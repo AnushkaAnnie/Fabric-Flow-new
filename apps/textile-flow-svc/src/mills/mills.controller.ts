@@ -6,7 +6,6 @@ import {
   Delete,
   Param,
   Body,
-  Query,
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
@@ -14,7 +13,12 @@ import {
 } from '@nestjs/common';
 import { MillsService } from './mills.service';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
-import { CreateMillSchema, UpdateMillSchema } from '@textile-flow/shared';
+import {
+  CreateMillSchema,
+  UpdateMillSchema,
+  type CreateMillDto,
+  type UpdateMillDto,
+} from '@textile-flow/shared';
 
 @Controller('mills')
 export class MillsController {
@@ -23,7 +27,7 @@ export class MillsController {
   @Post()
   @UsePipes(new ZodValidationPipe(CreateMillSchema))
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: any) {
+  create(@Body() dto: CreateMillDto) {
     return this.millsService.create(dto);
   }
 
@@ -40,7 +44,7 @@ export class MillsController {
   @Put(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body(new ZodValidationPipe(UpdateMillSchema)) dto: any,
+    @Body(new ZodValidationPipe(UpdateMillSchema)) dto: UpdateMillDto,
   ) {
     return this.millsService.update(id, dto);
   }

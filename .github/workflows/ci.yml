@@ -29,19 +29,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate Prisma Clients
-        run: |
-          cd apps/textile-flow-svc && npx prisma generate && cd ../..
+      - name: Build shared DTOs
+        run: npx turbo run build --filter=@textile-flow/shared
 
-      - name: Build shared package
-        run: npm run build --workspace=packages/shared
+      - name: Prisma generate
+        run: npx turbo run db:generate --filter=textile-flow-svc
+        env:
+          DATABASE_URL: "postgresql://fabric:secret@localhost:5432/stub_db"
 
-      - name: Run Turbo Lint
+      - name: Lint
         run: npx turbo run lint
-        continue-on-error: true
 
-      - name: Run Turbo Build
+      - name: Build
         run: npx turbo run build
         env:
-          # Stub DATABASE_URL so Prisma client doesn't fail at build time
           DATABASE_URL: "postgresql://fabric:secret@localhost:5432/stub_db"

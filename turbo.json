@@ -18,6 +18,11 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$"]
     },
+    "db:generate": {
+      "cache": false,
+      "inputs": ["prisma/schema.prisma"],
+      "outputs": ["generated/**"]
+    },
     "db:migrate": {
       "cache": false,
       "inputs": ["prisma/schema.prisma"]

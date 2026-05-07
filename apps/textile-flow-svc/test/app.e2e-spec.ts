@@ -4,6 +4,12 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
+type HealthCheckResponse = {
+  status: string;
+  service: string;
+  timestamp: string;
+};
+
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -21,11 +27,13 @@ describe('AppController (e2e)', () => {
       .get('/')
       .expect(200)
       .expect((res) => {
-        expect(res.body).toMatchObject({
+        const body = res.body as HealthCheckResponse;
+
+        expect(body).toMatchObject({
           status: 'ok',
           service: 'textile-flow-svc',
         });
-        expect(typeof res.body.timestamp).toBe('string');
+        expect(typeof body.timestamp).toBe('string');
       });
   });
 
