@@ -1,0 +1,110 @@
+// This is your Prisma schema file for master-data-svc
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Mill {
+  id            String   @id @default(uuid())
+  name          String
+  code          String   @unique
+  address       String?
+  contactPerson String?  @map("contact_person")
+  email         String?
+  phone         String?
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("mills")
+}
+
+model Knitter {
+  id            String   @id @default(uuid())
+  name          String
+  code          String   @unique
+  address       String?
+  contactPerson String?  @map("contact_person")
+  email         String?
+  phone         String?
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("knitters")
+}
+
+model Dyer {
+  id            String   @id @default(uuid())
+  name          String
+  code          String   @unique
+  address       String?
+  contactPerson String?  @map("contact_person")
+  email         String?
+  phone         String?
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("dyers")
+}
+
+model Compacter {
+  id            String   @id @default(uuid())
+  name          String
+  code          String   @unique
+  address       String?
+  contactPerson String?  @map("contact_person")
+  email         String?
+  phone         String?
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("compacters")
+}
+
+model Colour {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  hexCode     String?  @map("hex_code")
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("colours")
+}
+
+model WashType {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("wash_types")
+}
+
+model YarnQuality {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  composition String?
+  count       String?
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("yarn_qualities")
+}

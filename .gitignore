@@ -2,8 +2,6 @@
 
 # Dependencies
 node_modules
-.pnp
-.pnp.js
 
 # Local env files
 .env
@@ -27,6 +25,8 @@ out/
 build
 dist
 
+# Prisma generated clients (regenerated via prisma generate)
+apps/*/generated/
 
 # Debug
 npm-debug.log*
