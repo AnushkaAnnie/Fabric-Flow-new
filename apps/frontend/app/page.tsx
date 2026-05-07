@@ -2,14 +2,14 @@ import Link from "next/link";
 
 const services = [
   {
-    id: "yarn-fabric-tracker",
-    title: "Yarn‑to‑Fabric Tracker",
+    id: "textile-flow-tracker",
+    title: "Textile Flow Tracker",
     description:
-      "End-to-end production flow from yarn lot intake through knitting, dyeing, and compacting. Real-time stock visibility at every stage.",
+      "Complete yarn-to-fabric lifecycle for Chhavineetu Textiles LLP. Real-time stock visibility at every stage.",
     href: "/tracker",
     icon: "🧵",
     status: "active",
-    port: 3002,
+    port: 3001,
     color: "from-blue-500/20 to-violet-500/20",
     border: "border-blue-500/30",
     glow: "shadow-blue-500/10",
@@ -19,45 +19,7 @@ const services = [
       { label: "Programs", value: "—" },
       { label: "In Transit", value: "—" },
     ],
-  },
-  {
-    id: "master-data",
-    title: "Master Data",
-    description:
-      "Manage mills, knitters, dyers, compacters, yarn qualities, colours, and wash types. The foundational reference data powering every workflow.",
-    href: "/master-data",
-    icon: "🏭",
-    status: "active",
-    port: 3001,
-    color: "from-emerald-500/20 to-teal-500/20",
-    border: "border-emerald-500/30",
-    glow: "shadow-emerald-500/10",
-    badge: "Foundation",
-    metrics: [
-      { label: "Mills", value: "—" },
-      { label: "Knitters", value: "—" },
-      { label: "Colours", value: "—" },
-    ],
-  },
-  {
-    id: "audit-log",
-    title: "Audit Log",
-    description:
-      "Complete immutable trail of every CREATE, UPDATE, and DELETE operation across all services. Full accountability and compliance tracking.",
-    href: "/audit",
-    icon: "📋",
-    status: "active",
-    port: 3003,
-    color: "from-amber-500/20 to-orange-500/20",
-    border: "border-amber-500/30",
-    glow: "shadow-amber-500/10",
-    badge: "Compliance",
-    metrics: [
-      { label: "Total Events", value: "—" },
-      { label: "Today", value: "—" },
-      { label: "Services", value: "3" },
-    ],
-  },
+  }
 ];
 
 const pipeline = [
@@ -87,7 +49,7 @@ export default function HomePage() {
               🪡
             </div>
             <div>
-              <span className="text-xl font-bold gradient-text">Fabric Flow</span>
+              <span className="text-xl font-bold gradient-text">Textile Flow</span>
               <span className="ml-2 text-xs text-slate-500 font-medium uppercase tracking-wider">Phase 0</span>
             </div>
           </div>
@@ -104,15 +66,15 @@ export default function HomePage() {
         {/* Hero section */}
         <div className="text-center mb-20">
           <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 mb-6">
-            <span className="text-xs text-blue-400 font-semibold uppercase tracking-wider">Microservices Foundation</span>
+            <span className="text-xs text-blue-400 font-semibold uppercase tracking-wider">Monolith Foundation</span>
           </div>
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight">
-            <span className="gradient-text">Fabric Flow</span>
+            <span className="gradient-text">Textile Flow</span>
             <br />
-            <span className="text-slate-300 text-4xl md:text-5xl font-light">Production Platform</span>
+            <span className="text-slate-300 text-4xl md:text-5xl font-light">Chhavineetu Textiles LLP</span>
           </h1>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
-            A unified microservices platform for end-to-end textile manufacturing —
+            A unified application for end-to-end textile manufacturing —
             from raw yarn to finished fabric, with complete audit trails and master data management.
           </p>
         </div>
@@ -221,9 +183,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: "PostgreSQL", detail: "Docker · Port 5432", icon: "🐘", color: "text-sky-400" },
-              { label: "master_data_db", detail: "Mills, Knitters, Colours…", icon: "📊", color: "text-emerald-400" },
-              { label: "fabric_flow_db", detail: "Yarn Lots, Programs…", icon: "🗄️", color: "text-blue-400" },
-              { label: "audit_db", detail: "Audit Logs", icon: "📜", color: "text-amber-400" },
+              { label: "textile_flow_db", detail: "All Data Models", icon: "🗄️", color: "text-emerald-400" },
             ].map((item) => (
               <div key={item.label} className="bg-slate-800/40 border border-slate-700/30 rounded-xl p-4 hover:border-slate-600/50 transition-colors">
                 <div className="text-2xl mb-2">{item.icon}</div>
@@ -236,7 +196,7 @@ export default function HomePage() {
 
         {/* Footer */}
         <div className="text-center text-slate-600 text-sm">
-          <span>Fabric Flow Platform — Phase 0 Foundation</span>
+          <span>Textile Flow Platform</span>
           <span className="mx-2">·</span>
           <span>Turborepo + NestJS + Next.js + PostgreSQL</span>
         </div>

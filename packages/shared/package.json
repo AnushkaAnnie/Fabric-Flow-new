@@ -1,5 +1,5 @@
 {
-  "name": "@fabric-flow/shared",
+  "name": "@textile-flow/shared",
   "version": "1.0.0",
   "description": "Shared DTOs, schemas and types for Fabric-Flow services",
   "main": "dist/index.js",

@@ -1,5 +1,5 @@
 {
-  "name": "fabric-flow",
+  "name": "textile-flow",
   "private": true,
   "scripts": {
     "build": "turbo run build",
