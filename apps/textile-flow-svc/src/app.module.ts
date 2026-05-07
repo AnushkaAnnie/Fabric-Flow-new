@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { KnittersModule } from './knitters/knitters.module';
@@ -16,6 +17,7 @@ import { DyeingProgramsModule } from './dyeing-programs/dyeing-programs.module';
 import { MillsModule } from './mills/mills.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
+import { DevAuthGuard } from './common/guards/dev-auth.guard';
 
 @Module({
   imports: [
@@ -36,6 +38,12 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
     AuditLogsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: DevAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

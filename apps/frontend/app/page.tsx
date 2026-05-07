@@ -19,7 +19,7 @@ const services = [
       { label: "Programs", value: "—" },
       { label: "In Transit", value: "—" },
     ],
-  }
+  },
 ];
 
 const pipeline = [
@@ -49,14 +49,20 @@ export default function HomePage() {
               🪡
             </div>
             <div>
-              <span className="text-xl font-bold gradient-text">Textile Flow</span>
-              <span className="ml-2 text-xs text-slate-500 font-medium uppercase tracking-wider">Phase 0</span>
+              <span className="text-xl font-bold gradient-text">
+                Textile Flow
+              </span>
+              <span className="ml-2 text-xs text-slate-500 font-medium uppercase tracking-wider">
+                Phase 0
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs text-emerald-400 font-medium">All Systems Operational</span>
+              <span className="text-xs text-emerald-400 font-medium">
+                All Systems Operational
+              </span>
             </div>
           </div>
         </div>
@@ -66,16 +72,21 @@ export default function HomePage() {
         {/* Hero section */}
         <div className="text-center mb-20">
           <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 mb-6">
-            <span className="text-xs text-blue-400 font-semibold uppercase tracking-wider">Monolith Foundation</span>
+            <span className="text-xs text-blue-400 font-semibold uppercase tracking-wider">
+              Monolith Foundation
+            </span>
           </div>
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight">
             <span className="gradient-text">Textile Flow</span>
             <br />
-            <span className="text-slate-300 text-4xl md:text-5xl font-light">Chhavineetu Textiles LLP</span>
+            <span className="text-slate-300 text-4xl md:text-5xl font-light">
+              Chhavineetu Textiles LLP
+            </span>
           </h1>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
-            A unified application for end-to-end textile manufacturing —
-            from raw yarn to finished fabric, with complete audit trails and master data management.
+            A unified application for end-to-end textile manufacturing — from
+            raw yarn to finished fabric, with complete audit trails and master
+            data management.
           </p>
         </div>
 
@@ -88,18 +99,35 @@ export default function HomePage() {
             </h2>
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
               {pipeline.map((step, i) => (
-                <div key={step.stage} className="flex items-center gap-2 flex-shrink-0">
+                <div
+                  key={step.stage}
+                  className="flex items-center gap-2 flex-shrink-0"
+                >
                   <div className="flex flex-col items-center gap-2">
-                    <div className={`w-12 h-12 rounded-xl ${step.color}/20 border border-slate-700/50 flex items-center justify-center text-xl transition-transform hover:scale-105`}>
+                    <div
+                      className={`w-12 h-12 rounded-xl ${step.color}/20 border border-slate-700/50 flex items-center justify-center text-xl transition-transform hover:scale-105`}
+                    >
                       {step.icon}
                     </div>
-                    <span className="text-xs text-slate-400 font-medium whitespace-nowrap">{step.stage}</span>
+                    <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                      {step.stage}
+                    </span>
                   </div>
                   {i < pipeline.length - 1 && (
                     <div className="flex items-center gap-1 mb-4">
                       <div className="w-6 h-px bg-gradient-to-r from-slate-600 to-slate-700" />
-                      <svg className="w-3 h-3 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg
+                        className="w-3 h-3 text-slate-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </div>
                   )}
@@ -113,7 +141,9 @@ export default function HomePage() {
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-slate-200 mb-8 flex items-center gap-3">
             <span>Services</span>
-            <span className="text-sm font-normal text-slate-500 bg-slate-800/60 px-2.5 py-1 rounded-full">{services.length} running</span>
+            <span className="text-sm font-normal text-slate-500 bg-slate-800/60 px-2.5 py-1 rounded-full">
+              {services.length} running
+            </span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((svc) => (
@@ -124,7 +154,9 @@ export default function HomePage() {
                 className={`group relative glass-card rounded-2xl p-6 ${svc.border} hover:border-opacity-60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${svc.glow} cursor-pointer block`}
               >
                 {/* Background gradient on hover */}
-                <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${svc.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                <div
+                  className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${svc.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                />
 
                 <div className="relative z-10">
                   {/* Header */}
@@ -134,14 +166,20 @@ export default function HomePage() {
                         {svc.icon}
                       </div>
                       <div>
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{svc.badge}</span>
-                        <h3 className="text-base font-bold text-slate-100 leading-tight">{svc.title}</h3>
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          {svc.badge}
+                        </span>
+                        <h3 className="text-base font-bold text-slate-100 leading-tight">
+                          {svc.title}
+                        </h3>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <div className="flex items-center gap-1 bg-emerald-500/10 rounded-full px-2 py-0.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="text-xs text-emerald-400 font-medium">:{svc.port}</span>
+                        <span className="text-xs text-emerald-400 font-medium">
+                          :{svc.port}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -154,9 +192,16 @@ export default function HomePage() {
                   {/* Metrics */}
                   <div className="grid grid-cols-3 gap-3 mb-5">
                     {svc.metrics.map((metric) => (
-                      <div key={metric.label} className="bg-slate-800/40 rounded-xl p-2.5 text-center">
-                        <div className="text-base font-bold text-slate-200">{metric.value}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{metric.label}</div>
+                      <div
+                        key={metric.label}
+                        className="bg-slate-800/40 rounded-xl p-2.5 text-center"
+                      >
+                        <div className="text-base font-bold text-slate-200">
+                          {metric.value}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {metric.label}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -166,7 +211,9 @@ export default function HomePage() {
                     <span className="text-blue-400 font-medium group-hover:text-blue-300 transition-colors">
                       Open dashboard →
                     </span>
-                    <span className="text-slate-600 text-xs font-mono">localhost:{svc.port}</span>
+                    <span className="text-slate-600 text-xs font-mono">
+                      localhost:{svc.port}
+                    </span>
                   </div>
                 </div>
               </Link>
@@ -182,12 +229,27 @@ export default function HomePage() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "PostgreSQL", detail: "Docker · Port 5432", icon: "🐘", color: "text-sky-400" },
-              { label: "textile_flow_db", detail: "All Data Models", icon: "🗄️", color: "text-emerald-400" },
+              {
+                label: "PostgreSQL",
+                detail: "Docker · Port 5432",
+                icon: "🐘",
+                color: "text-sky-400",
+              },
+              {
+                label: "textile_flow_db",
+                detail: "All Data Models",
+                icon: "🗄️",
+                color: "text-emerald-400",
+              },
             ].map((item) => (
-              <div key={item.label} className="bg-slate-800/40 border border-slate-700/30 rounded-xl p-4 hover:border-slate-600/50 transition-colors">
+              <div
+                key={item.label}
+                className="bg-slate-800/40 border border-slate-700/30 rounded-xl p-4 hover:border-slate-600/50 transition-colors"
+              >
                 <div className="text-2xl mb-2">{item.icon}</div>
-                <div className={`text-sm font-semibold ${item.color}`}>{item.label}</div>
+                <div className={`text-sm font-semibold ${item.color}`}>
+                  {item.label}
+                </div>
                 <div className="text-xs text-slate-500 mt-1">{item.detail}</div>
               </div>
             ))}

@@ -10,18 +10,11 @@ export class MillsService {
     return this.prisma.mill.create({ data: dto });
   }
 
-  async findAll(page = 1, limit = 20) {
-    const skip = (page - 1) * limit;
-    const [data, total] = await Promise.all([
-      this.prisma.mill.findMany({
-        where: { isActive: true },
-        skip,
-        take: limit,
-        orderBy: { name: 'asc' },
-      }),
-      this.prisma.mill.count({ where: { isActive: true } }),
-    ]);
-    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  async findAll() {
+    return this.prisma.mill.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
+    });
   }
 
   async findOne(id: string) {

@@ -15,8 +15,13 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return the health check payload', () => {
+      const response = appController.getHealth();
+      expect(response).toMatchObject({
+        status: 'ok',
+        service: 'textile-flow-svc',
+      });
+      expect(typeof response.timestamp).toBe('string');
     });
   });
 });
