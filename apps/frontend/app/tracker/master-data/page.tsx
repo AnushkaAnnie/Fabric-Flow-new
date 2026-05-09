@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function TrackerPage() {
+export default function TrackerMasterDataPage() {
   redirect("/tracker/master-data/mills");
 }
