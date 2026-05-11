@@ -1,67 +1,29 @@
 import { z } from "zod";
 
+export const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/;
+
 // ──────────────────────────────────────────────
-// Mills
+// Master Data
 // ──────────────────────────────────────────────
-export const CreateMillSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  code: z.string().min(1, "Code is required").max(20),
+export * from './mills';
+export * from './knitters';
+export * from './dyers';
+export * from './compacters';
+
+export const MillResponseSchema = z.object({
+  id: z.number().int().positive(),
+  name: z.string(),
+  code: z.string(),
   address: z.string().optional(),
   contactPerson: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.string().optional(),
   phone: z.string().optional(),
-});
-
-export type CreateMillDto = z.infer<typeof CreateMillSchema>;
-
-export const UpdateMillSchema = CreateMillSchema.partial();
-export type UpdateMillDto = z.infer<typeof UpdateMillSchema>;
-
-export const MillResponseSchema = CreateMillSchema.extend({
-  id: z.string().uuid(),
+  contactNo: z.string().optional(),
+  gstin: z.string().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
 export type MillResponse = z.infer<typeof MillResponseSchema>;
-
-// ──────────────────────────────────────────────
-// Knitters
-// ──────────────────────────────────────────────
-export const CreateKnitterSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  code: z.string().min(1, "Code is required").max(20),
-  address: z.string().optional(),
-  contactPerson: z.string().optional(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-});
-export type CreateKnitterDto = z.infer<typeof CreateKnitterSchema>;
-export const UpdateKnitterSchema = CreateKnitterSchema.partial();
-export type UpdateKnitterDto = z.infer<typeof UpdateKnitterSchema>;
-
-export const CreateDyerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  code: z.string().min(1, "Code is required").max(20),
-  address: z.string().optional(),
-  contactPerson: z.string().optional(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-});
-export type CreateDyerDto = z.infer<typeof CreateDyerSchema>;
-export const UpdateDyerSchema = CreateDyerSchema.partial();
-export type UpdateDyerDto = z.infer<typeof UpdateDyerSchema>;
-
-export const CreateCompacterSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  code: z.string().min(1, "Code is required").max(20),
-  address: z.string().optional(),
-  contactPerson: z.string().optional(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-});
-export type CreateCompacterDto = z.infer<typeof CreateCompacterSchema>;
-export const UpdateCompacterSchema = CreateCompacterSchema.partial();
-export type UpdateCompacterDto = z.infer<typeof UpdateCompacterSchema>;
 
 export const CreateColourSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -106,12 +68,12 @@ export * from './yarn-lots/issue-yarn.dto';
 export const CreateDeliveryNoteSchema = z.object({
   dcNo: z.string().min(1),
   transferDcNo: z.string().optional(),
-  knitterId: z.string().uuid(),
+  knitterId: z.number().int().positive(),
   deliveryDate: z.string().datetime(),
   remarks: z.string().optional(),
   items: z.array(
     z.object({
-      yarnLotId: z.string().uuid(),
+      yarnLotId: z.number().int().positive(),
       sentWeight: z.number().positive(),
       cones: z.number().int().positive(),
     }),
@@ -125,9 +87,9 @@ export type CreateDeliveryNoteDto = z.infer<typeof CreateDeliveryNoteSchema>;
 export const CreateKnitterProgramSchema = z.object({
   programNo: z.string().min(1),
   memoNo: z.string().optional(),
-  knitterId: z.string().uuid(),
-  colourId: z.string().uuid(),
-  yarnQualityId: z.string().uuid(),
+  knitterId: z.number().int().positive(),
+  colourId: z.number().int().positive(),
+  yarnQualityId: z.number().int().positive(),
   startDate: z.string().datetime(),
   expectedEndDate: z.string().datetime().optional(),
   remarks: z.string().optional(),
@@ -141,7 +103,7 @@ export type CreateKnitterProgramDto = z.infer<
 // ──────────────────────────────────────────────
 export const CreateGreyFabricLotSchema = z.object({
   lotNumber: z.string().min(1),
-  knitterProgramId: z.string().uuid(),
+  knitterProgramId: z.number().int().positive(),
   receivedDate: z.string().datetime(),
   grossWeight: z.number().positive(),
   netWeight: z.number().positive(),
@@ -155,9 +117,9 @@ export type CreateGreyFabricLotDto = z.infer<typeof CreateGreyFabricLotSchema>;
 // ──────────────────────────────────────────────
 export const CreateDyeingProgramSchema = z.object({
   programNo: z.string().min(1),
-  dyerId: z.string().uuid(),
-  colourId: z.string().uuid(),
-  washTypeId: z.string().uuid(),
+  dyerId: z.number().int().positive(),
+  colourId: z.number().int().positive(),
+  washTypeId: z.number().int().positive(),
   startDate: z.string().datetime(),
   remarks: z.string().optional(),
 });
@@ -167,7 +129,7 @@ export type CreateDyeingProgramDto = z.infer<typeof CreateDyeingProgramSchema>;
 // Audit Log
 // ──────────────────────────────────────────────
 export const AuditLogResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.number().int().positive(),
   tableName: z.string(),
   recordId: z.string(),
   action: z.enum(["CREATE", "UPDATE", "DELETE"]),

@@ -10,6 +10,10 @@ export type FormField = {
   label: string;
   type: "text" | "number";
   required: boolean;
+  validation?: {
+    pattern: string;
+    message: string;
+  };
 };
 
 type MasterDataFormDialogProps = {
@@ -26,13 +30,31 @@ type MasterDataFormDialogProps = {
 function getSchema(fields: FormField[]) {
   const shape: Record<string, z.ZodTypeAny> = {};
   for (const field of fields) {
+    let schema: z.ZodTypeAny;
+    
     if (field.type === "number") {
-      shape[field.name] = field.required
+      schema = field.required
         ? z.coerce.number()
         : z.union([z.coerce.number(), z.literal("")]).optional();
     } else {
-      shape[field.name] = field.required ? z.string().min(1) : z.string().optional();
+      let strSchema: z.ZodTypeAny = z.string();
+      if (field.required) {
+        strSchema = (strSchema as z.ZodString).min(1, `${field.label} is required`);
+      } else {
+        strSchema = strSchema.optional().or(z.literal(""));
+      }
+
+      if (field.validation?.pattern) {
+        const regex = new RegExp(field.validation.pattern);
+        schema = strSchema.refine(
+          (val) => !val || regex.test(val as string),
+          { message: field.validation!.message }
+        );
+      } else {
+        schema = strSchema;
+      }
     }
+    shape[field.name] = schema;
   }
   return z.object(shape);
 }
@@ -99,7 +121,9 @@ export default function MasterDataFormDialog({
                     className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
                   />
                   {form.formState.errors[field.name] && (
-                    <p className="text-xs text-red-400">Invalid {field.label.toLowerCase()}</p>
+                    <p className="text-xs text-red-400">
+                      {form.formState.errors[field.name]?.message?.toString() || `Invalid ${field.label.toLowerCase()}`}
+                    </p>
                   )}
                 </div>
               ))}

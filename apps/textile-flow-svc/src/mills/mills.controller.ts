@@ -12,7 +12,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { MillsService } from './mills.service';
-import { ZodValidationPipe } from '../common/zod-validation.pipe';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import {
   CreateMillSchema,
   UpdateMillSchema,

@@ -11,24 +11,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-
-interface Knitter {
-  id: number;
-  name: string;
-}
+import type { YarnLot, IssueYarnFormData, Knitter } from '@/types/yarn';
 
 interface IssueFormProps {
-  lot: {
-    id: number;
-    hfCode: string;
-    availableWeight: number;
-  };
+  lot: Pick<YarnLot, 'id' | 'hfCode' | 'availableWeight'>;
   knitters: Knitter[];
-  onSubmit: (data: { knitterId: number; weight: number }) => void;
+  onSubmit: (data: IssueYarnFormData) => void;
   isSubmitting: boolean;
 }
 
-export function IssueForm({ lot, knitters, onSubmit, isSubmitting }: IssueFormProps) {
+export function IssueForm({
+  lot,
+  knitters,
+  onSubmit,
+  isSubmitting,
+}: IssueFormProps) {
   const [knitterId, setKnitterId] = useState('');
   const [weight, setWeight] = useState('');
 
@@ -50,7 +47,7 @@ export function IssueForm({ lot, knitters, onSubmit, isSubmitting }: IssueFormPr
       </div>
       <div>
         <Label>Knitter *</Label>
-        <Select value={knitterId} onValueChange={setKnitterId}>
+        <Select value={knitterId} onValueChange={(v) => setKnitterId(v || '')}>
           <SelectTrigger>
             <SelectValue placeholder="Select knitter" />
           </SelectTrigger>
@@ -75,7 +72,9 @@ export function IssueForm({ lot, knitters, onSubmit, isSubmitting }: IssueFormPr
         />
       </div>
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        {isSubmitting ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : null}
         Issue
       </Button>
     </form>

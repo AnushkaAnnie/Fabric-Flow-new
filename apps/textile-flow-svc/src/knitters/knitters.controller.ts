@@ -7,9 +7,16 @@ import {
   Patch,
   Post,
   ParseIntPipe,
+  UsePipes,
 } from '@nestjs/common';
-import type { CreateKnitterDto, UpdateKnitterDto } from '@textile-flow/shared';
+import {
+  CreateKnitterSchema,
+  UpdateKnitterSchema,
+  type CreateKnitterDto,
+  type UpdateKnitterDto,
+} from '@textile-flow/shared';
 import { KnittersService } from './knitters.service';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 
 @Controller('knitters')
 export class KnittersController {
@@ -21,6 +28,7 @@ export class KnittersController {
   }
 
   @Post()
+  @UsePipes(new ZodValidationPipe(CreateKnitterSchema))
   create(@Body() dto: CreateKnitterDto) {
     return this.knittersService.create(dto);
   }
@@ -31,7 +39,10 @@ export class KnittersController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateKnitterDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new ZodValidationPipe(UpdateKnitterSchema)) dto: UpdateKnitterDto,
+  ) {
     return this.knittersService.update(id, dto);
   }
 

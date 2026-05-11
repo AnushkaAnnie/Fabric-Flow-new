@@ -22,40 +22,47 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package2, ArrowRightLeft } from 'lucide-react';
 import { YarnLotForm } from '@/components/yarn/YarnLotForm';
 import { IssueForm } from '@/components/yarn/IssueForm';
+import type {
+  YarnLot,
+  YarnLotFormData,
+  IssueYarnFormData,
+  Mill,
+  Knitter,
+} from '@/types/yarn';
 
 export default function YarnPage() {
   const queryClient = useQueryClient();
-  const [selectedLot, setSelectedLot] = useState<any>(null);
+  const [selectedLot, setSelectedLot] = useState<YarnLot | null>(null);
   const [issueOpen, setIssueOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [editLot, setEditLot] = useState<any>(null);
+  const [editLot, setEditLot] = useState<YarnLot | null>(null);
 
-  const { data: lots = [], isLoading } = useQuery({
+  const { data: lots = [] } = useQuery<YarnLot[]>({
     queryKey: ['yarn-lots'],
     queryFn: async () => {
-      const { data } = await api.get('/yarn-lots');
+      const { data } = await api.get<YarnLot[]>('/yarn-lots');
       return data;
     },
   });
 
-  const { data: mills = [] } = useQuery({
+  const { data: mills = [] } = useQuery<Mill[]>({
     queryKey: ['mills'],
     queryFn: async () => {
-      const { data } = await api.get('/mills');
+      const { data } = await api.get<Mill[]>('/mills');
       return data;
     },
   });
 
-  const { data: knitters = [] } = useQuery({
+  const { data: knitters = [] } = useQuery<Knitter[]>({
     queryKey: ['knitters'],
     queryFn: async () => {
-      const { data } = await api.get('/knitters');
+      const { data } = await api.get<Knitter[]>('/knitters');
       return data;
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: (form: any) => api.post('/yarn-lots', form),
+    mutationFn: (form: YarnLotFormData) => api.post('/yarn-lots', form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['yarn-lots'] });
       toast.success('Yarn lot created');
@@ -65,19 +72,26 @@ export default function YarnPage() {
   });
 
   const issueMutation = useMutation({
-    mutationFn: ({ id, ...body }: any) =>
+    mutationFn: ({ id, ...body }: { id: number } & IssueYarnFormData) =>
       api.post(`/yarn-lots/${id}/issue`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['yarn-lots'] });
       toast.success('Yarn issued to knitter');
       setIssueOpen(false);
     },
-    onError: (err: any) =>
-      toast.error(err.response?.data?.message || 'Issue failed'),
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error ? err.message : 'Issue failed';
+      toast.error(message);
+    },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...body }: any) => api.patch(`/yarn-lots/${id}`, body),
+    mutationFn: ({
+      id,
+      ...body
+    }: { id: number } & Partial<YarnLotFormData>) =>
+      api.patch(`/yarn-lots/${id}`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['yarn-lots'] });
       toast.success('Yarn lot updated');
@@ -124,7 +138,7 @@ export default function YarnPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lots.map((lot: any) => (
+              {lots.map((lot: YarnLot) => (
                 <TableRow key={lot.id}>
                   <TableCell className="font-medium">{lot.hfCode}</TableCell>
                   <TableCell>{lot.mill?.name}</TableCell>
@@ -171,15 +185,23 @@ export default function YarnPage() {
       </Card>
 
       {/* Create / Edit Dialog */}
-      <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) setEditLot(null); }}>
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) setEditLot(null);
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editLot ? 'Edit Yarn Lot' : 'Add New Yarn Lot'}</DialogTitle>
+            <DialogTitle>
+              {editLot ? 'Edit Yarn Lot' : 'Add New Yarn Lot'}
+            </DialogTitle>
           </DialogHeader>
           <YarnLotForm
             initial={editLot}
             mills={mills}
-            onSubmit={(data) => {
+            onSubmit={(data: YarnLotFormData) => {
               if (editLot) {
                 updateMutation.mutate({ id: editLot.id, ...data });
               } else {
@@ -201,7 +223,7 @@ export default function YarnPage() {
             <IssueForm
               lot={selectedLot}
               knitters={knitters}
-              onSubmit={(data) =>
+              onSubmit={(data: IssueYarnFormData) =>
                 issueMutation.mutate({ id: selectedLot.id, ...data })
               }
               isSubmitting={issueMutation.isPending}

@@ -7,9 +7,16 @@ import {
   Patch,
   Post,
   ParseIntPipe,
+  UsePipes,
 } from '@nestjs/common';
-import * as Shared from '@textile-flow/shared';
+import {
+  CreateDyerSchema,
+  UpdateDyerSchema,
+  type CreateDyerDto,
+  type UpdateDyerDto,
+} from '@textile-flow/shared';
 import { DyersService } from './dyers.service';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 
 @Controller('dyers')
 export class DyersController {
@@ -21,7 +28,8 @@ export class DyersController {
   }
 
   @Post()
-  create(@Body() dto: Shared.CreateDyerDto) {
+  @UsePipes(new ZodValidationPipe(CreateDyerSchema))
+  create(@Body() dto: CreateDyerDto) {
     return this.dyersService.create(dto);
   }
 
@@ -31,7 +39,10 @@ export class DyersController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: Shared.UpdateDyerDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new ZodValidationPipe(UpdateDyerSchema)) dto: UpdateDyerDto,
+  ) {
     return this.dyersService.update(id, dto);
   }
 

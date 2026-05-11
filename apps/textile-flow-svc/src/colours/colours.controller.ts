@@ -31,7 +31,10 @@ export class ColoursController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: Shared.UpdateColourDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: Shared.UpdateColourDto,
+  ) {
     return this.coloursService.update(id, dto);
   }
 

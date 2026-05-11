@@ -31,7 +31,10 @@ export class WashTypesController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: Shared.UpdateWashTypeDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: Shared.UpdateWashTypeDto,
+  ) {
     return this.washTypesService.update(id, dto);
   }
 

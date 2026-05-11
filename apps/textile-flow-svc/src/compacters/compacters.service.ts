@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  CreateCompacterDto,
-  UpdateCompacterDto,
-} from '@textile-flow/shared';
+import { CreateCompacterDto, UpdateCompacterDto } from '@textile-flow/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()

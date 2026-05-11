@@ -11,20 +11,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-
-interface Mill {
-  id: number;
-  name: string;
-}
+import type { YarnLot, YarnLotFormData, Mill } from '@/types/yarn';
 
 interface YarnLotFormProps {
-  initial?: any;
+  initial?: YarnLot | null;
   mills: Mill[];
-  onSubmit: (data: any) => void;
+  onSubmit: (data: YarnLotFormData) => void;
   isSubmitting: boolean;
 }
 
-export function YarnLotForm({ initial, mills, onSubmit, isSubmitting }: YarnLotFormProps) {
+export function YarnLotForm({
+  initial,
+  mills,
+  onSubmit,
+  isSubmitting,
+}: YarnLotFormProps) {
   const [form, setForm] = useState({
     hfCode: '',
     millId: '',
@@ -38,6 +39,7 @@ export function YarnLotForm({ initial, mills, onSubmit, isSubmitting }: YarnLotF
 
   useEffect(() => {
     if (initial) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
         hfCode: initial.hfCode || '',
         millId: String(initial.millId || ''),
@@ -65,7 +67,8 @@ export function YarnLotForm({ initial, mills, onSubmit, isSubmitting }: YarnLotF
     });
   };
 
-  const totalWeight = Number(form.numBags || 0) * Number(form.bagWeight || 0);
+  const totalWeight =
+    Number(form.numBags || 0) * Number(form.bagWeight || 0);
   const totalCost = totalWeight * Number(form.ratePerKg || 0);
 
   return (
@@ -85,7 +88,7 @@ export function YarnLotForm({ initial, mills, onSubmit, isSubmitting }: YarnLotF
           <Label>Mill *</Label>
           <Select
             value={form.millId}
-            onValueChange={(v) => setForm({ ...form, millId: v })}
+            onValueChange={(v) => setForm({ ...form, millId: v || '' })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select mill" />
@@ -147,11 +150,17 @@ export function YarnLotForm({ initial, mills, onSubmit, isSubmitting }: YarnLotF
         </div>
       </div>
       <div className="flex justify-between text-sm bg-muted p-3 rounded">
-        <span>Total Weight: <strong>{totalWeight} kg</strong></span>
-        <span>Total Cost: <strong>₹{totalCost}</strong></span>
+        <span>
+          Total Weight: <strong>{totalWeight} kg</strong>
+        </span>
+        <span>
+          Total Cost: <strong>₹{totalCost}</strong>
+        </span>
       </div>
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        {isSubmitting ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : null}
         {initial ? 'Update Lot' : 'Create Lot'}
       </Button>
     </form>

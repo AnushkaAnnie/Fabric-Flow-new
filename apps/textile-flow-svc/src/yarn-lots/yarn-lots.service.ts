@@ -3,8 +3,12 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService, PrismaTransaction } from '../prisma/prisma.service';
-import { CreateYarnLotDto, IssueYarnDto, UpdateYarnLotDto } from '@textile-flow/shared';
+import { PrismaService } from '../prisma/prisma.service';
+import {
+  CreateYarnLotDto,
+  IssueYarnDto,
+  UpdateYarnLotDto,
+} from '@textile-flow/shared';
 import { lockYarnLot } from '../common/locks';
 
 @Injectable()
@@ -51,13 +55,14 @@ export class YarnLotsService {
 
   async update(id: number, dto: UpdateYarnLotDto) {
     const existing = await this.findOne(id);
-    const updateData: any = { ...dto };
+    const updateData: Record<string, any> = { ...dto };
     if (dto.numBags || dto.bagWeight) {
       const numBags = dto.numBags ?? existing.numBags;
       const bagWeight = dto.bagWeight ?? existing.bagWeight;
       const ratePerKg = dto.ratePerKg ?? existing.ratePerKg;
-      updateData.totalWeight = numBags * bagWeight;
-      updateData.totalCost = updateData.totalWeight * ratePerKg;
+      const totalWeight = numBags * bagWeight;
+      updateData['totalWeight'] = totalWeight;
+      updateData['totalCost'] = totalWeight * ratePerKg;
       // NEVER adjust availableWeight here
     }
     return this.prisma.yarnLot.update({

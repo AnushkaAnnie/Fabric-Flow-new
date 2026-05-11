@@ -31,7 +31,10 @@ export class YarnQualitiesController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: Shared.UpdateYarnQualityDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: Shared.UpdateYarnQualityDto,
+  ) {
     return this.yarnQualitiesService.update(id, dto);
   }
 

@@ -7,9 +7,16 @@ import {
   Patch,
   Post,
   ParseIntPipe,
+  UsePipes,
 } from '@nestjs/common';
-import * as Shared from '@textile-flow/shared';
+import {
+  CreateCompacterSchema,
+  UpdateCompacterSchema,
+  type CreateCompacterDto,
+  type UpdateCompacterDto,
+} from '@textile-flow/shared';
 import { CompactersService } from './compacters.service';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 
 @Controller('compacters')
 export class CompactersController {
@@ -21,7 +28,8 @@ export class CompactersController {
   }
 
   @Post()
-  create(@Body() dto: Shared.CreateCompacterDto) {
+  @UsePipes(new ZodValidationPipe(CreateCompacterSchema))
+  create(@Body() dto: CreateCompacterDto) {
     return this.compactersService.create(dto);
   }
 
@@ -31,7 +39,10 @@ export class CompactersController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: Shared.UpdateCompacterDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new ZodValidationPipe(UpdateCompacterSchema)) dto: UpdateCompacterDto,
+  ) {
     return this.compactersService.update(id, dto);
   }
 

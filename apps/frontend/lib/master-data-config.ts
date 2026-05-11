@@ -8,6 +8,8 @@ export type MasterDataConfig = {
   fields: FormField[];
 };
 
+const gstinPattern = "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$";
+
 const partyFields: FormField[] = [
   { name: "name", label: "Name", type: "text", required: true },
   { name: "code", label: "Code", type: "text", required: true },
@@ -15,13 +17,30 @@ const partyFields: FormField[] = [
   { name: "contactPerson", label: "Contact Person", type: "text", required: false },
   { name: "email", label: "Email", type: "text", required: false },
   { name: "phone", label: "Phone", type: "text", required: false },
+  {
+    name: "contactNo",
+    label: "Contact No.",
+    type: "text",
+    required: false,
+  },
+  {
+    name: "gstin",
+    label: "GSTIN",
+    type: "text",
+    required: false,
+    validation: {
+      pattern: gstinPattern,
+      message: "Invalid GSTIN (15 chars, e.g. 27AABCU9603R1ZT)",
+    },
+  },
 ];
 
 const partyColumns = [
   { key: "id", header: "ID" },
   { key: "name", header: "Name" },
   { key: "code", header: "Code" },
-  { key: "contactPerson", header: "Contact Person" },
+  { key: "contactNo", header: "Contact" },
+  { key: "gstin", header: "GSTIN" },
 ];
 
 export const masterDataConfig: MasterDataConfig[] = [

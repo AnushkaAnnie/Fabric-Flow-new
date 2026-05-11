@@ -1,12 +1,5 @@
-import { z } from "zod";
+import { z } from 'zod';
+import { CreateKnitterSchema } from './create-knitter.dto';
 
-export const UpdateKnitterDto = z.object({
-  name: z.string().min(1).optional(),
-  code: z.string().min(1).max(20).optional(),
-  address: z.string().optional(),
-  contactPerson: z.string().optional(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-});
-
-export type UpdateKnitterDtoType = z.infer<typeof UpdateKnitterDto>;
+export const UpdateKnitterSchema = CreateKnitterSchema.partial();
+export type UpdateKnitterDto = z.infer<typeof UpdateKnitterSchema>;

@@ -4,20 +4,29 @@ import {
   Post,
   Put,
   Delete,
-  Patch,
   Param,
   Body,
   ParseIntPipe,
+  UsePipes,
 } from '@nestjs/common';
 import { YarnLotsService } from './yarn-lots.service';
-import * as Shared from '@textile-flow/shared';
+import {
+  CreateYarnLotSchema,
+  UpdateYarnLotSchema,
+  IssueYarnSchema,
+  type CreateYarnLotDto,
+  type UpdateYarnLotDto,
+  type IssueYarnDto,
+} from '@textile-flow/shared';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 
 @Controller('yarn-lots')
 export class YarnLotsController {
   constructor(private readonly yarnLotsService: YarnLotsService) {}
 
   @Post()
-  create(@Body() dto: Shared.CreateYarnLotDto) {
+  @UsePipes(new ZodValidationPipe(CreateYarnLotSchema))
+  create(@Body() dto: CreateYarnLotDto) {
     return this.yarnLotsService.create(dto);
   }
 
@@ -32,7 +41,10 @@ export class YarnLotsController {
   }
 
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: Shared.UpdateYarnLotDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new ZodValidationPipe(UpdateYarnLotSchema)) dto: UpdateYarnLotDto,
+  ) {
     return this.yarnLotsService.update(id, dto);
   }
 
@@ -42,10 +54,8 @@ export class YarnLotsController {
   }
 
   @Post(':id/issue')
-  issue(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: Shared.IssueYarnDto,
-  ) {
+  @UsePipes(new ZodValidationPipe(IssueYarnSchema))
+  issue(@Param('id', ParseIntPipe) id: number, @Body() dto: IssueYarnDto) {
     return this.yarnLotsService.issue(id, dto);
   }
 }

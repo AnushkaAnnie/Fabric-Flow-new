@@ -1,10 +1,7 @@
 import { PrismaTransaction } from '../prisma/prisma.service';
 import { z } from 'zod';
 
-export async function lockYarnLot(
-  tx: PrismaTransaction,
-  id: number,
-) {
+export async function lockYarnLot(tx: PrismaTransaction, id: number) {
   const rows = await tx.$queryRaw`
     SELECT id, available_weight, total_weight
     FROM yarn_lots
