@@ -1,10 +1,19 @@
 import { z } from 'zod';
 import { gstinRegex } from '../index';
 
+const pincodeSchema = z
+  .string()
+  .regex(/^\d{6}$/, 'Pincode must be 6 digits')
+  .optional()
+  .or(z.literal(''));
+
 export const CreateDyerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  code: z.string().min(1, "Code is required").max(20),
-  address: z.string().optional(),
+  name: z.string().min(1, 'Name is required'),
+  addressLine1: z.string().optional(),
+  addressLine2: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  pincode: pincodeSchema,
   contactPerson: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional(),

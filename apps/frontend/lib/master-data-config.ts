@@ -12,8 +12,20 @@ const gstinPattern = "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]
 
 const partyFields: FormField[] = [
   { name: "name", label: "Name", type: "text", required: true },
-  { name: "code", label: "Code", type: "text", required: true },
-  { name: "address", label: "Address", type: "text", required: false },
+  { name: "addressLine1", label: "Address Line 1", type: "text", required: false },
+  { name: "addressLine2", label: "Address Line 2", type: "text", required: false },
+  { name: "city", label: "City", type: "text", required: false },
+  { name: "state", label: "State", type: "text", required: false },
+  {
+    name: "pincode",
+    label: "Pincode",
+    type: "text",
+    required: false,
+    validation: {
+      pattern: "^\\d{6}$",
+      message: "Pincode must be exactly 6 digits",
+    },
+  },
   { name: "contactPerson", label: "Contact Person", type: "text", required: false },
   { name: "email", label: "Email", type: "text", required: false },
   { name: "phone", label: "Phone", type: "text", required: false },
@@ -38,7 +50,9 @@ const partyFields: FormField[] = [
 const partyColumns = [
   { key: "id", header: "ID" },
   { key: "name", header: "Name" },
-  { key: "code", header: "Code" },
+  { key: "city", header: "City" },
+  { key: "state", header: "State" },
+  { key: "pincode", header: "Pincode" },
   { key: "contactNo", header: "Contact" },
   { key: "gstin", header: "GSTIN" },
 ];
@@ -78,25 +92,6 @@ export const masterDataConfig: MasterDataConfig[] = [
     fields: [
       { name: "name", label: "Name", type: "text", required: true },
       { name: "code", label: "Code", type: "text", required: true },
-      { name: "description", label: "Description", type: "text", required: false },
-    ],
-  },
-  {
-    entity: "yarn-qualities",
-    title: "Yarn Qualities",
-    path: "/tracker/master-data/yarn-qualities",
-    columns: [
-      { key: "id", header: "ID" },
-      { key: "name", header: "Name" },
-      { key: "code", header: "Code" },
-      { key: "composition", header: "Composition" },
-      { key: "count", header: "Count" },
-    ],
-    fields: [
-      { name: "name", label: "Name", type: "text", required: true },
-      { name: "code", label: "Code", type: "text", required: true },
-      { name: "composition", label: "Composition", type: "text", required: false },
-      { name: "count", label: "Count", type: "text", required: false },
       { name: "description", label: "Description", type: "text", required: false },
     ],
   },

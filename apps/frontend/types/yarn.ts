@@ -6,7 +6,6 @@ export interface YarnLot {
   mill?: { id: number; name: string } | null;
   description?: string | null;
   count?: string | null;
-  qualityId?: number | null;
   numBags: number;
   bagWeight: number;
   ratePerKg: number;
@@ -26,7 +25,6 @@ export interface YarnLotFormData {
   ratePerKg: number;
   description?: string;
   count?: string;
-  qualityId?: number;
 }
 
 // Data sent to issue yarn to a knitter
@@ -35,13 +33,13 @@ export interface IssueYarnFormData {
   weight: number;
 }
 
-// A mill reference (already exists in YarnLotForm.tsx – keep it there)
+// A mill reference
 export interface Mill {
   id: number;
   name: string;
 }
 
-// A knitter reference (already exists in IssueForm.tsx – keep it there)
+// A knitter reference
 export interface Knitter {
   id: number;
   name: string;

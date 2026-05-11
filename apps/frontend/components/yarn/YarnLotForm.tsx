@@ -34,7 +34,6 @@ export function YarnLotForm({
     ratePerKg: '',
     description: '',
     count: '',
-    qualityId: '',
   });
 
   useEffect(() => {
@@ -48,7 +47,6 @@ export function YarnLotForm({
         ratePerKg: String(initial.ratePerKg || ''),
         description: initial.description || '',
         count: initial.count || '',
-        qualityId: initial.qualityId ? String(initial.qualityId) : '',
       });
     }
   }, [initial]);
@@ -63,7 +61,6 @@ export function YarnLotForm({
       ratePerKg: Number(form.ratePerKg),
       description: form.description,
       count: form.count,
-      qualityId: form.qualityId ? Number(form.qualityId) : undefined,
     });
   };
 

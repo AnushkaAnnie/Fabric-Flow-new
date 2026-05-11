@@ -7,7 +7,6 @@ import { DyersModule } from './dyers/dyers.module';
 import { CompactersModule } from './compacters/compacters.module';
 import { ColoursModule } from './colours/colours.module';
 import { WashTypesModule } from './wash-types/wash-types.module';
-import { YarnQualitiesModule } from './yarn-qualities/yarn-qualities.module';
 import { YarnLotsModule } from './yarn-lots/yarn-lots.module';
 import { KnitterStockModule } from './knitter-stock/knitter-stock.module';
 import { DeliveryNotesModule } from './delivery-notes/delivery-notes.module';
@@ -26,7 +25,6 @@ import { DevAuthGuard } from './common/guards/dev-auth.guard';
     CompactersModule,
     ColoursModule,
     WashTypesModule,
-    YarnQualitiesModule,
     YarnLotsModule,
     KnitterStockModule,
     DeliveryNotesModule,

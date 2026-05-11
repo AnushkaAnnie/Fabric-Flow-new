@@ -25,7 +25,6 @@ export class YarnLotsService {
         description: dto.description,
         millId: dto.millId,
         count: dto.count,
-        qualityId: dto.qualityId,
         numBags: dto.numBags,
         bagWeight: dto.bagWeight,
         ratePerKg: dto.ratePerKg,

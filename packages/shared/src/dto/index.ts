@@ -13,8 +13,11 @@ export * from './compacters';
 export const MillResponseSchema = z.object({
   id: z.number().int().positive(),
   name: z.string(),
-  code: z.string(),
-  address: z.string().optional(),
+  addressLine1: z.string().nullable().optional(),
+  addressLine2: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  state: z.string().nullable().optional(),
+  pincode: z.string().nullable().optional(),
   contactPerson: z.string().optional(),
   email: z.string().optional(),
   phone: z.string().optional(),
@@ -43,17 +46,6 @@ export const CreateWashTypeSchema = z.object({
 export type CreateWashTypeDto = z.infer<typeof CreateWashTypeSchema>;
 export const UpdateWashTypeSchema = CreateWashTypeSchema.partial();
 export type UpdateWashTypeDto = z.infer<typeof UpdateWashTypeSchema>;
-
-export const CreateYarnQualitySchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  code: z.string().min(1, "Code is required").max(20),
-  composition: z.string().optional(),
-  count: z.string().optional(),
-  description: z.string().optional(),
-});
-export type CreateYarnQualityDto = z.infer<typeof CreateYarnQualitySchema>;
-export const UpdateYarnQualitySchema = CreateYarnQualitySchema.partial();
-export type UpdateYarnQualityDto = z.infer<typeof UpdateYarnQualitySchema>;
 
 // ──────────────────────────────────────────────
 // Yarn Lots
@@ -89,7 +81,6 @@ export const CreateKnitterProgramSchema = z.object({
   memoNo: z.string().optional(),
   knitterId: z.number().int().positive(),
   colourId: z.number().int().positive(),
-  yarnQualityId: z.number().int().positive(),
   startDate: z.string().datetime(),
   expectedEndDate: z.string().datetime().optional(),
   remarks: z.string().optional(),
