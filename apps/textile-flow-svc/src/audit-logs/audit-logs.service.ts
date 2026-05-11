@@ -1,13 +1,22 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
+// ---- DTO for creating an audit log entry ----
 export interface CreateAuditLogDto {
   tableName: string;
-  recordId: number | string;
-  action: string; // 'CREATE' | 'UPDATE' | 'DELETE'
+  recordId: string;
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
   oldData?: Record<string, unknown> | null;
   newData?: Record<string, unknown> | null;
   performedBy?: string;
+}
+
+/** Convert a plain object (or null) to a value Prisma accepts for a Json? field. */
+function toJsonField(
+  value: Record<string, unknown> | null | undefined,
+): Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue {
+  return value == null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
 }
 
 @Injectable()
@@ -21,15 +30,15 @@ export class AuditLogsService {
     });
   }
 
-  async create(data: CreateAuditLogDto) {
+  create(data: CreateAuditLogDto) {
     return this.prisma.auditLog.create({
       data: {
         tableName: data.tableName,
-        recordId: String(data.recordId || 0),
-        action: data.action as any,
-        oldData: data.oldData ? JSON.parse(JSON.stringify(data.oldData)) : null,
-        newData: data.newData ? JSON.parse(JSON.stringify(data.newData)) : null,
-        performedBy: data.performedBy || 'system',
+        recordId: data.recordId,
+        action: data.action,
+        oldData: toJsonField(data.oldData),
+        newData: toJsonField(data.newData),
+        performedBy: data.performedBy ?? 'system',
       },
     });
   }
