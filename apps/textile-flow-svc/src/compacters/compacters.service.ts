@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { CreateCompacterDto, UpdateCompacterDto } from '@textile-flow/shared';
+import {
+  CreateCompacterDto,
+  UpdateCompacterDto,
+} from '@textile-flow/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -14,15 +17,15 @@ export class CompactersService {
     return this.prisma.compacter.create({ data: dto });
   }
 
-  findOne(id: string) {
+  findOne(id: number) {
     return this.prisma.compacter.findUniqueOrThrow({ where: { id } });
   }
 
-  update(id: string, dto: UpdateCompacterDto) {
+  update(id: number, dto: UpdateCompacterDto) {
     return this.prisma.compacter.update({ where: { id }, data: dto });
   }
 
-  remove(id: string) {
+  remove(id: number) {
     return this.prisma.compacter.delete({ where: { id } });
   }
 }

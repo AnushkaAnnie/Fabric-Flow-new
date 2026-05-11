@@ -14,15 +14,15 @@ export class ColoursService {
     return this.prisma.colour.create({ data: dto });
   }
 
-  findOne(id: string) {
+  findOne(id: number) {
     return this.prisma.colour.findUniqueOrThrow({ where: { id } });
   }
 
-  update(id: string, dto: UpdateColourDto) {
+  update(id: number, dto: UpdateColourDto) {
     return this.prisma.colour.update({ where: { id }, data: dto });
   }
 
-  remove(id: string) {
+  remove(id: number) {
     return this.prisma.colour.delete({ where: { id } });
   }
 }

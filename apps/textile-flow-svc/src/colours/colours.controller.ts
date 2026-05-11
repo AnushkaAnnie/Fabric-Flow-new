@@ -6,8 +6,9 @@ import {
   Param,
   Patch,
   Post,
+  ParseIntPipe,
 } from '@nestjs/common';
-import type { CreateColourDto, UpdateColourDto } from '@textile-flow/shared';
+import * as Shared from '@textile-flow/shared';
 import { ColoursService } from './colours.service';
 
 @Controller('colours')
@@ -20,22 +21,22 @@ export class ColoursController {
   }
 
   @Post()
-  create(@Body() dto: CreateColourDto) {
+  create(@Body() dto: Shared.CreateColourDto) {
     return this.coloursService.create(dto);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.coloursService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateColourDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: Shared.UpdateColourDto) {
     return this.coloursService.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.coloursService.remove(id);
   }
 }

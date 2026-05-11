@@ -17,15 +17,15 @@ export class YarnQualitiesService {
     return this.prisma.yarnQuality.create({ data: dto });
   }
 
-  findOne(id: string) {
+  findOne(id: number) {
     return this.prisma.yarnQuality.findUniqueOrThrow({ where: { id } });
   }
 
-  update(id: string, dto: UpdateYarnQualityDto) {
+  update(id: number, dto: UpdateYarnQualityDto) {
     return this.prisma.yarnQuality.update({ where: { id }, data: dto });
   }
 
-  remove(id: string) {
+  remove(id: number) {
     return this.prisma.yarnQuality.delete({ where: { id } });
   }
 }

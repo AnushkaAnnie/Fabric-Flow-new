@@ -6,11 +6,9 @@ import {
   Param,
   Patch,
   Post,
+  ParseIntPipe,
 } from '@nestjs/common';
-import type {
-  CreateYarnQualityDto,
-  UpdateYarnQualityDto,
-} from '@textile-flow/shared';
+import * as Shared from '@textile-flow/shared';
 import { YarnQualitiesService } from './yarn-qualities.service';
 
 @Controller('yarn-qualities')
@@ -23,22 +21,22 @@ export class YarnQualitiesController {
   }
 
   @Post()
-  create(@Body() dto: CreateYarnQualityDto) {
+  create(@Body() dto: Shared.CreateYarnQualityDto) {
     return this.yarnQualitiesService.create(dto);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.yarnQualitiesService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateYarnQualityDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: Shared.UpdateYarnQualityDto) {
     return this.yarnQualitiesService.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.yarnQualitiesService.remove(id);
   }
 }

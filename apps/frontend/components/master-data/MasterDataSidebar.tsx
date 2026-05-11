@@ -26,6 +26,18 @@ export default function MasterDataSidebar() {
           );
         })}
       </nav>
+
+      <h2 className="mb-4 mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Inventory</h2>
+      <nav className="space-y-1">
+        <Link
+          href="/tracker/yarn"
+          className={`block rounded px-3 py-2 text-sm ${
+            pathname === "/tracker/yarn" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          Yarn Inventory
+        </Link>
+      </nav>
     </aside>
   );
 }

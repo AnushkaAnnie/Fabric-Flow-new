@@ -96,26 +96,9 @@ export type UpdateYarnQualityDto = z.infer<typeof UpdateYarnQualitySchema>;
 // ──────────────────────────────────────────────
 // Yarn Lots
 // ──────────────────────────────────────────────
-export const CreateYarnLotSchema = z.object({
-  lotNumber: z.string().min(1, "Lot number is required"),
-  millId: z.string().uuid(),
-  yarnQualityId: z.string().uuid(),
-  colourId: z.string().uuid(),
-  grossWeight: z.number().positive(),
-  netWeight: z.number().positive(),
-  cones: z.number().int().positive(),
-  receivedDate: z.string().datetime(),
-  remarks: z.string().optional(),
-});
-export type CreateYarnLotDto = z.infer<typeof CreateYarnLotSchema>;
-
-export const YarnLotResponseSchema = CreateYarnLotSchema.extend({
-  id: z.string().uuid(),
-  availableWeight: z.number(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-export type YarnLotResponse = z.infer<typeof YarnLotResponseSchema>;
+export * from './yarn-lots/create-yarn-lot.dto';
+export * from './yarn-lots/update-yarn-lot.dto';
+export * from './yarn-lots/issue-yarn.dto';
 
 // ──────────────────────────────────────────────
 // Delivery Notes

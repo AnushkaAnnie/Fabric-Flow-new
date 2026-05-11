@@ -1,12 +1,12 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { KnitterStockService } from './knitter-stock.service';
 
-@Controller('knitter-stocks')
+@Controller('knitter-stock')
 export class KnitterStockController {
   constructor(private readonly knitterStockService: KnitterStockService) {}
 
-  @Get(':knitterId')
-  findByKnitter(@Param('knitterId') knitterId: string) {
+  @Get('knitter/:knitterId')
+  findByKnitter(@Param('knitterId', ParseIntPipe) knitterId: number) {
     return this.knitterStockService.findByKnitter(knitterId);
   }
 }

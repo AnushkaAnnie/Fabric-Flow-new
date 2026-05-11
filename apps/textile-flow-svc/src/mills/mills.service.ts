@@ -17,18 +17,18 @@ export class MillsService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const mill = await this.prisma.mill.findUnique({ where: { id } });
     if (!mill) throw new NotFoundException(`Mill with id ${id} not found`);
     return mill;
   }
 
-  async update(id: string, dto: UpdateMillDto) {
+  async update(id: number, dto: UpdateMillDto) {
     await this.findOne(id);
     return this.prisma.mill.update({ where: { id }, data: dto });
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     await this.findOne(id);
     return this.prisma.mill.update({
       where: { id },

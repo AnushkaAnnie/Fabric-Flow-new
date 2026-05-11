@@ -14,15 +14,15 @@ export class DyersService {
     return this.prisma.dyer.create({ data: dto });
   }
 
-  findOne(id: string) {
+  findOne(id: number) {
     return this.prisma.dyer.findUniqueOrThrow({ where: { id } });
   }
 
-  update(id: string, dto: UpdateDyerDto) {
+  update(id: number, dto: UpdateDyerDto) {
     return this.prisma.dyer.update({ where: { id }, data: dto });
   }
 
-  remove(id: string) {
+  remove(id: number) {
     return this.prisma.dyer.delete({ where: { id } });
   }
 }

@@ -6,11 +6,9 @@ import {
   Param,
   Patch,
   Post,
+  ParseIntPipe,
 } from '@nestjs/common';
-import type {
-  CreateWashTypeDto,
-  UpdateWashTypeDto,
-} from '@textile-flow/shared';
+import * as Shared from '@textile-flow/shared';
 import { WashTypesService } from './wash-types.service';
 
 @Controller('wash-types')
@@ -23,22 +21,22 @@ export class WashTypesController {
   }
 
   @Post()
-  create(@Body() dto: CreateWashTypeDto) {
+  create(@Body() dto: Shared.CreateWashTypeDto) {
     return this.washTypesService.create(dto);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.washTypesService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateWashTypeDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: Shared.UpdateWashTypeDto) {
     return this.washTypesService.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.washTypesService.remove(id);
   }
 }

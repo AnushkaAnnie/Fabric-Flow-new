@@ -14,15 +14,15 @@ export class KnittersService {
     return this.prisma.knitter.create({ data: dto });
   }
 
-  findOne(id: string) {
+  findOne(id: number) {
     return this.prisma.knitter.findUniqueOrThrow({ where: { id } });
   }
 
-  update(id: string, dto: UpdateKnitterDto) {
+  update(id: number, dto: UpdateKnitterDto) {
     return this.prisma.knitter.update({ where: { id }, data: dto });
   }
 
-  remove(id: string) {
+  remove(id: number) {
     return this.prisma.knitter.delete({ where: { id } });
   }
 }

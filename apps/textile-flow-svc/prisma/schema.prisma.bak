@@ -9,7 +9,7 @@ datasource db {
 }
 
 model Mill {
-  id            Int      @id @default(autoincrement())
+  id            String   @id @default(uuid())
   name          String
   code          String   @unique
   address       String?
@@ -26,7 +26,7 @@ model Mill {
 }
 
 model Knitter {
-  id            Int      @id @default(autoincrement())
+  id            String   @id @default(uuid())
   name          String
   code          String   @unique
   address       String?
@@ -45,7 +45,7 @@ model Knitter {
 }
 
 model Dyer {
-  id            Int      @id @default(autoincrement())
+  id            String   @id @default(uuid())
   name          String
   code          String   @unique
   address       String?
@@ -62,7 +62,7 @@ model Dyer {
 }
 
 model Compacter {
-  id            Int      @id @default(autoincrement())
+  id            String   @id @default(uuid())
   name          String
   code          String   @unique
   address       String?
@@ -77,7 +77,7 @@ model Compacter {
 }
 
 model Colour {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   name        String
   code        String   @unique
   hexCode     String?  @map("hex_code")
@@ -94,7 +94,7 @@ model Colour {
 }
 
 model WashType {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   name        String
   code        String   @unique
   description String?
@@ -108,7 +108,7 @@ model WashType {
 }
 
 model YarnQuality {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   name        String
   code        String   @unique
   composition String?
@@ -125,53 +125,49 @@ model YarnQuality {
 }
 
 model YarnLot {
-  id              Int      @id @default(autoincrement())
-  hfCode          String   @map("hf_code")
-  description     String?
-  millId          Int      @map("mill_id")
-  count           String?
-  qualityId       Int?     @map("quality_id")
-  numBags         Int      @map("num_bags")
-  bagWeight       Float    @map("bag_weight")
-  ratePerKg       Float    @map("rate_per_kg")
-  totalWeight     Float    @map("total_weight")
-  totalCost       Float    @map("total_cost")
-  availableWeight Float    @map("available_weight")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id              String          @id @default(uuid())
+  lotNumber       String          @unique @map("lot_number")
+  millId          String          @map("mill_id")
+  yarnQualityId   String          @map("yarn_quality_id")
+  colourId        String          @map("colour_id")
+  grossWeight     Float           @map("gross_weight")
+  netWeight       Float           @map("net_weight")
+  availableWeight Float           @map("available_weight")
+  cones           Int
+  receivedDate    DateTime        @map("received_date")
+  remarks         String?
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
 
   mill            Mill                @relation(fields: [millId], references: [id])
-  quality         YarnQuality?        @relation(fields: [qualityId], references: [id])
+  yarnQuality     YarnQuality         @relation(fields: [yarnQualityId], references: [id])
+  colour          Colour              @relation(fields: [colourId], references: [id])
   KnitterStock    KnitterStock[]
   DeliveryNoteItem DeliveryNoteItem[]
-  // Keep colour relation if needed by existing code
-  colourId        Int?                @map("colour_id")
-  colour          Colour?             @relation(fields: [colourId], references: [id])
 
   @@map("yarn_lots")
 }
 
 model KnitterStock {
-  id              Int      @id @default(autoincrement())
-  knitterId       Int      @map("knitter_id")
-  yarnLotId       Int      @map("yarn_lot_id")
-  receivedWeight  Float    @map("received_weight")
-  remainingWeight Float    @map("remaining_weight")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id            String         @id @default(uuid())
+  knitterId     String         @map("knitter_id")
+  yarnLotId     String         @map("yarn_lot_id")
+  quantity      Float
+  receivedAt    DateTime       @default(now()) @map("received_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
 
-  knitter         Knitter        @relation(fields: [knitterId], references: [id])
-  yarnLot         YarnLot        @relation(fields: [yarnLotId], references: [id])
+  knitter       Knitter        @relation(fields: [knitterId], references: [id])
+  yarnLot       YarnLot        @relation(fields: [yarnLotId], references: [id])
 
-  @@unique([knitterId, yarnLotId])
   @@map("knitter_stocks")
 }
 
 model DeliveryNote {
-  id           Int                @id @default(autoincrement())
+  id           String             @id @default(uuid())
   dcNo         String             @unique @map("dc_no")
   transferDcNo String?            @map("transfer_dc_no")
-  knitterId    Int                @map("knitter_id")
+  knitterId    String             @map("knitter_id")
   deliveryDate DateTime           @map("delivery_date")
   remarks      String?
   createdAt    DateTime           @default(now()) @map("created_at")
@@ -184,9 +180,9 @@ model DeliveryNote {
 }
 
 model DeliveryNoteItem {
-  id             Int          @id @default(autoincrement())
-  deliveryNoteId Int          @map("delivery_note_id")
-  yarnLotId      Int          @map("yarn_lot_id")
+  id             String       @id @default(uuid())
+  deliveryNoteId String       @map("delivery_note_id")
+  yarnLotId      String       @map("yarn_lot_id")
   sentWeight     Float        @map("sent_weight")
   cones          Int
   createdAt      DateTime     @default(now()) @map("created_at")
@@ -198,12 +194,12 @@ model DeliveryNoteItem {
 }
 
 model KnitterProgram {
-  id              Int             @id @default(autoincrement())
+  id              String          @id @default(uuid())
   programNo       String          @unique @map("program_no")
   memoNo          String?         @map("memo_no")
-  knitterId       Int             @map("knitter_id")
-  colourId        Int             @map("colour_id")
-  yarnQualityId   Int             @map("yarn_quality_id")
+  knitterId       String          @map("knitter_id")
+  colourId        String          @map("colour_id")
+  yarnQualityId   String          @map("yarn_quality_id")
   startDate       DateTime        @map("start_date")
   expectedEndDate DateTime?       @map("expected_end_date")
   status          String          @default("ACTIVE")
@@ -220,9 +216,9 @@ model KnitterProgram {
 }
 
 model GreyFabricLot {
-  id               Int            @id @default(autoincrement())
+  id               String         @id @default(uuid())
   lotNumber        String         @unique @map("lot_number")
-  knitterProgramId Int            @map("knitter_program_id")
+  knitterProgramId String         @map("knitter_program_id")
   receivedDate     DateTime       @map("received_date")
   grossWeight      Float          @map("gross_weight")
   netWeight        Float          @map("net_weight")
@@ -238,12 +234,12 @@ model GreyFabricLot {
 }
 
 model DyeingProgram {
-  id             Int            @id @default(autoincrement())
+  id             String         @id @default(uuid())
   programNo      String         @unique @map("program_no")
-  dyerId         Int            @map("dyer_id")
-  colourId       Int            @map("colour_id")
-  washTypeId     Int            @map("wash_type_id")
-  greyFabricLotId Int           @map("grey_fabric_lot_id")
+  dyerId         String         @map("dyer_id")
+  colourId       String         @map("colour_id")
+  washTypeId     String         @map("wash_type_id")
+  greyFabricLotId String        @map("grey_fabric_lot_id")
   startDate      DateTime       @map("start_date")
   status         String         @default("ACTIVE")
   remarks        String?
@@ -259,7 +255,7 @@ model DyeingProgram {
 }
 
 model AuditLog {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   tableName   String   @map("table_name")
   recordId    String   @map("record_id")
   action      Action

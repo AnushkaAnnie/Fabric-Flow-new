@@ -8,7 +8,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
-  ParseUUIDPipe,
+  ParseIntPipe,
   UsePipes,
 } from '@nestjs/common';
 import { MillsService } from './mills.service';
@@ -37,13 +37,13 @@ export class MillsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.millsService.findOne(id);
   }
 
   @Put(':id')
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(UpdateMillSchema)) dto: UpdateMillDto,
   ) {
     return this.millsService.update(id, dto);
@@ -51,7 +51,7 @@ export class MillsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.millsService.remove(id);
   }
 }

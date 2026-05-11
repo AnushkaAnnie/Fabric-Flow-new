@@ -6,8 +6,9 @@ import {
   Param,
   Patch,
   Post,
+  ParseIntPipe,
 } from '@nestjs/common';
-import type { CreateDyerDto, UpdateDyerDto } from '@textile-flow/shared';
+import * as Shared from '@textile-flow/shared';
 import { DyersService } from './dyers.service';
 
 @Controller('dyers')
@@ -20,22 +21,22 @@ export class DyersController {
   }
 
   @Post()
-  create(@Body() dto: CreateDyerDto) {
+  create(@Body() dto: Shared.CreateDyerDto) {
     return this.dyersService.create(dto);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.dyersService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateDyerDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: Shared.UpdateDyerDto) {
     return this.dyersService.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.dyersService.remove(id);
   }
 }
