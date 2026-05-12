@@ -26,15 +26,8 @@ const partyFields: FormField[] = [
       message: "Pincode must be exactly 6 digits",
     },
   },
-  { name: "contactPerson", label: "Contact Person", type: "text", required: false },
   { name: "email", label: "Email", type: "text", required: false },
   { name: "phone", label: "Phone", type: "text", required: false },
-  {
-    name: "contactNo",
-    label: "Contact No.",
-    type: "text",
-    required: false,
-  },
   {
     name: "gstin",
     label: "GSTIN",
@@ -53,7 +46,6 @@ const partyColumns = [
   { key: "city", header: "City" },
   { key: "state", header: "State" },
   { key: "pincode", header: "Pincode" },
-  { key: "contactNo", header: "Contact" },
   { key: "gstin", header: "GSTIN" },
 ];
 

@@ -14,10 +14,8 @@ model Mill {
   city          String?
   state         String?
   pincode       String?
-  contactPerson String?  @map("contact_person")
   email         String?
   phone         String?
-  contactNo     String?  @map("contact_no")
   gstin         String?  @unique
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -36,10 +34,8 @@ model Knitter {
   city          String?
   state         String?
   pincode       String?
-  contactPerson String?  @map("contact_person")
   email         String?
   phone         String?
-  contactNo     String?  @map("contact_no")
   gstin         String?  @unique
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -60,10 +56,8 @@ model Dyer {
   city          String?
   state         String?
   pincode       String?
-  contactPerson String?  @map("contact_person")
   email         String?
   phone         String?
-  contactNo     String?  @map("contact_no")
   gstin         String?  @unique
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -82,10 +76,8 @@ model Compacter {
   city          String?
   state         String?
   pincode       String?
-  contactPerson String?  @map("contact_person")
   email         String?
   phone         String?
-  contactNo     String?  @map("contact_no")
   gstin         String?  @unique
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")

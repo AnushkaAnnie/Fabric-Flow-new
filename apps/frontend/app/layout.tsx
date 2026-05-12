@@ -27,7 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("dark", "font-sans", geist.variable)}>
-      <body className="font-sans antialiased bg-[#080c14] text-slate-100">
+      <body
+        suppressHydrationWarning
+        className="font-sans antialiased bg-[#080c14] text-slate-100"
+      >
         <Providers>{children}</Providers>
         <Toaster theme="dark" position="top-right" richColors />
       </body>

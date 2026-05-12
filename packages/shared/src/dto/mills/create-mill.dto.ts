@@ -14,10 +14,8 @@ export const CreateMillSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   pincode: pincodeSchema,
-  contactPerson: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional(),
-  contactNo: z.string().optional(),
   gstin: z
     .string()
     .length(15, 'GSTIN must be exactly 15 characters')
