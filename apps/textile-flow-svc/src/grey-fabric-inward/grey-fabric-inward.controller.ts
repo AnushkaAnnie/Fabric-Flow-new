@@ -8,7 +8,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { GreyFabricInwardService } from './grey-fabric-inward.service';
-import { CreateGreyFabricInwardDto } from '@textile-flow/shared';
+import type { CreateGreyFabricInwardDto } from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { CreateGreyFabricInwardSchema } from '@textile-flow/shared';
 

@@ -1,8 +1,8 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { DeliveryNotesService } from './delivery-notes.service';
-import { CreateDeliveryNoteDto } from '@textile-flow/shared';
-import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import type { CreateDeliveryNoteDto } from '@textile-flow/shared';
 import { CreateDeliveryNoteSchema } from '@textile-flow/shared';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 
 @Controller('delivery-notes')
 export class DeliveryNotesController {

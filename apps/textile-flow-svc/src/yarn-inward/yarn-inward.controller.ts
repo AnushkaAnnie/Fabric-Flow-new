@@ -8,7 +8,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { YarnInwardService } from './yarn-inward.service';
-import { CreateYarnInwardDto } from '@textile-flow/shared';
+import type { CreateYarnInwardDto } from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { CreateYarnInwardSchema } from '@textile-flow/shared';
 

@@ -8,7 +8,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { MemosService } from './memos.service';
-import { CreateMemoDto } from '@textile-flow/shared';
+import type { CreateMemoDto } from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { CreateMemoSchema } from '@textile-flow/shared';
 
