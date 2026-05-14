@@ -62,8 +62,10 @@ export default function YarnInwardPage() {
   });
 
   const createMutation = useMutation<YarnInward, Error, Record<string, unknown>>({
-    mutationFn: (form: Record<string, unknown>) =>
-      api.post<YarnInward>('/yarn-inward', form),
+    mutationFn: async (form: Record<string, unknown>) => {
+      const response = await api.post<YarnInward>('/yarn-inward', form);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['yarn-inward'] });
       toast.success('Yarn inward record created');

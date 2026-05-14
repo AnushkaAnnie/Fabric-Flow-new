@@ -42,8 +42,10 @@ export default function GreyFabricInwardPage() {
   });
 
   const mutation = useMutation<GreyFabricInward, Error, Record<string, unknown>>({
-    mutationFn: (body: Record<string, unknown>) =>
-      api.post<GreyFabricInward>('/grey-fabric-inward', body),
+    mutationFn: async (body: Record<string, unknown>) => {
+      const response = await api.post<GreyFabricInward>('/grey-fabric-inward', body);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grey-fabric-inward'] });
       toast.success('Grey fabric inward recorded');

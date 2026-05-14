@@ -56,8 +56,10 @@ export default function DeliveryNotesPage() {
   });
 
   const createMutation = useMutation<DeliveryNote, Error, Record<string, unknown>>({
-    mutationFn: (form: Record<string, unknown>) =>
-      api.post<DeliveryNote>('/delivery-notes', form),
+    mutationFn: async (form: Record<string, unknown>) => {
+      const response = await api.post<DeliveryNote>('/delivery-notes', form);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       queryClient.invalidateQueries({ queryKey: ['knitter-stock'] });

@@ -74,8 +74,10 @@ export default function MemosPage() {
   });
 
   const createMutation = useMutation<Memo, Error, Record<string, unknown>>({
-    mutationFn: (form: Record<string, unknown>) =>
-      api.post<Memo>('/memos', form),
+    mutationFn: async (form: Record<string, unknown>) => {
+      const response = await api.post<Memo>('/memos', form);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['memos'] });
       toast.success('Memo created successfully');
