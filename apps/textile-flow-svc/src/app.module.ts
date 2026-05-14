@@ -21,6 +21,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
 import { YarnInwardModule } from './yarn-inward/yarn-inward.module';
 import { MemosModule } from './memos/memos.module';
+import { GreyFabricInwardModule } from './grey-fabric-inward/grey-fabric-inward.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { MemosModule } from './memos/memos.module';
     AuditLogsModule,
     YarnInwardModule,
     MemosModule,
+    GreyFabricInwardModule,
   ],
 
   controllers: [AppController],

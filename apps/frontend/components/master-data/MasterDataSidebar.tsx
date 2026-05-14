@@ -57,6 +57,14 @@ export default function MasterDataSidebar() {
         >
           Memos
         </Link>
+        <Link
+          href="/tracker/grey-fabric-inward"
+          className={`block rounded px-3 py-2 text-sm ${
+            pathname === "/tracker/grey-fabric-inward" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          Grey Fabric Inward
+        </Link>
       </nav>
     </aside>
   );
