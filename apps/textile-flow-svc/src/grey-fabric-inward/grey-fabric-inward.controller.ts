@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { GreyFabricInwardService } from './grey-fabric-inward.service';
 import { CreateGreyFabricInwardDto } from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
@@ -10,7 +18,8 @@ export class GreyFabricInwardController {
 
   @Post()
   create(
-    @Body(new ZodValidationPipe(CreateGreyFabricInwardSchema)) dto: CreateGreyFabricInwardDto,
+    @Body(new ZodValidationPipe(CreateGreyFabricInwardSchema))
+    dto: CreateGreyFabricInwardDto,
   ) {
     return this.service.create(dto);
   }

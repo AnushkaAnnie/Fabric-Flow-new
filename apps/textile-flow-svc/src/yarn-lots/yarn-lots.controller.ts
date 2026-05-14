@@ -2,7 +2,7 @@ import {
   Controller,
   Get,
   Post,
-  Patch,       // FIX RC3: was Put
+  Patch, // FIX RC3: was Put
   Delete,
   Param,
   Body,

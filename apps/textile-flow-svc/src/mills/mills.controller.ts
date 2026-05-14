@@ -2,7 +2,7 @@ import {
   Controller,
   Get,
   Post,
-  Patch,       // FIX RC3: was Put — frontend hook sends PATCH, not PUT
+  Patch, // FIX RC3: was Put — frontend hook sends PATCH, not PUT
   Delete,
   Param,
   Body,

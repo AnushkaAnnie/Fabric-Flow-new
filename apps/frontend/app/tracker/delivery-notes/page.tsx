@@ -5,27 +5,24 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, PlusCircle } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
+import type {
+  DeliveryNote,
+  DeliveryNoteFormData,
+  Knitter,
+  YarnLot,
+} from '@/types/entities';
 
 export default function DeliveryNotesPage() {
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
-
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<DeliveryNoteFormData>({
     sourceKnitterId: '',
     destinationKnitterId: '',
     yarnLotId: '',
@@ -34,32 +31,33 @@ export default function DeliveryNotesPage() {
     note: '',
   });
 
-  const { data: deliveryNotes = [] } = useQuery<any[]>({
+  const { data: deliveryNotes = [] } = useQuery<DeliveryNote[]>({
     queryKey: ['delivery-notes'],
     queryFn: async () => {
-      const { data } = await api.get('/delivery-notes');
+      const { data } = await api.get<DeliveryNote[]>('/delivery-notes');
       return data;
     },
   });
 
-  const { data: knitters = [] } = useQuery<any[]>({
+  const { data: knitters = [] } = useQuery<Knitter[]>({
     queryKey: ['knitters'],
     queryFn: async () => {
-      const { data } = await api.get('/knitters');
+      const { data } = await api.get<Knitter[]>('/knitters');
       return data;
     },
   });
 
-  const { data: yarnLots = [] } = useQuery<any[]>({
+  const { data: yarnLots = [] } = useQuery<YarnLot[]>({
     queryKey: ['yarn-lots'],
     queryFn: async () => {
-      const { data } = await api.get('/yarn-lots');
+      const { data } = await api.get<YarnLot[]>('/yarn-lots');
       return data;
     },
   });
 
-  const createMutation = useMutation({
-    mutationFn: (form: any) => api.post('/delivery-notes', form),
+  const createMutation = useMutation<DeliveryNote, Error, Record<string, unknown>>({
+    mutationFn: (form: Record<string, unknown>) =>
+      api.post<DeliveryNote>('/delivery-notes', form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery-notes'] });
       queryClient.invalidateQueries({ queryKey: ['knitter-stock'] });
@@ -74,8 +72,10 @@ export default function DeliveryNotesPage() {
         note: '',
       });
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to create delivery note';
+    onError: (error: Error) => {
+      const message =
+        (error as unknown as { response?: { data?: { message?: string } } })
+          .response?.data?.message || 'Failed to create delivery note';
       toast.error(message);
     },
   });
@@ -93,6 +93,18 @@ export default function DeliveryNotesPage() {
       yarnLotId: parseInt(formData.yarnLotId),
       quantity: parseFloat(formData.quantity),
     });
+  };
+
+  const resetForm = () => {
+    setFormData({
+      sourceKnitterId: '',
+      destinationKnitterId: '',
+      yarnLotId: '',
+      quantity: '',
+      dcNumber: '',
+      note: '',
+    });
+    setCreateOpen(false);
   };
 
   return (
@@ -121,9 +133,11 @@ export default function DeliveryNotesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {deliveryNotes.map((dn: any) => (
+              {deliveryNotes.map((dn: DeliveryNote) => (
                 <TableRow key={dn.id}>
-                  <TableCell>{new Date(dn.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {new Date(dn.createdAt).toLocaleDateString()}
+                  </TableCell>
                   <TableCell>{dn.dcNumber || '-'}</TableCell>
                   <TableCell>{dn.sourceKnitter?.name}</TableCell>
                   <TableCell>{dn.destinationKnitter?.name}</TableCell>
@@ -137,91 +151,115 @@ export default function DeliveryNotesPage() {
       </Card>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Create New Transfer DC</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4 text-slate-900">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-white">Source Knitter</label>
-                <select
-                  required
-                  className="w-full border p-2 rounded"
-                  value={formData.sourceKnitterId}
-                  onChange={e => setFormData({ ...formData, sourceKnitterId: e.target.value })}
-                >
-                  <option value="">Select Source...</option>
-                  {knitters.map(k => (
-                    <option key={k.id} value={k.id}>{k.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-white">Destination Knitter</label>
-                <select
-                  required
-                  className="w-full border p-2 rounded"
-                  value={formData.destinationKnitterId}
-                  onChange={e => setFormData({ ...formData, destinationKnitterId: e.target.value })}
-                >
-                  <option value="">Select Destination...</option>
-                  {knitters.map(k => (
-                    <option key={k.id} value={k.id}>{k.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-white">Yarn Lot</label>
-                <select
-                  required
-                  className="w-full border p-2 rounded"
-                  value={formData.yarnLotId}
-                  onChange={e => setFormData({ ...formData, yarnLotId: e.target.value })}
-                >
-                  <option value="">Select Lot...</option>
-                  {yarnLots.map(l => (
-                    <option key={l.id} value={l.id}>{l.hfCode}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-white">Quantity (kg)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  className="w-full border p-2 rounded"
-                  value={formData.quantity}
-                  onChange={e => setFormData({ ...formData, quantity: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-white">DC Number (Optional)</label>
-                <input
-                  type="text"
-                  className="w-full border p-2 rounded"
-                  value={formData.dcNumber}
-                  onChange={e => setFormData({ ...formData, dcNumber: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-white">Note</label>
-                <input
-                  type="text"
-                  className="w-full border p-2 rounded"
-                  value={formData.note}
-                  onChange={e => setFormData({ ...formData, note: e.target.value })}
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm text-slate-300">Source Knitter</label>
+              <select
+                value={formData.sourceKnitterId}
+                onChange={(e) =>
+                  setFormData({ ...formData, sourceKnitterId: e.target.value })
+                }
+                className="mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
+              >
+                <option value="">Select Source...</option>
+                {knitters.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} className="text-black">
+
+            <div>
+              <label className="block text-sm text-slate-300">
+                Destination Knitter
+              </label>
+              <select
+                value={formData.destinationKnitterId}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    destinationKnitterId: e.target.value,
+                  })
+                }
+                className="mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
+              >
+                <option value="">Select Destination...</option>
+                {knitters.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm text-slate-300">Yarn Lot</label>
+              <select
+                value={formData.yarnLotId}
+                onChange={(e) =>
+                  setFormData({ ...formData, yarnLotId: e.target.value })
+                }
+                className="mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
+              >
+                <option value="">Select Lot...</option>
+                {yarnLots.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.hfCode}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm text-slate-300">
+                Quantity (kg)
+              </label>
+              <input
+                type="number"
+                value={formData.quantity}
+                onChange={(e) =>
+                  setFormData({ ...formData, quantity: e.target.value })
+                }
+                className="mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-slate-300">
+                DC Number (Optional)
+              </label>
+              <input
+                type="text"
+                value={formData.dcNumber}
+                onChange={(e) =>
+                  setFormData({ ...formData, dcNumber: e.target.value })
+                }
+                className="mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-slate-300">Note</label>
+              <input
+                type="text"
+                value={formData.note}
+                onChange={(e) =>
+                  setFormData({ ...formData, note: e.target.value })
+                }
+                className="mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
+              />
+            </div>
+
+            <div className="flex gap-4 justify-end">
+              <Button type="button" variant="outline" onClick={resetForm}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                Create Transfer
-              </Button>
+              <Button type="submit">Create Transfer</Button>
             </div>
           </form>
         </DialogContent>

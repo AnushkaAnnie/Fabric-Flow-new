@@ -10,11 +10,11 @@ import { Request, Response } from 'express';
 type HttpExceptionResponse =
   | string
   | {
-    message?: string | string[];
-    error?: string;
-    statusCode?: number;
-    [key: string]: unknown;
-  };
+      message?: string | string[];
+      error?: string;
+      statusCode?: number;
+      [key: string]: unknown;
+    };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -36,11 +36,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       exception instanceof HttpException
         ? (exception.getResponse() as HttpExceptionResponse)
         : {
-          message:
-            exception instanceof Error
-              ? exception.message
-              : 'Internal server error',
-        };
+            message:
+              exception instanceof Error
+                ? exception.message
+                : 'Internal server error',
+          };
 
     const requestBody = request.body as unknown;
 

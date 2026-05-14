@@ -13,11 +13,15 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type {
+  GreyFabricInward,
+  GreyFabricInwardFormData,
+} from '@/types/entities';
 
 export default function GreyFabricInwardPage() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<GreyFabricInwardFormData>({
     receiptDate: '',
     supplierName: '',
     fabricType: '',
@@ -29,30 +33,25 @@ export default function GreyFabricInwardPage() {
     remarks: '',
   });
 
-  const { data: records = [], isLoading } = useQuery({
+  const { data: records = [] } = useQuery<GreyFabricInward[]>({
     queryKey: ['grey-fabric-inward'],
     queryFn: async () => {
-      const { data } = await api.get('/grey-fabric-inward');
+      const { data } = await api.get<GreyFabricInward[]>('/grey-fabric-inward');
       return data;
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: (body: any) => api.post('/grey-fabric-inward', body),
+  const mutation = useMutation<GreyFabricInward, Error, Record<string, unknown>>({
+    mutationFn: (body: Record<string, unknown>) =>
+      api.post<GreyFabricInward>('/grey-fabric-inward', body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grey-fabric-inward'] });
       toast.success('Grey fabric inward recorded');
       setOpen(false);
       setForm({
-        receiptDate: '',
-        supplierName: '',
-        fabricType: '',
-        colour: '',
-        totalWeight: '',
-        rollCount: '',
-        ratePerKg: '',
-        purchaseAccount: 'C.N.T.LLP',
-        remarks: '',
+        receiptDate: '', supplierName: '', fabricType: '', colour: '',
+        totalWeight: '', rollCount: '', ratePerKg: '',
+        purchaseAccount: 'C.N.T.LLP', remarks: '',
       });
     },
     onError: () => toast.error('Failed to save inward record'),
@@ -73,8 +72,7 @@ export default function GreyFabricInwardPage() {
     });
   };
 
-  const totalCost =
-    Number(form.totalWeight || 0) * Number(form.ratePerKg || 0);
+  const totalCost = Number(form.totalWeight || 0) * Number(form.ratePerKg || 0);
 
   return (
     <div className="p-6 space-y-8">
@@ -84,9 +82,7 @@ export default function GreyFabricInwardPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>All Inward Records</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>All Inward Records</CardTitle></CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
@@ -103,7 +99,7 @@ export default function GreyFabricInwardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {records.map((r: any) => (
+              {records.map((r: GreyFabricInward) => (
                 <TableRow key={r.id}>
                   <TableCell>{r.id}</TableCell>
                   <TableCell>{new Date(r.receiptDate).toLocaleDateString()}</TableCell>
@@ -123,97 +119,59 @@ export default function GreyFabricInwardPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>New Grey Fabric Inward</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>New Grey Fabric Inward</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="date">Receipt Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={form.receiptDate}
-                onChange={(e) => setForm({ ...form, receiptDate: e.target.value })}
-              />
+              <Input id="date" type="date" value={form.receiptDate}
+                onChange={(e) => setForm({ ...form, receiptDate: e.target.value })} />
             </div>
             <div>
               <Label htmlFor="supplier">Supplier Name *</Label>
-              <Input
-                id="supplier"
-                value={form.supplierName}
-                onChange={(e) => setForm({ ...form, supplierName: e.target.value })}
-                required
-              />
+              <Input id="supplier" value={form.supplierName} required
+                onChange={(e) => setForm({ ...form, supplierName: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="fabricType">Fabric Type</Label>
-                <Input
-                  id="fabricType"
-                  value={form.fabricType}
-                  onChange={(e) => setForm({ ...form, fabricType: e.target.value })}
-                  placeholder="e.g. INTERLOCK"
-                />
+                <Input id="fabricType" value={form.fabricType} placeholder="e.g. INTERLOCK"
+                  onChange={(e) => setForm({ ...form, fabricType: e.target.value })} />
               </div>
               <div>
                 <Label htmlFor="colour">Colour</Label>
-                <Input
-                  id="colour"
-                  value={form.colour}
-                  onChange={(e) => setForm({ ...form, colour: e.target.value })}
-                />
+                <Input id="colour" value={form.colour}
+                  onChange={(e) => setForm({ ...form, colour: e.target.value })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="weight">Total Weight (kg) *</Label>
-                <Input
-                  id="weight"
-                  type="number"
-                  value={form.totalWeight}
-                  onChange={(e) => setForm({ ...form, totalWeight: e.target.value })}
-                  required
-                />
+                <Input id="weight" type="number" value={form.totalWeight} required
+                  onChange={(e) => setForm({ ...form, totalWeight: e.target.value })} />
               </div>
               <div>
                 <Label htmlFor="rolls">Roll Count</Label>
-                <Input
-                  id="rolls"
-                  type="number"
-                  value={form.rollCount}
-                  onChange={(e) => setForm({ ...form, rollCount: e.target.value })}
-                />
+                <Input id="rolls" type="number" value={form.rollCount}
+                  onChange={(e) => setForm({ ...form, rollCount: e.target.value })} />
               </div>
             </div>
             <div>
               <Label htmlFor="rate">Rate per Kg (₹)</Label>
-              <Input
-                id="rate"
-                type="number"
-                value={form.ratePerKg}
-                onChange={(e) => setForm({ ...form, ratePerKg: e.target.value })}
-              />
+              <Input id="rate" type="number" value={form.ratePerKg}
+                onChange={(e) => setForm({ ...form, ratePerKg: e.target.value })} />
             </div>
             <div>
               <Label htmlFor="account">Purchase Account</Label>
-              <Input
-                id="account"
-                value={form.purchaseAccount}
-                onChange={(e) => setForm({ ...form, purchaseAccount: e.target.value })}
-              />
+              <Input id="account" value={form.purchaseAccount}
+                onChange={(e) => setForm({ ...form, purchaseAccount: e.target.value })} />
             </div>
             <div>
               <Label htmlFor="remarks">Remarks</Label>
-              <Input
-                id="remarks"
-                value={form.remarks}
-                onChange={(e) => setForm({ ...form, remarks: e.target.value })}
-              />
+              <Input id="remarks" value={form.remarks}
+                onChange={(e) => setForm({ ...form, remarks: e.target.value })} />
             </div>
             <div className="flex justify-between text-sm bg-muted p-3 rounded">
-              <span>
-                Total Cost: <strong>₹{totalCost}</strong>
-              </span>
+              <span>Total Cost: <strong>₹{totalCost}</strong></span>
             </div>
             <Button type="submit" disabled={mutation.isPending}>
               {mutation.isPending ? 'Saving...' : 'Create Inward'}

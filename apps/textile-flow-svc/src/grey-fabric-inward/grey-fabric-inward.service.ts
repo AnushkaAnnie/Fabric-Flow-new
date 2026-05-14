@@ -31,7 +31,9 @@ export class GreyFabricInwardService {
         data: {
           lotNumber: `PUR-${inward.id}`, // simple auto-generated lot number
           knitterProgramId: 0, // placeholder; not linked to a knitting program
-          receivedDate: dto.receiptDate ? new Date(dto.receiptDate) : new Date(),
+          receivedDate: dto.receiptDate
+            ? new Date(dto.receiptDate)
+            : new Date(),
           grossWeight: dto.totalWeight,
           netWeight: dto.totalWeight,
           rolls: dto.rollCount || 0,
@@ -59,7 +61,8 @@ export class GreyFabricInwardService {
       where: { id },
       include: { greyFabricLots: true },
     });
-    if (!record) throw new NotFoundException('Grey fabric inward record not found');
+    if (!record)
+      throw new NotFoundException('Grey fabric inward record not found');
     return record;
   }
 

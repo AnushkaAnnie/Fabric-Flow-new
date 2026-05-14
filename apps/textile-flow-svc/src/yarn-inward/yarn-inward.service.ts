@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateYarnInwardDto } from '@textile-flow/shared';
 
@@ -33,12 +33,12 @@ export class YarnInwardService {
       // 2. Create a yarn lot linked to this inward
       const yarnLot = await tx.yarnLot.create({
         data: {
-          hfCode: dto.hfBatch || `HF-${inward.id}`,   // auto-generate if needed
+          hfCode: dto.hfBatch || `HF-${inward.id}`, // auto-generate if needed
           millId: dto.millId,
           totalWeight: totalWeight,
-          availableWeight: 0,                         // will be issued immediately
+          availableWeight: 0, // will be issued immediately
           numBags: dto.numBags || 0,
-          bagWeight: 0,                               // not relevant for direct inward
+          bagWeight: 0, // not relevant for direct inward
           ratePerKg: dto.ratePerKg || 0,
           totalCost: totalCost,
           yarnInwardId: inward.id,
