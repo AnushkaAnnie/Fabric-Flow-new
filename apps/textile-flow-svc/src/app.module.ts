@@ -19,6 +19,9 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { DevAuthGuard } from './common/guards/dev-auth.guard';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
+import { YarnInwardModule } from './yarn-inward/yarn-inward.module';
+import { MemosModule } from './memos/memos.module';
+
 @Module({
   imports: [
     KnittersModule,
@@ -35,7 +38,10 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     MillsModule,
     PrismaModule,
     AuditLogsModule,
+    YarnInwardModule,
+    MemosModule,
   ],
+
   controllers: [AppController],
   providers: [
     AppService,

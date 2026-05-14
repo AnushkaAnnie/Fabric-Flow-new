@@ -30,12 +30,32 @@ export default function MasterDataSidebar() {
       <h2 className="mb-4 mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Inventory</h2>
       <nav className="space-y-1">
         <Link
+          href="/tracker/yarn-inward"
+          className={`block rounded px-3 py-2 text-sm ${
+            pathname === "/tracker/yarn-inward" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          Yarn Inward
+        </Link>
+        <Link
           href="/tracker/yarn"
           className={`block rounded px-3 py-2 text-sm ${
             pathname === "/tracker/yarn" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
           }`}
         >
           Yarn Inventory
+        </Link>
+      </nav>
+
+      <h2 className="mb-4 mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Knitting</h2>
+      <nav className="space-y-1">
+        <Link
+          href="/tracker/memos"
+          className={`block rounded px-3 py-2 text-sm ${
+            pathname === "/tracker/memos" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          Memos
         </Link>
       </nav>
     </aside>
