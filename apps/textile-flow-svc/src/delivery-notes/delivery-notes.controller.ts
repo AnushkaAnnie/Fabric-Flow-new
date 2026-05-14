@@ -1,12 +1,20 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { DeliveryNotesService } from './delivery-notes.service';
+import { CreateDeliveryNoteDto } from '@textile-flow/shared';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import { CreateDeliveryNoteSchema } from '@textile-flow/shared';
 
 @Controller('delivery-notes')
 export class DeliveryNotesController {
-  constructor(private readonly deliveryNotesService: DeliveryNotesService) {}
+  constructor(private readonly service: DeliveryNotesService) {}
+
+  @Post()
+  create(@Body(new ZodValidationPipe(CreateDeliveryNoteSchema)) dto: CreateDeliveryNoteDto) {
+    return this.service.create(dto);
+  }
 
   @Get()
   findAll() {
-    return this.deliveryNotesService.findAll();
+    return this.service.findAll();
   }
 }

@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const CreateYarnInwardSchema = z.object({
   receiptDate: z.string().optional(), // ISO date
   millId: z.number().int().positive(),
+  deliveryKnitterId: z.number().int().positive('Delivery knitter is required'),
   hfBatch: z.string().optional(),
   yarnCount: z.string().optional(),
   yarnQuality: z.string().optional(),

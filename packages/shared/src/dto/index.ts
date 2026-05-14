@@ -60,21 +60,7 @@ export * from './yarn-lots/issue-yarn.dto';
 // ──────────────────────────────────────────────
 // Delivery Notes
 // ──────────────────────────────────────────────
-export const CreateDeliveryNoteSchema = z.object({
-  dcNo: z.string().min(1),
-  transferDcNo: z.string().optional(),
-  knitterId: z.number().int().positive(),
-  deliveryDate: z.string().datetime(),
-  remarks: z.string().optional(),
-  items: z.array(
-    z.object({
-      yarnLotId: z.number().int().positive(),
-      sentWeight: z.number().positive(),
-      cones: z.number().int().positive(),
-    }),
-  ),
-});
-export type CreateDeliveryNoteDto = z.infer<typeof CreateDeliveryNoteSchema>;
+export * from './delivery-notes';
 
 // ──────────────────────────────────────────────
 // Knitter Programs

@@ -30,6 +30,7 @@ export default function YarnInwardPage() {
   const [formData, setFormData] = useState({
     receiptDate: new Date().toISOString().split('T')[0],
     millId: '',
+    deliveryKnitterId: '',
     hfBatch: '',
     yarnCount: '',
     yarnQuality: '',
@@ -56,6 +57,14 @@ export default function YarnInwardPage() {
     },
   });
 
+  const { data: knitters = [] } = useQuery<any[]>({
+    queryKey: ['knitters'],
+    queryFn: async () => {
+      const { data } = await api.get('/knitters');
+      return data;
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: (form: any) => api.post('/yarn-inward', form),
     onSuccess: () => {
@@ -65,6 +74,7 @@ export default function YarnInwardPage() {
       setFormData({
         receiptDate: new Date().toISOString().split('T')[0],
         millId: '',
+        deliveryKnitterId: '',
         hfBatch: '',
         yarnCount: '',
         yarnQuality: '',
@@ -83,6 +93,7 @@ export default function YarnInwardPage() {
     createMutation.mutate({
       ...formData,
       millId: parseInt(formData.millId),
+      deliveryKnitterId: parseInt(formData.deliveryKnitterId),
       totalWeight: parseFloat(formData.totalWeight),
       numBags: formData.numBags ? parseInt(formData.numBags) : undefined,
       ratePerKg: formData.ratePerKg ? parseFloat(formData.ratePerKg) : undefined,
@@ -110,6 +121,7 @@ export default function YarnInwardPage() {
               <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Mill</TableHead>
+                <TableHead>Delivered To</TableHead>
                 <TableHead>HF Batch</TableHead>
                 <TableHead>Count</TableHead>
                 <TableHead>Weight</TableHead>
@@ -122,6 +134,7 @@ export default function YarnInwardPage() {
                 <TableRow key={r.id}>
                   <TableCell>{new Date(r.receiptDate).toLocaleDateString()}</TableCell>
                   <TableCell>{r.mill?.name}</TableCell>
+                  <TableCell>{r.deliveryKnitter?.name}</TableCell>
                   <TableCell>{r.hfBatch}</TableCell>
                   <TableCell>{r.yarnCount}</TableCell>
                   <TableCell>{r.totalWeight} kg</TableCell>
@@ -165,6 +178,17 @@ export default function YarnInwardPage() {
                 <option value="">Select Mill...</option>
                 {mills.map(m => (
                   <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+              <select
+                required
+                className="border p-2 rounded"
+                value={formData.deliveryKnitterId}
+                onChange={e => setFormData({ ...formData, deliveryKnitterId: e.target.value })}
+              >
+                <option value="">Issue to Knitter...</option>
+                {knitters.map(k => (
+                  <option key={k.id} value={k.id}>{k.name}</option>
                 ))}
               </select>
               <input
@@ -255,6 +279,7 @@ export default function YarnInwardPage() {
                 <div>
                   <p><strong>Date:</strong> {new Date(poRecord.receiptDate).toLocaleDateString()}</p>
                   <p><strong>Mill:</strong> {poRecord.mill?.name}</p>
+                  <p><strong>Delivered To:</strong> {poRecord.deliveryKnitter?.name}</p>
                 </div>
                 <div className="text-right">
                   <p><strong>Record ID:</strong> INW-{poRecord.id.toString().padStart(4, '0')}</p>

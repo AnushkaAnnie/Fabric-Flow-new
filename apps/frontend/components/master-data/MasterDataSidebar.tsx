@@ -45,6 +45,14 @@ export default function MasterDataSidebar() {
         >
           Yarn Inventory
         </Link>
+        <Link
+          href="/tracker/delivery-notes"
+          className={`block rounded px-3 py-2 text-sm ${
+            pathname === "/tracker/delivery-notes" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          Delivery Notes (Transfers)
+        </Link>
       </nav>
 
       <h2 className="mb-4 mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Knitting</h2>
