@@ -2,7 +2,7 @@ import {
   Controller,
   Get,
   Post,
-  Put,
+  Patch,       // FIX RC3: was Put
   Delete,
   Param,
   Body,
@@ -40,7 +40,8 @@ export class YarnLotsController {
     return this.yarnLotsService.findOne(id);
   }
 
-  @Put(':id')
+  // FIX RC3: Changed @Put to @Patch to match frontend updateMutation
+  @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(UpdateYarnLotSchema)) dto: UpdateYarnLotDto,

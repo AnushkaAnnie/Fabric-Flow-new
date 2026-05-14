@@ -26,8 +26,13 @@ export function useMasterData(entity: string) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }: { id: string } & Record<string, unknown>) =>
-      api.patch(`/${entity}/${id}`, data),
+    // FIX RC4: id type widened from string to string | number.
+    // Prisma / backend returns numeric ids (Int). The original type
+    // forced a string check in MasterDataEntityPage which silently aborted
+    // the update when the backend returned a number id.
+    // String() coercion here keeps the URL correct: /mills/42
+    mutationFn: ({ id, ...data }: { id: string | number } & Record<string, unknown>) =>
+      api.patch(`/${entity}/${String(id)}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
       toast.success(`${entity.slice(0, -1)} updated`);
@@ -36,7 +41,8 @@ export function useMasterData(entity: string) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/${entity}/${id}`),
+    // FIX RC4: same — accept number | string so delete works with numeric ids
+    mutationFn: (id: string | number) => api.delete(`/${entity}/${String(id)}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
       toast.success(`${entity.slice(0, -1)} deleted`);

@@ -2,7 +2,7 @@ import {
   Controller,
   Get,
   Post,
-  Put,
+  Patch,       // FIX RC3: was Put — frontend hook sends PATCH, not PUT
   Delete,
   Param,
   Body,
@@ -41,7 +41,10 @@ export class MillsController {
     return this.millsService.findOne(id);
   }
 
-  @Put(':id')
+  // FIX RC3: Changed @Put to @Patch
+  // The frontend useMasterData hook calls api.patch(`/${entity}/${id}`, data)
+  // but this controller only had @Put — HTTP 404 / method not allowed on every edit.
+  @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(UpdateMillSchema)) dto: UpdateMillDto,

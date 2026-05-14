@@ -51,10 +51,16 @@ export default function MasterDataEntityPage({
         }}
         defaultValues={editingRow ?? {}}
         onSubmit={(values) => {
-          if (!editingRow?.id || typeof editingRow.id !== "string") {
-            return;
-          }
-          updateMutation.mutate({ id: editingRow.id, ...values });
+          // FIX RC4: The original guard checked typeof editingRow.id !== "string"
+          // which caused it to bail out silently when the backend returns numeric ids.
+          // Backend Prisma models return id as number (Int).
+          // We now accept both string and number, convert to string for the URL,
+          // matching the string expected by api.patch(`/${entity}/${id}`, data).
+          const rawId = editingRow?.id;
+          if (rawId === undefined || rawId === null) return;
+
+          const id = String(rawId); // safely handles both number and string ids
+          updateMutation.mutate({ id, ...values });
           setEditingRow(null);
         }}
       />
