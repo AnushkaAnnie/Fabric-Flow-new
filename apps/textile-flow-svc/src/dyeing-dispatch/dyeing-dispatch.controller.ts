@@ -24,7 +24,8 @@ export class DyeingDispatchController {
 
   @Post()
   create(
-    @Body(new ZodValidationPipe(CreateDyeingDispatchSchema)) dto: CreateDyeingDispatchDto,
+    @Body(new ZodValidationPipe(CreateDyeingDispatchSchema))
+    dto: CreateDyeingDispatchDto,
   ) {
     return this.service.create(dto);
   }
@@ -43,7 +44,8 @@ export class DyeingDispatchController {
   updateReceivedWeight(
     @Param('dispatchId', ParseIntPipe) dispatchId: number,
     @Param('lineId', ParseIntPipe) lineId: number,
-    @Body(new ZodValidationPipe(UpdateReceivedWeightSchema)) dto: UpdateReceivedWeightDto,
+    @Body(new ZodValidationPipe(UpdateReceivedWeightSchema))
+    dto: UpdateReceivedWeightDto,
   ) {
     return this.service.updateReceivedWeight(dispatchId, lineId, dto);
   }

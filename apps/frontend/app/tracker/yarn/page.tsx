@@ -148,65 +148,82 @@ export default function YarnPage() {
                 <TableHead>Mill</TableHead>
                 {viewMode === 'knitter' ? (
                   <>
-                    <TableHead>Received (kg)</TableHead>
-                    <TableHead>Remaining (kg)</TableHead>
+                    <TableHead>Knitter</TableHead>
+                    <TableHead>Received Weight</TableHead>
+                    <TableHead>Used Weight</TableHead>
+                    <TableHead>Available Weight</TableHead>
                   </>
                 ) : (
                   <>
                     <TableHead>Total (kg)</TableHead>
                     <TableHead>Available (kg)</TableHead>
+                    <TableHead>Rate/kg</TableHead>
+                    <TableHead>Total Cost</TableHead>
                   </>
                 )}
-                <TableHead>Bags</TableHead>
-                <TableHead>Rate/kg</TableHead>
-                <TableHead>Total Cost</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(lots as any[]).map((lot) => (
-                <TableRow key={lot.id}>
-                  <TableCell className="font-medium">{lot.hfCode}</TableCell>
-                  <TableCell>{lot.mill?.name}</TableCell>
-                  {viewMode === 'knitter' ? (
-                    <>
-                      <TableCell>
-                        {lot.knitterStocks?.[0]?.receivedWeight ?? '-'}
-                      </TableCell>
-                      <TableCell>
-                        {lot.knitterStocks?.[0]?.remainingWeight ?? '-'}
-                      </TableCell>
-                    </>
-                  ) : (
-                    <>
-                      <TableCell>{lot.totalWeight}</TableCell>
-                      <TableCell>{lot.availableWeight}</TableCell>
-                    </>
-                  )}
-                  <TableCell>{lot.numBags}</TableCell>
-                  <TableCell>₹{lot.ratePerKg}</TableCell>
-                  <TableCell>₹{lot.totalCost}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditLot(lot as YarnLot);
-                        setCreateOpen(true);
-                      }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteMutation.mutate(lot.id)}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {lots.map((lot) => {
+                if (viewMode === 'knitter') {
+                  return lot.knitterStocks?.map((stock) => {
+                    const used = stock.receivedWeight - stock.remainingWeight;
+                    return (
+                      <TableRow key={`${lot.id}-${stock.knitterId}`}>
+                        <TableCell className="font-medium">{lot.hfCode}</TableCell>
+                        <TableCell>{lot.mill?.name}</TableCell>
+                        <TableCell>{stock.knitter?.name}</TableCell>
+                        <TableCell>{stock.receivedWeight.toFixed(2)} kg</TableCell>
+                        <TableCell>{used.toFixed(2)} kg</TableCell>
+                        <TableCell>{stock.remainingWeight.toFixed(2)} kg</TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditLot(lot);
+                              setCreateOpen(true);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  });
+                }
+
+                return (
+                  <TableRow key={lot.id}>
+                    <TableCell className="font-medium">{lot.hfCode}</TableCell>
+                    <TableCell>{lot.mill?.name}</TableCell>
+                    <TableCell>{lot.totalWeight} kg</TableCell>
+                    <TableCell>{lot.availableWeight} kg</TableCell>
+                    <TableCell>₹{lot.ratePerKg}</TableCell>
+                    <TableCell>₹{lot.totalCost}</TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditLot(lot);
+                          setCreateOpen(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(lot.id)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

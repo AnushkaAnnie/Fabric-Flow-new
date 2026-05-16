@@ -58,6 +58,4 @@ export class YarnLotsController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.yarnLotsService.remove(id);
   }
-
 }
-

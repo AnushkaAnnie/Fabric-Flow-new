@@ -5,8 +5,7 @@ export const UpdateYarnLotSchema = z.object({
   description: z.string().optional(),
   millId: z.number().int().positive().optional(),
   count: z.string().optional(),
-  numBags: z.number().int().positive().optional(),
-  bagWeight: z.number().positive().optional(),
+  totalWeight: z.number().positive().optional(),
   ratePerKg: z.number().positive().optional(),
 });
 

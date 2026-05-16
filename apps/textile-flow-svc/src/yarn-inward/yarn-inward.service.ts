@@ -32,8 +32,6 @@ export class YarnInwardService {
         millId: dto.millId,
         totalWeight: 0,
         availableWeight: 0,
-        numBags: 0,
-        bagWeight: 0,
         ratePerKg: dto.ratePerKg || 0,
         totalCost: 0,
         yarnInwardId: inward.id,

@@ -7,8 +7,7 @@ export class YarnLotsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateYarnLotDto) {
-    const totalWeight = dto.numBags * dto.bagWeight;
-    const totalCost = totalWeight * dto.ratePerKg;
+    const totalCost = dto.totalWeight * dto.ratePerKg;
 
     return this.prisma.yarnLot.create({
       data: {
@@ -16,12 +15,10 @@ export class YarnLotsService {
         description: dto.description,
         millId: dto.millId,
         count: dto.count,
-        numBags: dto.numBags,
-        bagWeight: dto.bagWeight,
         ratePerKg: dto.ratePerKg,
-        totalWeight,
+        totalWeight: dto.totalWeight,
         totalCost,
-        availableWeight: totalWeight,
+        availableWeight: dto.totalWeight,
       },
       include: { mill: true },
     });
@@ -37,7 +34,11 @@ export class YarnLotsService {
           mill: true,
           knitterStocks: {
             where: { knitterId: filters.knitterId },
-            select: { receivedWeight: true, remainingWeight: true },
+            select: {
+              knitter: { select: { name: true } },
+              receivedWeight: true,
+              remainingWeight: true,
+            },
           },
         },
         orderBy: { createdAt: 'desc' },
@@ -68,18 +69,17 @@ export class YarnLotsService {
   async update(id: number, dto: UpdateYarnLotDto) {
     const existing = await this.findOne(id);
     const updateData: Record<string, any> = { ...dto };
-    if (dto.numBags || dto.bagWeight) {
-      const numBags = dto.numBags ?? existing.numBags;
-      const bagWeight = dto.bagWeight ?? existing.bagWeight;
-      const ratePerKg = dto.ratePerKg ?? existing.ratePerKg;
-      const totalWeight = numBags * bagWeight;
-      updateData['totalWeight'] = totalWeight;
-      updateData['totalCost'] = totalWeight * ratePerKg;
+
+    if (dto.totalWeight) {
+      updateData['totalCost'] =
+        dto.totalWeight * (dto.ratePerKg ?? existing.ratePerKg);
+
+      // if weight was zero and is now positive, it means physical receipt
+      if (existing.totalWeight === 0 && dto.totalWeight > 0) {
+        updateData['availableWeight'] = dto.totalWeight;
+      }
     }
-    // If this is the first time we set a weight, make it fully available
-    if (existing.totalWeight === 0 && (updateData['totalWeight'] ?? 0) > 0) {
-      updateData['availableWeight'] = updateData['totalWeight'];
-    }
+
     return this.prisma.yarnLot.update({
       where: { id },
       data: updateData,
@@ -92,4 +92,3 @@ export class YarnLotsService {
     return this.prisma.yarnLot.delete({ where: { id } });
   }
 }
-

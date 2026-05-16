@@ -5,8 +5,7 @@ export const CreateYarnLotSchema = z.object({
   description: z.string().optional(),
   millId: z.number().int().positive(),
   count: z.string().optional(),
-  numBags: z.number().int().positive(),
-  bagWeight: z.number().positive(),
+  totalWeight: z.number().positive(),
   ratePerKg: z.number().positive(),
 });
 

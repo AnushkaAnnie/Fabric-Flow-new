@@ -125,8 +125,6 @@ model YarnLot {
   description     String?
   millId          Int      @map("mill_id")
   count           String?
-  numBags         Int      @map("num_bags")
-  bagWeight       Float    @map("bag_weight")
   ratePerKg       Float    @map("rate_per_kg")
   totalWeight     Float    @map("total_weight")
   totalCost       Float    @map("total_cost")
@@ -135,7 +133,7 @@ model YarnLot {
   updatedAt       DateTime @updatedAt @map("updated_at")
   colourId        Int?     @map("colour_id")
 
-  KnitterStock  KnitterStock[]
+  knitterStocks  KnitterStock[]
   colour        Colour?        @relation(fields: [colourId], references: [id])
   mill          Mill           @relation(fields: [millId], references: [id])
   yarnInwardId  Int?           @map("yarn_inward_id")

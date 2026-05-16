@@ -29,8 +29,7 @@ export function YarnLotForm({
   const [form, setForm] = useState({
     hfCode: '',
     millId: '',
-    numBags: '',
-    bagWeight: '',
+    totalWeight: '',
     ratePerKg: '',
     description: '',
     count: '',
@@ -38,12 +37,10 @@ export function YarnLotForm({
 
   useEffect(() => {
     if (initial) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
         hfCode: initial.hfCode || '',
         millId: String(initial.millId || ''),
-        numBags: String(initial.numBags || ''),
-        bagWeight: String(initial.bagWeight || ''),
+        totalWeight: String(initial.totalWeight || ''),
         ratePerKg: String(initial.ratePerKg || ''),
         description: initial.description || '',
         count: initial.count || '',
@@ -56,17 +53,14 @@ export function YarnLotForm({
     onSubmit({
       hfCode: form.hfCode,
       millId: Number(form.millId),
-      numBags: Number(form.numBags),
-      bagWeight: Number(form.bagWeight),
+      totalWeight: Number(form.totalWeight),
       ratePerKg: Number(form.ratePerKg),
       description: form.description,
       count: form.count,
     });
   };
 
-  const totalWeight =
-    Number(form.numBags || 0) * Number(form.bagWeight || 0);
-  const totalCost = totalWeight * Number(form.ratePerKg || 0);
+  const totalCost = (Number(form.totalWeight) || 0) * (Number(form.ratePerKg) || 0);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -100,22 +94,13 @@ export function YarnLotForm({
           </Select>
         </div>
         <div>
-          <Label htmlFor="numBags">Number of Bags *</Label>
+          <Label htmlFor="totalWeight">Total Weight (kg) *</Label>
           <Input
-            id="numBags"
+            id="totalWeight"
             type="number"
-            value={form.numBags}
-            onChange={(e) => setForm({ ...form, numBags: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="bagWeight">Bag Weight (kg) *</Label>
-          <Input
-            id="bagWeight"
-            type="number"
-            value={form.bagWeight}
-            onChange={(e) => setForm({ ...form, bagWeight: e.target.value })}
+            step="any"
+            value={form.totalWeight}
+            onChange={(e) => setForm({ ...form, totalWeight: e.target.value })}
             required
           />
         </div>
@@ -124,12 +109,13 @@ export function YarnLotForm({
           <Input
             id="ratePerKg"
             type="number"
+            step="any"
             value={form.ratePerKg}
             onChange={(e) => setForm({ ...form, ratePerKg: e.target.value })}
             required
           />
         </div>
-        <div>
+        <div className="col-span-2">
           <Label htmlFor="description">Description</Label>
           <Input
             id="description"
@@ -148,10 +134,7 @@ export function YarnLotForm({
       </div>
       <div className="flex justify-between text-sm bg-muted p-3 rounded">
         <span>
-          Total Weight: <strong>{totalWeight} kg</strong>
-        </span>
-        <span>
-          Total Cost: <strong>₹{totalCost}</strong>
+          Total Cost: <strong>₹{totalCost.toFixed(2)}</strong>
         </span>
       </div>
       <Button type="submit" disabled={isSubmitting}>

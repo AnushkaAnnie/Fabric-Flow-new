@@ -6,28 +6,31 @@ export interface YarnLot {
   mill?: { id: number; name: string } | null;
   description?: string | null;
   count?: string | null;
-  numBags: number;
-  bagWeight: number;
-  ratePerKg: number;
   totalWeight: number;
+  ratePerKg: number;
   totalCost: number;
   availableWeight: number;
+  knitterStocks?: KnitterStock[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface KnitterStock {
+  knitterId: number;
+  knitter?: { name: string };
+  receivedWeight: number;
+  remainingWeight: number;
 }
 
 // Data sent to create/update a yarn lot
 export interface YarnLotFormData {
   hfCode: string;
   millId: number;
-  numBags: number;
-  bagWeight: number;
+  totalWeight: number;
   ratePerKg: number;
   description?: string;
   count?: string;
 }
-
-
 
 // A mill reference
 export interface Mill {

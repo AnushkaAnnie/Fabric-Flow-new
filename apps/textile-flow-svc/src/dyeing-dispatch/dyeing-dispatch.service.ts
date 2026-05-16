@@ -26,7 +26,9 @@ export class DyeingDispatchService {
     return this.prisma.$transaction(async (tx) => {
       const dispatch = await tx.dyeingDispatch.create({
         data: {
-          dispatchDate: dto.dispatchDate ? new Date(dto.dispatchDate) : new Date(),
+          dispatchDate: dto.dispatchDate
+            ? new Date(dto.dispatchDate)
+            : new Date(),
           dyerId: dto.dyerId,
           remarks: dto.remarks,
         },
@@ -99,15 +101,15 @@ export class DyeingDispatchService {
     const sentWeight = Number(line.sentWeight);
     const receivedWeight = dto.receivedWeight;
     const lossPercent =
-      sentWeight > 0
-        ? ((sentWeight - receivedWeight) / sentWeight) * 100
-        : 0;
+      sentWeight > 0 ? ((sentWeight - receivedWeight) / sentWeight) * 100 : 0;
 
     return this.prisma.dyeingDispatchLine.update({
       where: { id: lineId },
       data: {
         receivedWeight,
-        receivedDate: dto.receivedDate ? new Date(dto.receivedDate) : new Date(),
+        receivedDate: dto.receivedDate
+          ? new Date(dto.receivedDate)
+          : new Date(),
         processLossPercent: lossPercent,
         status: 'RECEIVED',
       },

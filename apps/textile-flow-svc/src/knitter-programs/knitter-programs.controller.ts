@@ -17,7 +17,8 @@ export class KnitterProgramsController {
 
   @Post()
   create(
-    @Body(new ZodValidationPipe(CreateKnitterProgramSchema)) dto: CreateKnitterProgramDto,
+    @Body(new ZodValidationPipe(CreateKnitterProgramSchema))
+    dto: CreateKnitterProgramDto,
   ) {
     return this.service.create(dto);
   }
