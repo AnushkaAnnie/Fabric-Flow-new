@@ -7,69 +7,44 @@ export class YarnInwardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateYarnInwardDto) {
-    const totalWeight = dto.totalWeight; // already validated >0
-    const totalCost = totalWeight * (dto.ratePerKg || 0);
+    // 1. Create inward record (invoice details only – no weight yet)
+    const inward = await this.prisma.yarnInward.create({
+      data: {
+        receiptDate: dto.receiptDate ? new Date(dto.receiptDate) : new Date(),
+        millId: dto.millId,
+        deliveryKnitterId: dto.deliveryKnitterId, // optional, set later
+        hfBatch: dto.hfBatch,
+        yarnCount: dto.yarnCount,
+        yarnQuality: dto.yarnQuality,
+        totalWeight: 0, // no physical weight yet
+        numBags: 0,
+        ratePerKg: dto.ratePerKg,
+        totalCost: 0,
+        purchaseAccount: dto.purchaseAccount,
+        remarks: dto.remarks,
+      },
+    });
 
-    // Atomic: create inward, create yarn lot, auto-issue to delivery knitter
-    return this.prisma.$transaction(async (tx) => {
-      // 1. Create inward record
-      const inward = await tx.yarnInward.create({
-        data: {
-          receiptDate: dto.receiptDate ? new Date(dto.receiptDate) : new Date(),
-          millId: dto.millId,
-          deliveryKnitterId: dto.deliveryKnitterId,
-          hfBatch: dto.hfBatch,
-          yarnCount: dto.yarnCount,
-          yarnQuality: dto.yarnQuality,
-          totalWeight: totalWeight,
-          numBags: dto.numBags,
-          ratePerKg: dto.ratePerKg,
-          totalCost: totalCost,
-          purchaseAccount: dto.purchaseAccount,
-          remarks: dto.remarks,
-        },
-      });
+    // 2. Create an empty yarn lot – only HF code/description, no quantity
+    await this.prisma.yarnLot.create({
+      data: {
+        hfCode: dto.hfBatch || `HF-${inward.id}`,
+        millId: dto.millId,
+        totalWeight: 0,
+        availableWeight: 0,
+        numBags: 0,
+        bagWeight: 0,
+        ratePerKg: dto.ratePerKg || 0,
+        totalCost: 0,
+        yarnInwardId: inward.id,
+        description: dto.remarks || '',
+      },
+    });
 
-      // 2. Create a yarn lot linked to this inward
-      const yarnLot = await tx.yarnLot.create({
-        data: {
-          hfCode: dto.hfBatch || `HF-${inward.id}`, // auto-generate if needed
-          millId: dto.millId,
-          totalWeight: totalWeight,
-          availableWeight: 0, // will be issued immediately
-          numBags: dto.numBags || 0,
-          bagWeight: 0, // not relevant for direct inward
-          ratePerKg: dto.ratePerKg || 0,
-          totalCost: totalCost,
-          yarnInwardId: inward.id,
-          description: dto.remarks || '',
-        },
-      });
-
-      // 3. Auto-issue the entire weight to the delivery knitter
-      await tx.knitterStock.upsert({
-        where: {
-          knitterId_yarnLotId: {
-            knitterId: dto.deliveryKnitterId,
-            yarnLotId: yarnLot.id,
-          },
-        },
-        create: {
-          knitterId: dto.deliveryKnitterId,
-          yarnLotId: yarnLot.id,
-          receivedWeight: totalWeight,
-          remainingWeight: totalWeight,
-        },
-        update: {
-          receivedWeight: { increment: totalWeight },
-          remainingWeight: { increment: totalWeight },
-        },
-      });
-
-      return tx.yarnInward.findUnique({
-        where: { id: inward.id },
-        include: { mill: true, deliveryKnitter: true, yarnLots: true },
-      });
+    // 3. Return the inward record (no auto-issue)
+    return this.prisma.yarnInward.findUnique({
+      where: { id: inward.id },
+      include: { mill: true, deliveryKnitter: true, yarnLots: true },
     });
   }
 

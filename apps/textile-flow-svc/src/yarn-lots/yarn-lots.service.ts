@@ -36,8 +36,30 @@ export class YarnLotsService {
     });
   }
 
-  async findAll() {
+  async findAll(filters?: { hfCode?: string; knitterId?: number }) {
+    if (filters?.knitterId) {
+      return this.prisma.yarnLot.findMany({
+        where: {
+          knitterStocks: { some: { knitterId: filters.knitterId } },
+        },
+        include: {
+          mill: true,
+          knitterStocks: {
+            where: { knitterId: filters.knitterId },
+            select: { receivedWeight: true, remainingWeight: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
+    const where: Record<string, any> = {};
+    if (filters?.hfCode) {
+      where['hfCode'] = { contains: filters.hfCode, mode: 'insensitive' };
+    }
+
     return this.prisma.yarnLot.findMany({
+      where,
       include: { mill: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -62,7 +84,10 @@ export class YarnLotsService {
       const totalWeight = numBags * bagWeight;
       updateData['totalWeight'] = totalWeight;
       updateData['totalCost'] = totalWeight * ratePerKg;
-      // NEVER adjust availableWeight here
+    }
+    // If this is the first time we set a weight, make it fully available
+    if (existing.totalWeight === 0 && (updateData['totalWeight'] ?? 0) > 0) {
+      updateData['availableWeight'] = updateData['totalWeight'];
     }
     return this.prisma.yarnLot.update({
       where: { id },

@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package2, ArrowRightLeft } from 'lucide-react';
+import { Package2, ArrowRightLeft, Search } from 'lucide-react';
 import { YarnLotForm } from '@/components/yarn/YarnLotForm';
 import { IssueForm } from '@/components/yarn/IssueForm';
 import type {
@@ -37,28 +37,31 @@ export default function YarnPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editLot, setEditLot] = useState<YarnLot | null>(null);
 
+  // Search / filter state
+  const [searchHF, setSearchHF] = useState('');
+  const [selectedKnitterId, setSelectedKnitterId] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'all' | 'knitter'>('all');
+
   const { data: lots = [] } = useQuery<YarnLot[]>({
-    queryKey: ['yarn-lots'],
+    queryKey: ['yarn-lots', searchHF, selectedKnitterId, viewMode],
     queryFn: async () => {
-      const { data } = await api.get<YarnLot[]>('/yarn-lots');
+      const params: Record<string, string> = {};
+      if (viewMode === 'all' && searchHF) params['hfCode'] = searchHF;
+      if (viewMode === 'knitter' && selectedKnitterId)
+        params['knitterId'] = selectedKnitterId;
+      const { data } = await api.get<YarnLot[]>('/yarn-lots', { params });
       return data;
     },
   });
 
   const { data: mills = [] } = useQuery<Mill[]>({
     queryKey: ['mills'],
-    queryFn: async () => {
-      const { data } = await api.get<Mill[]>('/mills');
-      return data;
-    },
+    queryFn: async () => (await api.get<Mill[]>('/mills')).data,
   });
 
   const { data: knitters = [] } = useQuery<Knitter[]>({
     queryKey: ['knitters'],
-    queryFn: async () => {
-      const { data } = await api.get<Knitter[]>('/knitters');
-      return data;
-    },
+    queryFn: async () => (await api.get<Knitter[]>('/knitters')).data,
   });
 
   const createMutation = useMutation({
@@ -80,8 +83,7 @@ export default function YarnPage() {
       setIssueOpen(false);
     },
     onError: (err: unknown) => {
-      const message =
-        err instanceof Error ? err.message : 'Issue failed';
+      const message = err instanceof Error ? err.message : 'Issue failed';
       toast.error(message);
     },
   });
@@ -119,9 +121,47 @@ export default function YarnPage() {
         </Button>
       </div>
 
+      {/* Search & Filter Controls */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search HF code..."
+            value={searchHF}
+            onChange={(e) => setSearchHF(e.target.value)}
+            className="pl-8 rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
+          />
+        </div>
+        <select
+          value={viewMode}
+          onChange={(e) => setViewMode(e.target.value as 'all' | 'knitter')}
+          className="rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
+        >
+          <option value="all">All Inventory</option>
+          <option value="knitter">By Knitter</option>
+        </select>
+        {viewMode === 'knitter' && (
+          <select
+            value={selectedKnitterId}
+            onChange={(e) => setSelectedKnitterId(e.target.value)}
+            className="rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
+          >
+            <option value="">Select knitter...</option>
+            {knitters.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>All Yarn Lots</CardTitle>
+          <CardTitle>
+            {viewMode === 'knitter' ? 'Knitter Stock' : 'All Yarn Lots'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -129,8 +169,17 @@ export default function YarnPage() {
               <TableRow>
                 <TableHead>HF Code</TableHead>
                 <TableHead>Mill</TableHead>
-                <TableHead>Total (kg)</TableHead>
-                <TableHead>Available (kg)</TableHead>
+                {viewMode === 'knitter' ? (
+                  <>
+                    <TableHead>Received (kg)</TableHead>
+                    <TableHead>Remaining (kg)</TableHead>
+                  </>
+                ) : (
+                  <>
+                    <TableHead>Total (kg)</TableHead>
+                    <TableHead>Available (kg)</TableHead>
+                  </>
+                )}
                 <TableHead>Bags</TableHead>
                 <TableHead>Rate/kg</TableHead>
                 <TableHead>Total Cost</TableHead>
@@ -138,12 +187,25 @@ export default function YarnPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lots.map((lot: YarnLot) => (
+              {(lots as any[]).map((lot) => (
                 <TableRow key={lot.id}>
                   <TableCell className="font-medium">{lot.hfCode}</TableCell>
                   <TableCell>{lot.mill?.name}</TableCell>
-                  <TableCell>{lot.totalWeight}</TableCell>
-                  <TableCell>{lot.availableWeight}</TableCell>
+                  {viewMode === 'knitter' ? (
+                    <>
+                      <TableCell>
+                        {lot.knitterStocks?.[0]?.receivedWeight ?? '-'}
+                      </TableCell>
+                      <TableCell>
+                        {lot.knitterStocks?.[0]?.remainingWeight ?? '-'}
+                      </TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell>{lot.totalWeight}</TableCell>
+                      <TableCell>{lot.availableWeight}</TableCell>
+                    </>
+                  )}
                   <TableCell>{lot.numBags}</TableCell>
                   <TableCell>₹{lot.ratePerKg}</TableCell>
                   <TableCell>₹{lot.totalCost}</TableCell>
@@ -152,7 +214,7 @@ export default function YarnPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setSelectedLot(lot);
+                        setSelectedLot(lot as YarnLot);
                         setIssueOpen(true);
                       }}
                       disabled={lot.availableWeight <= 0}
@@ -163,7 +225,7 @@ export default function YarnPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setEditLot(lot);
+                        setEditLot(lot as YarnLot);
                         setCreateOpen(true);
                       }}
                     >

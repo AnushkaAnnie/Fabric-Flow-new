@@ -2,10 +2,11 @@ import {
   Controller,
   Get,
   Post,
-  Patch, // FIX RC3: was Put
+  Patch,
   Delete,
   Param,
   Body,
+  Query,
   ParseIntPipe,
   UsePipes,
 } from '@nestjs/common';
@@ -31,8 +32,14 @@ export class YarnLotsController {
   }
 
   @Get()
-  findAll() {
-    return this.yarnLotsService.findAll();
+  findAll(
+    @Query('hfCode') hfCode?: string,
+    @Query('knitterId') knitterId?: string,
+  ) {
+    return this.yarnLotsService.findAll({
+      hfCode,
+      knitterId: knitterId ? parseInt(knitterId, 10) : undefined,
+    });
   }
 
   @Get(':id')
