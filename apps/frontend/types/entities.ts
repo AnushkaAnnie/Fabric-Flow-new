@@ -142,3 +142,80 @@ export interface YarnInwardFormData {
 
 // Re-export commonly used types from yarn.ts for convenience
 export type { YarnLot, Knitter } from './yarn';
+
+// ===================== Phase 3D =====================
+export interface KnitterProgram {
+  id: number;
+  knitterId: number;
+  yarnLotId: number;
+  quantityUsed: number;
+  greyWeight: number;
+  numRolls?: number;
+  dia?: string;
+  gg?: string;
+  loopLength?: string;
+  fabricName?: string;
+  fabricColour?: string;
+  programmeRef?: string;
+  preAssignedDyerId?: number;
+  programDate: string;
+  anomalyFlag: boolean;
+  knitter?: { id: number; name: string };
+  yarnLot?: { id: number; hfCode: string };
+  greyFabricLots?: GreyFabricLot[];
+  preAssignedDyer?: { id: number; name: string };
+}
+
+export interface KnitterProgramFormData {
+  knitterId: string;
+  yarnLotId: string;
+  quantityUsed: string;
+  greyWeight: string;
+  numRolls: string;
+  dia: string;
+  gg: string;
+  loopLength: string;
+  fabricName: string;
+  fabricColour: string;
+  programmeRef: string;
+  preAssignedDyerId: string;
+  programDate: string;
+}
+
+export interface DyeingDispatch {
+  id: number;
+  dispatchDate: string;
+  dyerId: number;
+  remarks?: string;
+  dyer?: { id: number; name: string };
+  lines?: DyeingDispatchLine[];
+}
+
+export interface DyeingDispatchLine {
+  id: number;
+  dispatchId: number;
+  greyFabricLotId: number;
+  sentWeight: number;
+  receivedWeight?: number;
+  receivedDate?: string;
+  processLossPercent?: number;
+  status: 'DISPATCHED' | 'RECEIVED' | 'CANCELLED';
+  greyFabricLot?: GreyFabricLot;
+}
+
+export interface DyeingDispatchFormData {
+  dispatchDate: string;
+  dyerId: string;
+  remarks: string;
+  lines: { greyFabricLotId: string }[];
+}
+
+export interface GreyFabricLot {
+  id: number;
+  lotNumber: string;
+  greyWeight: number;
+  rollCount?: number;
+  source: 'KNITTED' | 'PURCHASED';
+  status: 'AVAILABLE' | 'DISPATCHED' | 'CONSUMED' | 'DELETED';
+  knitter?: { id: number; name: string };
+}

@@ -22,6 +22,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { YarnInwardModule } from './yarn-inward/yarn-inward.module';
 import { MemosModule } from './memos/memos.module';
 import { GreyFabricInwardModule } from './grey-fabric-inward/grey-fabric-inward.module';
+import { DyeingDispatchModule } from './dyeing-dispatch/dyeing-dispatch.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { GreyFabricInwardModule } from './grey-fabric-inward/grey-fabric-inward.
     YarnInwardModule,
     MemosModule,
     GreyFabricInwardModule,
+    DyeingDispatchModule,
   ],
 
   controllers: [AppController],

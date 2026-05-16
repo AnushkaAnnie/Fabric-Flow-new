@@ -14,10 +14,8 @@ import { YarnLotsService } from './yarn-lots.service';
 import {
   CreateYarnLotSchema,
   UpdateYarnLotSchema,
-  IssueYarnSchema,
   type CreateYarnLotDto,
   type UpdateYarnLotDto,
-  type IssueYarnDto,
 } from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 
@@ -61,9 +59,5 @@ export class YarnLotsController {
     return this.yarnLotsService.remove(id);
   }
 
-  @Post(':id/issue')
-  @UsePipes(new ZodValidationPipe(IssueYarnSchema))
-  issue(@Param('id', ParseIntPipe) id: number, @Body() dto: IssueYarnDto) {
-    return this.yarnLotsService.issue(id, dto);
-  }
 }
+

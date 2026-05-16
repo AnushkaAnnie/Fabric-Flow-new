@@ -73,6 +73,26 @@ export default function MasterDataSidebar() {
         >
           Grey Fabric Inward
         </Link>
+        <Link
+          href="/tracker/knitter-programs"
+          className={`block rounded px-3 py-2 text-sm ${
+            pathname === "/tracker/knitter-programs" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          Knitter Production
+        </Link>
+      </nav>
+
+      <h2 className="mb-4 mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">Dyeing</h2>
+      <nav className="space-y-1">
+        <Link
+          href="/tracker/dyeing"
+          className={`block rounded px-3 py-2 text-sm ${
+            pathname === "/tracker/dyeing" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          Dyeing Dispatch
+        </Link>
       </nav>
     </aside>
   );

@@ -1,15 +1,6 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  CreateYarnLotDto,
-  IssueYarnDto,
-  UpdateYarnLotDto,
-} from '@textile-flow/shared';
-import { lockYarnLot } from '../common/locks';
+import { CreateYarnLotDto, UpdateYarnLotDto } from '@textile-flow/shared';
 
 @Injectable()
 export class YarnLotsService {
@@ -100,45 +91,5 @@ export class YarnLotsService {
     await this.findOne(id);
     return this.prisma.yarnLot.delete({ where: { id } });
   }
-
-  async issue(id: number, dto: IssueYarnDto) {
-    return this.prisma.$transaction(async (tx) => {
-      const yarn = await lockYarnLot(tx, id);
-      if (!yarn) throw new NotFoundException('Yarn lot not found');
-      if (yarn.available_weight < dto.weight) {
-        throw new BadRequestException(
-          `Insufficient inventory. Available: ${yarn.available_weight} kg, requested: ${dto.weight} kg`,
-        );
-      }
-
-      await tx.yarnLot.update({
-        where: { id },
-        data: { availableWeight: { decrement: dto.weight } },
-      });
-
-      await tx.knitterStock.upsert({
-        where: {
-          knitterId_yarnLotId: {
-            knitterId: dto.knitterId,
-            yarnLotId: id,
-          },
-        },
-        create: {
-          knitterId: dto.knitterId,
-          yarnLotId: id,
-          receivedWeight: dto.weight,
-          remainingWeight: dto.weight,
-        },
-        update: {
-          receivedWeight: { increment: dto.weight },
-          remainingWeight: { increment: dto.weight },
-        },
-      });
-
-      return tx.yarnLot.findUnique({
-        where: { id },
-        include: { mill: true },
-      });
-    });
-  }
 }
+

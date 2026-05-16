@@ -30,14 +30,10 @@ export class GreyFabricInwardService {
       await tx.greyFabricLot.create({
         data: {
           lotNumber: `PUR-${inward.id}`, // simple auto-generated lot number
-          knitterProgramId: 0, // placeholder; not linked to a knitting program
-          receivedDate: dto.receiptDate
-            ? new Date(dto.receiptDate)
-            : new Date(),
-          grossWeight: dto.totalWeight,
-          netWeight: dto.totalWeight,
-          rolls: dto.rollCount || 0,
+          greyWeight: dto.totalWeight,
+          rollCount: dto.rollCount || 0,
           source: 'PURCHASED',
+          status: 'AVAILABLE',
           greyFabricInwardId: inward.id,
         },
       });

@@ -12,6 +12,8 @@ export * from './mills';
 export * from './knitters';
 export * from './dyers';
 export * from './compacters';
+export * from './knitter-programs';
+export * from './dyeing-dispatch';
 
 export const MillResponseSchema = z.object({
   id: z.number().int().positive(),
@@ -55,55 +57,11 @@ export type UpdateWashTypeDto = z.infer<typeof UpdateWashTypeSchema>;
 // ──────────────────────────────────────────────
 export * from './yarn-lots/create-yarn-lot.dto';
 export * from './yarn-lots/update-yarn-lot.dto';
-export * from './yarn-lots/issue-yarn.dto';
 
 // ──────────────────────────────────────────────
 // Delivery Notes
 // ──────────────────────────────────────────────
 export * from './delivery-notes';
-
-// ──────────────────────────────────────────────
-// Knitter Programs
-// ──────────────────────────────────────────────
-export const CreateKnitterProgramSchema = z.object({
-  programNo: z.string().min(1),
-  memoNo: z.string().optional(),
-  knitterId: z.number().int().positive(),
-  colourId: z.number().int().positive(),
-  startDate: z.string().datetime(),
-  expectedEndDate: z.string().datetime().optional(),
-  remarks: z.string().optional(),
-});
-export type CreateKnitterProgramDto = z.infer<
-  typeof CreateKnitterProgramSchema
->;
-
-// ──────────────────────────────────────────────
-// Grey Fabric Lots
-// ──────────────────────────────────────────────
-export const CreateGreyFabricLotSchema = z.object({
-  lotNumber: z.string().min(1),
-  knitterProgramId: z.number().int().positive(),
-  receivedDate: z.string().datetime(),
-  grossWeight: z.number().positive(),
-  netWeight: z.number().positive(),
-  rolls: z.number().int().positive(),
-  remarks: z.string().optional(),
-});
-export type CreateGreyFabricLotDto = z.infer<typeof CreateGreyFabricLotSchema>;
-
-// ──────────────────────────────────────────────
-// Dyeing Programs
-// ──────────────────────────────────────────────
-export const CreateDyeingProgramSchema = z.object({
-  programNo: z.string().min(1),
-  dyerId: z.number().int().positive(),
-  colourId: z.number().int().positive(),
-  washTypeId: z.number().int().positive(),
-  startDate: z.string().datetime(),
-  remarks: z.string().optional(),
-});
-export type CreateDyeingProgramDto = z.infer<typeof CreateDyeingProgramSchema>;
 
 // ──────────────────────────────────────────────
 // Audit Log

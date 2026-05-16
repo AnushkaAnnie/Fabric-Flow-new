@@ -27,11 +27,7 @@ export interface YarnLotFormData {
   count?: string;
 }
 
-// Data sent to issue yarn to a knitter
-export interface IssueYarnFormData {
-  knitterId: number;
-  weight: number;
-}
+
 
 // A mill reference
 export interface Mill {
@@ -41,6 +37,11 @@ export interface Mill {
 
 // A knitter reference
 export interface Knitter {
+  id: number;
+  name: string;
+}
+
+export interface Dyer {
   id: number;
   name: string;
 }

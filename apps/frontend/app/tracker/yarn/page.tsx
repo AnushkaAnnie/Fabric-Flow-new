@@ -19,21 +19,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package2, ArrowRightLeft, Search } from 'lucide-react';
+import { Package2, Search } from 'lucide-react';
 import { YarnLotForm } from '@/components/yarn/YarnLotForm';
-import { IssueForm } from '@/components/yarn/IssueForm';
-import type {
-  YarnLot,
-  YarnLotFormData,
-  IssueYarnFormData,
-  Mill,
-  Knitter,
-} from '@/types/yarn';
+import type { YarnLot, YarnLotFormData, Mill, Knitter } from '@/types/yarn';
 
 export default function YarnPage() {
   const queryClient = useQueryClient();
-  const [selectedLot, setSelectedLot] = useState<YarnLot | null>(null);
-  const [issueOpen, setIssueOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [editLot, setEditLot] = useState<YarnLot | null>(null);
 
@@ -72,20 +63,6 @@ export default function YarnPage() {
       setCreateOpen(false);
     },
     onError: () => toast.error('Failed to create yarn lot'),
-  });
-
-  const issueMutation = useMutation({
-    mutationFn: ({ id, ...body }: { id: number } & IssueYarnFormData) =>
-      api.post(`/yarn-lots/${id}/issue`, body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['yarn-lots'] });
-      toast.success('Yarn issued to knitter');
-      setIssueOpen(false);
-    },
-    onError: (err: unknown) => {
-      const message = err instanceof Error ? err.message : 'Issue failed';
-      toast.error(message);
-    },
   });
 
   const updateMutation = useMutation({
@@ -211,17 +188,6 @@ export default function YarnPage() {
                   <TableCell>₹{lot.totalCost}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedLot(lot as YarnLot);
-                        setIssueOpen(true);
-                      }}
-                      disabled={lot.availableWeight <= 0}
-                    >
-                      <ArrowRightLeft className="mr-1 h-3 w-3" /> Issue
-                    </Button>
-                    <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => {
@@ -272,25 +238,6 @@ export default function YarnPage() {
             }}
             isSubmitting={createMutation.isPending || updateMutation.isPending}
           />
-        </DialogContent>
-      </Dialog>
-
-      {/* Issue to Knitter Dialog */}
-      <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Issue Yarn to Knitter</DialogTitle>
-          </DialogHeader>
-          {selectedLot && (
-            <IssueForm
-              lot={selectedLot}
-              knitters={knitters}
-              onSubmit={(data: IssueYarnFormData) =>
-                issueMutation.mutate({ id: selectedLot.id, ...data })
-              }
-              isSubmitting={issueMutation.isPending}
-            />
-          )}
         </DialogContent>
       </Dialog>
     </div>

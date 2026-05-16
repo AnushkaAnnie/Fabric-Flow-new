@@ -46,6 +46,7 @@ model Knitter {
   KnitterStock       KnitterStock[]
   memoLines          MemoLine[]
   yarnInwards        YarnInward[]
+  greyFabricLots     GreyFabricLot[]
 
   @@map("knitters")
 }
@@ -64,8 +65,10 @@ model Dyer {
   isActive      Boolean         @default(true) @map("is_active")
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
-  DyeingProgram DyeingProgram[]
-  memoLines     MemoLine[]
+  DyeingProgram     DyeingProgram[]
+  memoLines         MemoLine[]
+  knitterPrograms   KnitterProgram[]
+  dyeingDispatches  DyeingDispatch[]
 
   @@map("dyers")
 }
@@ -98,7 +101,6 @@ model Colour {
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
   DyeingProgram  DyeingProgram[]
-  KnitterProgram KnitterProgram[]
   YarnLot        YarnLot[]
 
   @@map("colours")
@@ -138,8 +140,9 @@ model YarnLot {
   mill          Mill           @relation(fields: [millId], references: [id])
   yarnInwardId  Int?           @map("yarn_inward_id")
   yarnInward    YarnInward?    @relation(fields: [yarnInwardId], references: [id])
-  memoLines     MemoLine[]
-  deliveryNotes DeliveryNote[]
+  memoLines       MemoLine[]
+  deliveryNotes   DeliveryNote[]
+  knitterPrograms KnitterProgram[]
 
   @@map("yarn_lots")
 }
@@ -176,22 +179,28 @@ model DeliveryNote {
 }
 
 model KnitterProgram {
-  id              Int             @id @default(autoincrement())
-  programNo       String          @unique @map("program_no")
-  memoNo          String?         @map("memo_no")
-  knitterId       Int             @map("knitter_id")
-  colourId        Int             @map("colour_id")
-  startDate       DateTime        @map("start_date")
-  expectedEndDate DateTime?       @map("expected_end_date")
-  status          String          @default("ACTIVE")
-  remarks         String?
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
-  GreyFabricLot   GreyFabricLot[]
-  colour          Colour          @relation(fields: [colourId], references: [id])
-  knitter         Knitter         @relation(fields: [knitterId], references: [id])
+  id            Int       @id @default(autoincrement())
+  knitterId     Int
+  knitter       Knitter   @relation(fields: [knitterId], references: [id])
+  yarnLotId     Int
+  yarnLot       YarnLot   @relation(fields: [yarnLotId], references: [id])
+  quantityUsed  Decimal   @db.Decimal(10,2)   // kg of yarn consumed
+  greyWeight    Decimal   @db.Decimal(10,2)   // actual scale weight of grey fabric produced
+  numRolls      Int?
+  dia           String?
+  gg            String?
+  loopLength    String?
+  fabricName    String?
+  fabricColour  String?
+  programmeRef  String?
+  preAssignedDyerId Int?
+  preAssignedDyer   Dyer?   @relation(fields: [preAssignedDyerId], references: [id])
+  anomalyFlag   Boolean   @default(false)    // set to true if greyWeight > quantityUsed
+  programDate   DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  @@map("knitter_programs")
+  greyFabricLots GreyFabricLot[]
 }
 
 enum GreyFabricLotSource {
@@ -199,24 +208,64 @@ enum GreyFabricLotSource {
   PURCHASED
 }
 
-model GreyFabricLot {
-  id                 Int                 @id @default(autoincrement())
-  lotNumber          String              @unique @map("lot_number")
-  knitterProgramId   Int                 @map("knitter_program_id")
-  receivedDate       DateTime            @map("received_date")
-  grossWeight        Float               @map("gross_weight")
-  netWeight          Float               @map("net_weight")
-  rolls              Int
-  remarks            String?
-  source             GreyFabricLotSource @default(KNITTED)
-  greyFabricInwardId Int?                @map("grey_fabric_inward_id")
-  createdAt          DateTime            @default(now()) @map("created_at")
-  updatedAt          DateTime            @updatedAt @map("updated_at")
-  DyeingProgram      DyeingProgram[]
-  knitterProgram     KnitterProgram      @relation(fields: [knitterProgramId], references: [id])
-  greyFabricInward   GreyFabricInward?   @relation(fields: [greyFabricInwardId], references: [id])
+enum GreyFabricLotStatus {
+  AVAILABLE
+  DISPATCHED
+  CONSUMED
+  DELETED
+}
 
-  @@map("grey_fabric_lots")
+model GreyFabricLot {
+  id              Int             @id @default(autoincrement())
+  lotNumber       String          @unique
+  knitterProgramId Int?
+  knitterProgram  KnitterProgram? @relation(fields: [knitterProgramId], references: [id])
+  knitterId       Int?
+  knitter         Knitter?        @relation(fields: [knitterId], references: [id])
+  greyWeight      Decimal         @db.Decimal(10,2)
+  rollCount       Int?
+  source          GreyFabricLotSource @default(KNITTED)
+  status          GreyFabricLotStatus @default(AVAILABLE)
+  greyFabricInwardId Int?
+  greyFabricInward GreyFabricInward? @relation(fields: [greyFabricInwardId], references: [id])
+  dyeingDispatchLines DyeingDispatchLine[]
+  DyeingProgram      DyeingProgram[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model DyeingDispatch {
+  id            Int       @id @default(autoincrement())
+  dispatchDate  DateTime  @default(now())
+  dyerId        Int
+  dyer          Dyer      @relation(fields: [dyerId], references: [id])
+  remarks       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lines         DyeingDispatchLine[]
+}
+
+model DyeingDispatchLine {
+  id              Int             @id @default(autoincrement())
+  dispatchId      Int
+  dispatch        DyeingDispatch  @relation(fields: [dispatchId], references: [id])
+  greyFabricLotId Int
+  greyFabricLot   GreyFabricLot   @relation(fields: [greyFabricLotId], references: [id])
+  sentWeight      Decimal         @db.Decimal(10,2)       // weight sent (grey lot weight)
+  receivedWeight  Decimal?        @db.Decimal(10,2)       // actual received from dyer
+  receivedDate    DateTime?
+  processLossPercent Decimal?     @db.Decimal(5,2)
+  status          DyeingStatus    @default(DISPATCHED)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([greyFabricLotId])   // a grey lot can be in only one active dispatch
+}
+
+enum DyeingStatus {
+  DISPATCHED
+  RECEIVED
+  CANCELLED
 }
 
 model DyeingProgram {
