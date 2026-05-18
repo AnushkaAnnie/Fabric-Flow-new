@@ -38,7 +38,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         status = HttpStatus.INTERNAL_SERVER_ERROR;
         message = 'Internal server error';
       }
-    } catch (_e) {
+    } catch {
       // If even extracting the message fails, provide a generic fallback
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'Internal server error';
@@ -53,4 +53,3 @@ export class AllExceptionsFilter implements ExceptionFilter {
     });
   }
 }
-
