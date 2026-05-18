@@ -313,19 +313,25 @@ model YarnInward {
   receiptDate       DateTime  @default(now()) @map("receipt_date")
   millId            Int       @map("mill_id")
   mill              Mill      @relation(fields: [millId], references: [id])
+  deliveryKnitterId Int       @map("delivery_knitter_id")
+  deliveryKnitter   Knitter   @relation(fields: [deliveryKnitterId], references: [id])
   hfBatch           String?   @map("hf_batch")
   yarnCount         String?   @map("yarn_count")
   yarnQuality       String?   @map("yarn_quality")
-  totalWeight       Decimal   @map("total_weight") @db.Decimal(10, 2)
+  rlVl              String?   @map("rl_vl")                         // "RL" or "VL"
   numBags           Int?      @map("num_bags")
+  bagWeight         Decimal?  @map("bag_weight") @db.Decimal(10, 2) // default 60 in application
+  totalWeight       Decimal   @map("total_weight") @db.Decimal(10, 2) // computed: numBags * bagWeight
   ratePerKg         Decimal?  @map("rate_per_kg") @db.Decimal(10, 2)
-  totalCost         Decimal?  @map("total_cost") @db.Decimal(10, 2)
+  cgstRate          Decimal?  @map("cgst_rate") @db.Decimal(5, 2)   // default 2.5
+  sgstRate          Decimal?  @map("sgst_rate") @db.Decimal(5, 2)   // default 2.5
+  cgstAmount        Decimal?  @map("cgst_amount") @db.Decimal(10, 2)
+  sgstAmount        Decimal?  @map("sgst_amount") @db.Decimal(10, 2)
+  totalCost         Decimal?  @map("total_cost") @db.Decimal(10, 2) // taxable + taxes
   purchaseAccount   String?   @map("purchase_account")
   remarks           String?
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
-  deliveryKnitterId Int       @map("delivery_knitter_id")
-  deliveryKnitter   Knitter   @relation(fields: [deliveryKnitterId], references: [id])
   yarnLots          YarnLot[]
 
   @@map("yarn_inwards")

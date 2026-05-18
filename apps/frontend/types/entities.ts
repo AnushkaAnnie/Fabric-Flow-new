@@ -110,20 +110,25 @@ export interface YarnInward {
   receiptDate: string;
   millId: number;
   deliveryKnitterId: number;
+  mill?: { id: number; name: string };
+  deliveryKnitter?: { id: number; name: string };
   hfBatch?: string | null;
   yarnCount?: string | null;
   yarnQuality?: string | null;
-  totalWeight: number;
+  rlVl?: string | null;
   numBags?: number | null;
+  bagWeight?: number | null;
+  totalWeight: number;
   ratePerKg?: number | null;
+  cgstRate?: number | null;
+  sgstRate?: number | null;
+  cgstAmount?: number | null;
+  sgstAmount?: number | null;
   totalCost?: number | null;
   purchaseAccount?: string | null;
   remarks?: string | null;
   createdAt: string;
-  updatedAt: string;
-  mill?: { id: number; name: string } | null;
-  deliveryKnitter?: { id: number; name: string } | null;
-  yarnLots?: unknown[];
+  yarnLots?: { id: number; hfCode: string; totalWeight: number; availableWeight: number }[];
 }
 
 export interface YarnInwardFormData {
@@ -133,9 +138,12 @@ export interface YarnInwardFormData {
   hfBatch: string;
   yarnCount: string;
   yarnQuality: string;
-  totalWeight: string;
+  rlVl: string;            // 'RL' | 'VL' | ''
   numBags: string;
+  bagWeight: string;       // default '60'
   ratePerKg: string;
+  cgstRate: string;        // default '2.5'
+  sgstRate: string;        // default '2.5'
   purchaseAccount: string;
   remarks: string;
 }
