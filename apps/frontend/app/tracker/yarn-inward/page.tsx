@@ -13,16 +13,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Package2, Printer } from 'lucide-react';
-import type {
-  YarnInward,
-  YarnInwardFormData,
-  Knitter,
-} from '@/types/entities';
+import { PlusCircle, Pencil, Trash2, FileText } from 'lucide-react';
+import type { YarnInward, YarnInwardFormData, Knitter } from '@/types/entities';
 import type { Mill } from '@/types/yarn';
 
+// ── Constants ────────────────────────────────────────────────────────────────
 const SELECT_CLASS =
-  'mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-ring';
+  'mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-ring';
 
 const EMPTY_FORM: YarnInwardFormData = {
   receiptDate: new Date().toISOString().split('T')[0],
@@ -41,99 +38,154 @@ const EMPTY_FORM: YarnInwardFormData = {
   remarks: '',
 };
 
+const fmt = (v: number | null | undefined, prefix = '') =>
+  v != null ? `${prefix}${Number(v).toFixed(2)}` : '–';
+
 export default function YarnInwardPage() {
   const queryClient = useQueryClient();
+
   const [createOpen, setCreateOpen] = useState(false);
-  const [poRecord, setPoRecord] = useState<YarnInward | null>(null);
-  const [formData, setFormData] = useState<YarnInwardFormData>(EMPTY_FORM);
+  const [editRecord, setEditRecord]   = useState<YarnInward | null>(null);
+  const [poRecord,   setPoRecord]     = useState<YarnInward | null>(null);
+  const [formData,   setFormData]     = useState<YarnInwardFormData>(EMPTY_FORM);
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const { data: records = [] } = useQuery<YarnInward[]>({
     queryKey: ['yarn-inward'],
-    queryFn: async () => {
-      const { data } = await api.get<YarnInward[]>('/yarn-inward');
-      return data;
-    },
+    queryFn: async () => (await api.get<YarnInward[]>('/yarn-inward')).data,
   });
 
   const { data: mills = [] } = useQuery<Mill[]>({
     queryKey: ['mills'],
-    queryFn: async () => {
-      const { data } = await api.get<Mill[]>('/mills');
-      return data;
-    },
+    queryFn: async () => (await api.get<Mill[]>('/mills')).data,
   });
 
   const { data: knitters = [] } = useQuery<Knitter[]>({
     queryKey: ['knitters'],
-    queryFn: async () => {
-      const { data } = await api.get<Knitter[]>('/knitters');
-      return data;
-    },
+    queryFn: async () => (await api.get<Knitter[]>('/knitters')).data,
   });
 
-  // ── Mutation ───────────────────────────────────────────────────────────────
+  // ── Mutations ──────────────────────────────────────────────────────────────
   const createMutation = useMutation<YarnInward, Error, Record<string, unknown>>({
-    mutationFn: async (form: Record<string, unknown>) => {
-      const response = await api.post<YarnInward>('/yarn-inward', form);
-      return response.data;
-    },
+    mutationFn: (body) => api.post<YarnInward>('/yarn-inward', body).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['yarn-inward'] });
-      toast.success('Yarn inward record created');
-      setCreateOpen(false);
-      setFormData(EMPTY_FORM);
+      toast.success('Yarn inward created');
+      closeDialogs();
     },
-    onError: () => toast.error('Failed to create yarn inward record'),
+    onError: () => toast.error('Failed to create yarn inward'),
   });
 
-  // ── Live calculation (display only) ────────────────────────────────────────
-  const bagWeight   = parseFloat(formData.bagWeight)  || 0;
-  const numBags     = parseInt(formData.numBags)       || 0;
-  const totalWeight = numBags * bagWeight;
-  const ratePerKg   = parseFloat(formData.ratePerKg)  || 0;
-  const taxableCost = totalWeight * ratePerKg;
-  const cgstRate    = parseFloat(formData.cgstRate)    || 0;
-  const sgstRate    = parseFloat(formData.sgstRate)    || 0;
-  const cgstAmount  = taxableCost * (cgstRate / 100);
-  const sgstAmount  = taxableCost * (sgstRate / 100);
-  const totalCost   = taxableCost + cgstAmount + sgstAmount;
+  const updateMutation = useMutation<YarnInward, Error, { id: number } & Record<string, unknown>>({
+    mutationFn: ({ id, ...body }) =>
+      api.patch<YarnInward>(`/yarn-inward/${id}`, body).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['yarn-inward'] });
+      toast.success('Yarn inward updated');
+      closeDialogs();
+    },
+    onError: () => toast.error('Failed to update yarn inward'),
+  });
+
+  const deleteMutation = useMutation<unknown, Error, number>({
+    mutationFn: (id) => api.delete(`/yarn-inward/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['yarn-inward'] });
+      toast.success('Yarn inward deleted');
+    },
+    onError: () => toast.error('Failed to delete yarn inward'),
+  });
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const closeDialogs = () => {
+    setCreateOpen(false);
+    setEditRecord(null);
+    setFormData(EMPTY_FORM);
+  };
+
+  const openEditDialog = (record: YarnInward) => {
+    setEditRecord(record);
+    setFormData({
+      receiptDate:       record.receiptDate?.split('T')[0] ?? '',
+      millId:            String(record.millId ?? ''),
+      deliveryKnitterId: String(record.deliveryKnitterId ?? ''),
+      hfBatch:           record.hfBatch ?? '',
+      yarnCount:         record.yarnCount ?? '',
+      yarnQuality:       record.yarnQuality ?? '',
+      rlVl:              record.rlVl ?? '',
+      numBags:           record.numBags != null ? String(record.numBags) : '',
+      bagWeight:         record.bagWeight != null ? String(record.bagWeight) : '60',
+      ratePerKg:         record.ratePerKg != null ? String(record.ratePerKg) : '',
+      cgstRate:          record.cgstRate != null ? String(record.cgstRate) : '2.5',
+      sgstRate:          record.sgstRate != null ? String(record.sgstRate) : '2.5',
+      purchaseAccount:   record.purchaseAccount ?? 'C.N.T.LLP',
+      remarks:           record.remarks ?? '',
+    });
+  };
+
+  const confirmDelete = (id: number) => {
+    if (window.confirm('Delete this yarn inward record?')) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const handleGeneratePO = (record: YarnInward) => {
+    setPoRecord(record);
+  };
+
+  // ── Live calculation ───────────────────────────────────────────────────────
+  const numBagsVal   = parseInt(formData.numBags)    || 0;
+  const bagWeightVal = parseFloat(formData.bagWeight) || 0;
+  const ratePerKgVal = parseFloat(formData.ratePerKg) || 0;
+  const cgstRateVal  = parseFloat(formData.cgstRate)  || 0;
+  const sgstRateVal  = parseFloat(formData.sgstRate)  || 0;
+  const totalWeightCalc = numBagsVal * bagWeightVal;
+  const taxableCostCalc = totalWeightCalc * ratePerKgVal;
+  const cgstAmountCalc  = taxableCostCalc * (cgstRateVal  / 100);
+  const sgstAmountCalc  = taxableCostCalc * (sgstRateVal  / 100);
+  const totalCostCalc   = taxableCostCalc + cgstAmountCalc + sgstAmountCalc;
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate({
+    const payload: Record<string, unknown> = {
       receiptDate:       formData.receiptDate,
       millId:            parseInt(formData.millId),
       deliveryKnitterId: parseInt(formData.deliveryKnitterId),
-      hfBatch:           formData.hfBatch || undefined,
-      yarnCount:         formData.yarnCount || undefined,
+      hfBatch:           formData.hfBatch     || undefined,
+      yarnCount:         formData.yarnCount   || undefined,
       yarnQuality:       formData.yarnQuality || undefined,
-      rlVl:              formData.rlVl || undefined,
-      numBags:           formData.numBags ? parseInt(formData.numBags) : undefined,
-      bagWeight:         formData.bagWeight ? parseFloat(formData.bagWeight) : undefined,
+      rlVl:              formData.rlVl        || undefined,
+      numBags:           formData.numBags     ? parseInt(formData.numBags)    : undefined,
+      bagWeight:         formData.bagWeight   ? parseFloat(formData.bagWeight): undefined,
       ratePerKg:         parseFloat(formData.ratePerKg),
-      cgstRate:          formData.cgstRate ? parseFloat(formData.cgstRate) : undefined,
-      sgstRate:          formData.sgstRate ? parseFloat(formData.sgstRate) : undefined,
+      cgstRate:          formData.cgstRate    ? parseFloat(formData.cgstRate) : undefined,
+      sgstRate:          formData.sgstRate    ? parseFloat(formData.sgstRate) : undefined,
       purchaseAccount:   formData.purchaseAccount || undefined,
-      remarks:           formData.remarks || undefined,
-    });
+      remarks:           formData.remarks     || undefined,
+    };
+
+    if (editRecord) {
+      updateMutation.mutate({ id: editRecord.id, ...payload });
+    } else {
+      createMutation.mutate(payload);
+    }
   };
 
-  const fmt = (v: number | null | undefined) =>
-    v != null ? Number(v).toFixed(2) : '–';
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="p-6 space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Yarn Inward</h1>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Package2 className="mr-2 h-4 w-4" /> Add Inward Record
+        <Button onClick={() => { setEditRecord(null); setCreateOpen(true); }}>
+          <PlusCircle className="mr-2 h-4 w-4" /> Add Inward Record
         </Button>
       </div>
 
-      {/* ── Records Table ── */}
+      {/* ── Table ── */}
       <Card>
         <CardHeader><CardTitle>Inward Records</CardTitle></CardHeader>
         <CardContent className="overflow-x-auto">
@@ -158,15 +210,14 @@ export default function YarnInwardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {records.map((r: YarnInward) => {
-                const tw   = Number(r.totalWeight);
-                const rate = Number(r.ratePerKg ?? 0);
-                const taxable = tw * rate;
+              {records.map((r) => {
+                const tw      = Number(r.totalWeight ?? 0);
+                const rate    = Number(r.ratePerKg   ?? 0);
                 return (
                   <TableRow key={r.id}>
                     <TableCell>{new Date(r.receiptDate).toLocaleDateString()}</TableCell>
-                    <TableCell>{r.mill?.name}</TableCell>
-                    <TableCell>{r.deliveryKnitter?.name}</TableCell>
+                    <TableCell>{r.mill?.name ?? '–'}</TableCell>
+                    <TableCell>{r.deliveryKnitter?.name ?? '–'}</TableCell>
                     <TableCell>{r.hfBatch ?? '–'}</TableCell>
                     <TableCell>{r.yarnCount ?? '–'}</TableCell>
                     <TableCell>{r.rlVl ?? '–'}</TableCell>
@@ -174,14 +225,35 @@ export default function YarnInwardPage() {
                     <TableCell>{fmt(r.bagWeight)} kg</TableCell>
                     <TableCell>{fmt(r.totalWeight)} kg</TableCell>
                     <TableCell>₹{fmt(r.ratePerKg)}</TableCell>
-                    <TableCell>₹{taxable.toFixed(2)}</TableCell>
+                    <TableCell>₹{(tw * rate).toFixed(2)}</TableCell>
                     <TableCell>₹{fmt(r.cgstAmount)}</TableCell>
                     <TableCell>₹{fmt(r.sgstAmount)}</TableCell>
                     <TableCell className="font-semibold">₹{fmt(r.totalCost)}</TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm" onClick={() => setPoRecord(r)}>
-                        <Printer className="mr-1 h-3 w-3" /> PO
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="outline" size="sm"
+                          title="Edit"
+                          onClick={() => openEditDialog(r)}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="outline" size="sm"
+                          title="Delete"
+                          onClick={() => confirmDelete(r.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="outline" size="sm"
+                          title="Generate PO"
+                          onClick={() => handleGeneratePO(r)}
+                        >
+                          <FileText className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -191,13 +263,18 @@ export default function YarnInwardPage() {
         </CardContent>
       </Card>
 
-      {/* ── Create Dialog ── */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>Add Yarn Inward</DialogTitle></DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
+      {/* ── Create / Edit Dialog ── */}
+      <Dialog
+        open={createOpen || editRecord !== null}
+        onOpenChange={(open) => { if (!open) closeDialogs(); }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editRecord ? 'Edit Yarn Inward' : 'Add Yarn Inward'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
 
-            {/* Row 1: Date + Mill */}
+            {/* Row 1 – Date + Mill */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="receiptDate">Receipt Date *</Label>
@@ -212,65 +289,65 @@ export default function YarnInwardPage() {
                   value={formData.millId}
                   onChange={(e) => setFormData({ ...formData, millId: e.target.value })}
                 >
-                  <option value="">Select Mill...</option>
+                  <option value="">Select Mill…</option>
                   {mills.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </div>
             </div>
 
-            {/* Row 2: Knitter + HF Batch */}
+            {/* Row 2 – Knitter + HF Batch */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="deliveryKnitter">Issue to Knitter *</Label>
-                <select id="deliveryKnitter" required className={SELECT_CLASS}
+                <Label htmlFor="knitter">Delivery Knitter *</Label>
+                <select id="knitter" required className={SELECT_CLASS}
                   value={formData.deliveryKnitterId}
                   onChange={(e) => setFormData({ ...formData, deliveryKnitterId: e.target.value })}
                 >
-                  <option value="">Select Knitter...</option>
+                  <option value="">Select Knitter…</option>
                   {knitters.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
                 </select>
               </div>
               <div>
                 <Label htmlFor="hfBatch">HF Batch</Label>
-                <Input id="hfBatch" type="text" placeholder="e.g. HF-24"
+                <Input id="hfBatch" placeholder="e.g. HF-24"
                   value={formData.hfBatch}
                   onChange={(e) => setFormData({ ...formData, hfBatch: e.target.value })}
                 />
               </div>
             </div>
 
-            {/* Row 3: Yarn Count + Quality */}
+            {/* Row 3 – Yarn Count + Quality */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="yarnCount">Yarn Count</Label>
-                <Input id="yarnCount" type="text" placeholder="e.g. 30/1"
+                <Input id="yarnCount" placeholder="e.g. 30/1"
                   value={formData.yarnCount}
                   onChange={(e) => setFormData({ ...formData, yarnCount: e.target.value })}
                 />
               </div>
               <div>
                 <Label htmlFor="yarnQuality">Yarn Quality</Label>
-                <Input id="yarnQuality" type="text" placeholder="e.g. Super Carded"
+                <Input id="yarnQuality" placeholder="e.g. Super Carded"
                   value={formData.yarnQuality}
                   onChange={(e) => setFormData({ ...formData, yarnQuality: e.target.value })}
                 />
               </div>
             </div>
 
-            {/* Row 4: RL/VL */}
+            {/* Row 4 – RL/VL */}
             <div>
               <Label htmlFor="rlVl">RL / VL</Label>
               <select id="rlVl" className={SELECT_CLASS}
                 value={formData.rlVl}
                 onChange={(e) => setFormData({ ...formData, rlVl: e.target.value })}
               >
-                <option value="">Select...</option>
+                <option value="">Select…</option>
                 <option value="RL">RL</option>
                 <option value="VL">VL</option>
               </select>
             </div>
 
-            {/* Row 5: Bags + Bag Weight */}
+            {/* Row 5 – Bags + Bag Weight */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="numBags">Number of Bags</Label>
@@ -288,7 +365,7 @@ export default function YarnInwardPage() {
               </div>
             </div>
 
-            {/* Row 6: Rate per Kg */}
+            {/* Row 6 – Rate per Kg */}
             <div>
               <Label htmlFor="ratePerKg">Rate per Kg (₹) *</Label>
               <Input id="ratePerKg" type="number" step="0.01" min="0" required placeholder="0.00"
@@ -297,7 +374,7 @@ export default function YarnInwardPage() {
               />
             </div>
 
-            {/* Row 7: CGST + SGST */}
+            {/* Row 7 – CGST + SGST */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="cgstRate">CGST (%)</Label>
@@ -315,18 +392,18 @@ export default function YarnInwardPage() {
               </div>
             </div>
 
-            {/* Row 8: Purchase Account + Remarks */}
+            {/* Row 8 – Account + Remarks */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="purchaseAccount">Purchase Account</Label>
-                <Input id="purchaseAccount" type="text" placeholder="e.g. C.N.T.LLP"
+                <Input id="purchaseAccount" placeholder="e.g. C.N.T.LLP"
                   value={formData.purchaseAccount}
                   onChange={(e) => setFormData({ ...formData, purchaseAccount: e.target.value })}
                 />
               </div>
               <div>
                 <Label htmlFor="remarks">Remarks</Label>
-                <Input id="remarks" type="text" placeholder="Any additional notes..."
+                <Input id="remarks" placeholder="Any additional notes…"
                   value={formData.remarks}
                   onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
                 />
@@ -337,50 +414,85 @@ export default function YarnInwardPage() {
             <div className="bg-slate-800 border border-slate-700 p-4 rounded-lg space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-400">Total Weight</span>
-                <strong>{totalWeight.toFixed(2)} kg</strong>
+                <strong>{totalWeightCalc.toFixed(2)} kg</strong>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Taxable Amount</span>
-                <strong>₹{taxableCost.toFixed(2)}</strong>
+                <strong>₹{taxableCostCalc.toFixed(2)}</strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">CGST ({cgstRate}%)</span>
-                <strong>₹{cgstAmount.toFixed(2)}</strong>
+                <span className="text-slate-400">CGST ({cgstRateVal}%)</span>
+                <strong>₹{cgstAmountCalc.toFixed(2)}</strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">SGST ({sgstRate}%)</span>
-                <strong>₹{sgstAmount.toFixed(2)}</strong>
+                <span className="text-slate-400">SGST ({sgstRateVal}%)</span>
+                <strong>₹{sgstAmountCalc.toFixed(2)}</strong>
               </div>
-              <div className="flex justify-between border-t border-slate-600 pt-2 mt-2">
+              <div className="flex justify-between border-t border-slate-600 pt-2 mt-1">
                 <span className="font-semibold text-white">Total Cost</span>
-                <strong className="text-lg text-white">₹{totalCost.toFixed(2)}</strong>
+                <strong className="text-lg text-white">₹{totalCostCalc.toFixed(2)}</strong>
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Saving...' : 'Save Inward Record'}
-            </Button>
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={closeDialogs}>
+                Cancel
+              </Button>
+              <Button type="submit" className="flex-1" disabled={isPending}>
+                {isPending ? 'Saving…' : editRecord ? 'Update Record' : 'Create Record'}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* ── PO Dialog ── */}
+      {/* ── PO Preview Dialog ── */}
       {poRecord && (
         <Dialog open={!!poRecord} onOpenChange={() => setPoRecord(null)}>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Purchase Order</DialogTitle></DialogHeader>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Purchase Order</DialogTitle>
+            </DialogHeader>
             <div className="space-y-2 text-sm">
-              <p><strong>Date:</strong> {new Date(poRecord.receiptDate).toLocaleDateString()}</p>
-              <p><strong>Mill:</strong> {poRecord.mill?.name}</p>
-              <p><strong>Delivered To:</strong> {poRecord.deliveryKnitter?.name}</p>
-              <p><strong>HF Batch:</strong> {poRecord.hfBatch ?? '–'}</p>
-              <p><strong>RL/VL:</strong> {poRecord.rlVl ?? '–'}</p>
-              <p><strong>Bags:</strong> {poRecord.numBags ?? '–'} × {fmt(poRecord.bagWeight)} kg</p>
-              <p><strong>Total Weight:</strong> {fmt(poRecord.totalWeight)} kg</p>
-              <p><strong>Rate per Kg:</strong> ₹{fmt(poRecord.ratePerKg)}</p>
-              <p><strong>CGST ({poRecord.cgstRate ?? 0}%):</strong> ₹{fmt(poRecord.cgstAmount)}</p>
-              <p><strong>SGST ({poRecord.sgstRate ?? 0}%):</strong> ₹{fmt(poRecord.sgstAmount)}</p>
-              <p className="text-base font-bold"><strong>Total Cost:</strong> ₹{fmt(poRecord.totalCost)}</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                <span className="text-slate-400">Date</span>
+                <span>{new Date(poRecord.receiptDate).toLocaleDateString()}</span>
+                <span className="text-slate-400">Mill</span>
+                <span>{poRecord.mill?.name ?? '–'}</span>
+                <span className="text-slate-400">Delivered To</span>
+                <span>{poRecord.deliveryKnitter?.name ?? '–'}</span>
+                <span className="text-slate-400">HF Batch</span>
+                <span>{poRecord.hfBatch ?? '–'}</span>
+                <span className="text-slate-400">Yarn Count</span>
+                <span>{poRecord.yarnCount ?? '–'}</span>
+                <span className="text-slate-400">Quality</span>
+                <span>{poRecord.yarnQuality ?? '–'}</span>
+                <span className="text-slate-400">RL / VL</span>
+                <span>{poRecord.rlVl ?? '–'}</span>
+                <span className="text-slate-400">Bags</span>
+                <span>{poRecord.numBags ?? '–'} × {fmt(poRecord.bagWeight)} kg</span>
+                <span className="text-slate-400">Total Weight</span>
+                <span className="font-semibold">{fmt(poRecord.totalWeight)} kg</span>
+                <span className="text-slate-400">Rate / kg</span>
+                <span>₹{fmt(poRecord.ratePerKg)}</span>
+                <span className="text-slate-400">Taxable Amount</span>
+                <span>₹{((Number(poRecord.totalWeight ?? 0)) * (Number(poRecord.ratePerKg ?? 0))).toFixed(2)}</span>
+                <span className="text-slate-400">CGST ({poRecord.cgstRate ?? 0}%)</span>
+                <span>₹{fmt(poRecord.cgstAmount)}</span>
+                <span className="text-slate-400">SGST ({poRecord.sgstRate ?? 0}%)</span>
+                <span>₹{fmt(poRecord.sgstAmount)}</span>
+              </div>
+              <div className="border-t border-slate-600 pt-3 flex justify-between text-base font-bold">
+                <span>Total Cost</span>
+                <span>₹{fmt(poRecord.totalCost)}</span>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-2">
+              <Button variant="outline" onClick={() => setPoRecord(null)}>Close</Button>
+              <Button onClick={() => window.print()}>
+                <FileText className="mr-2 h-4 w-4" /> Print
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
