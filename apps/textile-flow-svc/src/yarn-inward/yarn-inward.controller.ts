@@ -9,9 +9,15 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { YarnInwardService } from './yarn-inward.service';
-import type { CreateYarnInwardDto, UpdateYarnInwardDto } from '@textile-flow/shared';
+import type {
+  CreateYarnInwardDto,
+  UpdateYarnInwardDto,
+} from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { CreateYarnInwardSchema, UpdateYarnInwardSchema } from '@textile-flow/shared';
+import {
+  CreateYarnInwardSchema,
+  UpdateYarnInwardSchema,
+} from '@textile-flow/shared';
 
 @Controller('yarn-inward')
 export class YarnInwardController {
@@ -38,7 +44,8 @@ export class YarnInwardController {
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body(new ZodValidationPipe(UpdateYarnInwardSchema)) dto: UpdateYarnInwardDto,
+    @Body(new ZodValidationPipe(UpdateYarnInwardSchema))
+    dto: UpdateYarnInwardDto,
   ) {
     return this.service.update(id, dto);
   }
@@ -48,4 +55,3 @@ export class YarnInwardController {
     return this.service.remove(id);
   }
 }
-

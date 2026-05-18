@@ -24,6 +24,8 @@ import { YarnInwardModule } from './yarn-inward/yarn-inward.module';
 import { MemosModule } from './memos/memos.module';
 import { GreyFabricInwardModule } from './grey-fabric-inward/grey-fabric-inward.module';
 import { DyeingDispatchModule } from './dyeing-dispatch/dyeing-dispatch.module';
+import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
+
 
 @Module({
   imports: [
@@ -45,6 +47,7 @@ import { DyeingDispatchModule } from './dyeing-dispatch/dyeing-dispatch.module';
     MemosModule,
     GreyFabricInwardModule,
     DyeingDispatchModule,
+    PurchaseOrdersModule,
   ],
 
   controllers: [AppController],

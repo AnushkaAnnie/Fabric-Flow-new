@@ -176,29 +176,39 @@ export class YarnInwardService {
     if (!existing) throw new NotFoundException('Yarn inward record not found');
 
     // Recalculate derived fields from updated inputs (or keep existing values)
-    const numBags    = dto.numBags    ?? existing.numBags    ?? 0;
-    const bagWeight  = dto.bagWeight  ? Number(dto.bagWeight)  : Number(existing.bagWeight  ?? 60);
-    const ratePerKg  = dto.ratePerKg  ? Number(dto.ratePerKg)  : Number(existing.ratePerKg  ?? 0);
-    const totalWeight  = numBags * bagWeight;
-    const taxableCost  = totalWeight * ratePerKg;
-    const cgstRate   = dto.cgstRate   !== undefined ? Number(dto.cgstRate)   : Number(existing.cgstRate   ?? 2.5);
-    const sgstRate   = dto.sgstRate   !== undefined ? Number(dto.sgstRate)   : Number(existing.sgstRate   ?? 2.5);
-    const cgstAmount   = taxableCost * (cgstRate / 100);
-    const sgstAmount   = taxableCost * (sgstRate / 100);
-    const totalCost    = taxableCost + cgstAmount + sgstAmount;
+    const numBags = dto.numBags ?? existing.numBags ?? 0;
+    const bagWeight = dto.bagWeight
+      ? Number(dto.bagWeight)
+      : Number(existing.bagWeight ?? 60);
+    const ratePerKg = dto.ratePerKg
+      ? Number(dto.ratePerKg)
+      : Number(existing.ratePerKg ?? 0);
+    const totalWeight = numBags * bagWeight;
+    const taxableCost = totalWeight * ratePerKg;
+    const cgstRate =
+      dto.cgstRate !== undefined
+        ? Number(dto.cgstRate)
+        : Number(existing.cgstRate ?? 2.5);
+    const sgstRate =
+      dto.sgstRate !== undefined
+        ? Number(dto.sgstRate)
+        : Number(existing.sgstRate ?? 2.5);
+    const cgstAmount = taxableCost * (cgstRate / 100);
+    const sgstAmount = taxableCost * (sgstRate / 100);
+    const totalCost = taxableCost + cgstAmount + sgstAmount;
 
     return this.prisma.yarnInward.update({
       where: { id },
       data: {
-        receiptDate:      dto.receiptDate ? new Date(dto.receiptDate) : undefined,
-        millId:           dto.millId,
+        receiptDate: dto.receiptDate ? new Date(dto.receiptDate) : undefined,
+        millId: dto.millId,
         deliveryKnitterId: dto.deliveryKnitterId,
-        hfBatch:          dto.hfBatch,
-        yarnCount:        dto.yarnCount,
-        yarnQuality:      dto.yarnQuality,
-        rlVl:             dto.rlVl,
-        purchaseAccount:  dto.purchaseAccount,
-        remarks:          dto.remarks,
+        hfBatch: dto.hfBatch,
+        yarnCount: dto.yarnCount,
+        yarnQuality: dto.yarnQuality,
+        rlVl: dto.rlVl,
+        purchaseAccount: dto.purchaseAccount,
+        remarks: dto.remarks,
         numBags,
         bagWeight,
         totalWeight,
@@ -212,7 +222,7 @@ export class YarnInwardService {
       select: {
         id: true,
         receiptDate: true,
-        mill:            { select: { id: true, name: true } },
+        mill: { select: { id: true, name: true } },
         deliveryKnitter: { select: { id: true, name: true } },
         hfBatch: true,
         yarnCount: true,
@@ -230,7 +240,14 @@ export class YarnInwardService {
         purchaseAccount: true,
         remarks: true,
         createdAt: true,
-        yarnLots: { select: { id: true, hfCode: true, totalWeight: true, availableWeight: true } },
+        yarnLots: {
+          select: {
+            id: true,
+            hfCode: true,
+            totalWeight: true,
+            availableWeight: true,
+          },
+        },
       },
     });
   }

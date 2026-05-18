@@ -394,3 +394,37 @@ model GreyFabricInward {
 
   @@map("grey_fabric_inwards")
 }
+
+model PurchaseOrder {
+  id              String   @id @default(cuid())
+  poNumber        String   @map("po_number")
+  hfCode          String   @map("hf_code")
+  supplierName    String   @map("supplier_name")
+  supplierAddress String   @map("supplier_address")
+  supplierGST     String   @map("supplier_gst")
+  agent           String?
+  date            DateTime
+  deliveryDate    DateTime @map("delivery_date")
+  createdAt       DateTime @default(now()) @map("created_at")
+  items           PurchaseOrderItem[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id               String        @id @default(cuid())
+  purchaseOrderId  String        @map("purchase_order_id")
+  purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  description      String
+  count            String
+  quality          String
+  bags             Int
+  bagWeight        Float         @map("bag_weight")
+  totalWeight      Float         @map("total_weight")
+  rate             Float
+  cgst             Float
+  sgst             Float
+
+  @@map("purchase_order_items")
+}
+
