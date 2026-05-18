@@ -11,6 +11,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Package2, Printer } from 'lucide-react';
 import type {
   YarnInward,
@@ -147,45 +149,127 @@ export default function YarnInwardPage() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Add Yarn Inward</DialogTitle></DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4 text-slate-900">
+          <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
             <div className="grid grid-cols-2 gap-4">
-              <input type="date" required className="border p-2 rounded"
-                value={formData.receiptDate}
-                onChange={(e) => setFormData({ ...formData, receiptDate: e.target.value })} />
-              <select required className="border p-2 rounded" value={formData.millId}
-                onChange={(e) => setFormData({ ...formData, millId: e.target.value })}>
-                <option value="">Select Mill...</option>
-                {mills.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-              <select required className="border p-2 rounded" value={formData.deliveryKnitterId}
-                onChange={(e) => setFormData({ ...formData, deliveryKnitterId: e.target.value })}>
-                <option value="">Issue to Knitter...</option>
-                {knitters.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
-              </select>
-              <input type="text" placeholder="HF Batch" className="border p-2 rounded"
-                value={formData.hfBatch}
-                onChange={(e) => setFormData({ ...formData, hfBatch: e.target.value })} />
-              <input type="text" placeholder="Yarn Count" className="border p-2 rounded"
-                value={formData.yarnCount}
-                onChange={(e) => setFormData({ ...formData, yarnCount: e.target.value })} />
-              <input type="text" placeholder="Yarn Quality" className="border p-2 rounded"
-                value={formData.yarnQuality}
-                onChange={(e) => setFormData({ ...formData, yarnQuality: e.target.value })} />
-              <input type="number" step="0.01" required placeholder="Total Weight (kg)"
-                className="border p-2 rounded" value={formData.totalWeight}
-                onChange={(e) => setFormData({ ...formData, totalWeight: e.target.value })} />
-              <input type="number" placeholder="Num Bags" className="border p-2 rounded"
-                value={formData.numBags}
-                onChange={(e) => setFormData({ ...formData, numBags: e.target.value })} />
-              <input type="number" step="0.01" placeholder="Rate Per Kg"
-                className="border p-2 rounded" value={formData.ratePerKg}
-                onChange={(e) => setFormData({ ...formData, ratePerKg: e.target.value })} />
-              <input type="text" placeholder="Purchase Account" className="border p-2 rounded"
-                value={formData.purchaseAccount}
-                onChange={(e) => setFormData({ ...formData, purchaseAccount: e.target.value })} />
-              <input type="text" placeholder="Remarks" className="border p-2 rounded"
-                value={formData.remarks}
-                onChange={(e) => setFormData({ ...formData, remarks: e.target.value })} />
+              <div>
+                <Label htmlFor="receiptDate">Receipt Date *</Label>
+                <Input
+                  id="receiptDate"
+                  type="date"
+                  required
+                  value={formData.receiptDate}
+                  onChange={(e) => setFormData({ ...formData, receiptDate: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="mill">Mill *</Label>
+                <select
+                  id="mill"
+                  required
+                  className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-ring"
+                  value={formData.millId}
+                  onChange={(e) => setFormData({ ...formData, millId: e.target.value })}
+                >
+                  <option value="">Select Mill...</option>
+                  {mills.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="deliveryKnitter">Issue to Knitter *</Label>
+                <select
+                  id="deliveryKnitter"
+                  required
+                  className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-ring"
+                  value={formData.deliveryKnitterId}
+                  onChange={(e) => setFormData({ ...formData, deliveryKnitterId: e.target.value })}
+                >
+                  <option value="">Issue to Knitter...</option>
+                  {knitters.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="hfBatch">HF Batch</Label>
+                <Input
+                  id="hfBatch"
+                  type="text"
+                  placeholder="e.g. HF-24"
+                  value={formData.hfBatch}
+                  onChange={(e) => setFormData({ ...formData, hfBatch: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="yarnCount">Yarn Count</Label>
+                <Input
+                  id="yarnCount"
+                  type="text"
+                  placeholder="e.g. 30/1"
+                  value={formData.yarnCount}
+                  onChange={(e) => setFormData({ ...formData, yarnCount: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="yarnQuality">Yarn Quality</Label>
+                <Input
+                  id="yarnQuality"
+                  type="text"
+                  placeholder="e.g. Super Carded"
+                  value={formData.yarnQuality}
+                  onChange={(e) => setFormData({ ...formData, yarnQuality: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="totalWeight">Total Weight (kg) *</Label>
+                <Input
+                  id="totalWeight"
+                  type="number"
+                  step="0.01"
+                  required
+                  placeholder="0.00"
+                  value={formData.totalWeight}
+                  onChange={(e) => setFormData({ ...formData, totalWeight: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="numBags">Num Bags</Label>
+                <Input
+                  id="numBags"
+                  type="number"
+                  placeholder="0"
+                  value={formData.numBags}
+                  onChange={(e) => setFormData({ ...formData, numBags: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ratePerKg">Rate Per Kg (₹)</Label>
+                <Input
+                  id="ratePerKg"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={formData.ratePerKg}
+                  onChange={(e) => setFormData({ ...formData, ratePerKg: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="purchaseAccount">Purchase Account</Label>
+                <Input
+                  id="purchaseAccount"
+                  type="text"
+                  placeholder="e.g. C.N.T.LLP"
+                  value={formData.purchaseAccount}
+                  onChange={(e) => setFormData({ ...formData, purchaseAccount: e.target.value })}
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="remarks">Remarks</Label>
+                <Input
+                  id="remarks"
+                  type="text"
+                  placeholder="Any additional notes..."
+                  value={formData.remarks}
+                  onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                />
+              </div>
             </div>
             <div className="text-sm font-semibold text-white">Calculated Cost: ₹{calculatedCost}</div>
             <Button type="submit" disabled={createMutation.isPending}>
