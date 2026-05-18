@@ -48,7 +48,29 @@ export class YarnInwardService {
 
   async findAll() {
     return this.prisma.yarnInward.findMany({
-      include: { mill: true, deliveryKnitter: true, yarnLots: true },
+      select: {
+        id: true,
+        receiptDate: true,
+        mill: { select: { id: true, name: true } },
+        deliveryKnitter: { select: { id: true, name: true } },
+        hfBatch: true,
+        yarnCount: true,
+        yarnQuality: true,
+        totalWeight: true,
+        ratePerKg: true,
+        totalCost: true,
+        purchaseAccount: true,
+        remarks: true,
+        createdAt: true,
+        yarnLots: {
+          select: {
+            id: true,
+            hfCode: true,
+            totalWeight: true,
+            availableWeight: true,
+          },
+        },
+      },
       orderBy: { receiptDate: 'desc' },
     });
   }
@@ -56,7 +78,29 @@ export class YarnInwardService {
   async findOne(id: number) {
     const record = await this.prisma.yarnInward.findUnique({
       where: { id },
-      include: { mill: true, deliveryKnitter: true, yarnLots: true },
+      select: {
+        id: true,
+        receiptDate: true,
+        mill: { select: { id: true, name: true } },
+        deliveryKnitter: { select: { id: true, name: true } },
+        hfBatch: true,
+        yarnCount: true,
+        yarnQuality: true,
+        totalWeight: true,
+        ratePerKg: true,
+        totalCost: true,
+        purchaseAccount: true,
+        remarks: true,
+        createdAt: true,
+        yarnLots: {
+          select: {
+            id: true,
+            hfCode: true,
+            totalWeight: true,
+            availableWeight: true,
+          },
+        },
+      },
     });
     if (!record) throw new NotFoundException('Yarn inward record not found');
     return record;

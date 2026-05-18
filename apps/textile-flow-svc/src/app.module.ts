@@ -1,5 +1,5 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { KnittersModule } from './knitters/knitters.module';
@@ -17,6 +17,7 @@ import { MillsModule } from './mills/mills.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { DevAuthGuard } from './common/guards/dev-auth.guard';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
 import { YarnInwardModule } from './yarn-inward/yarn-inward.module';
@@ -52,6 +53,10 @@ import { DyeingDispatchModule } from './dyeing-dispatch/dyeing-dispatch.module';
     {
       provide: APP_GUARD,
       useClass: DevAuthGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
     },
   ],
 })

@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
@@ -14,36 +14,26 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
-    // Root cause 1 fix: the original code logged error.response?.data || error.message.
-    // When the backend is unreachable (ECONNREFUSED, CORS block, static export)
-    // error.response is undefined AND error.message is "" — so {} was logged.
-    // This version surfaces the actual network/status detail so you can diagnose quickly.
-    const status = error.response?.status;
+  (error) => {
+    const method = error.config?.method?.toUpperCase() || 'REQUEST';
+    const url = error.config?.url || 'unknown';
+    const status = error.response?.status || 'NETWORK';
     const data = error.response?.data;
-    const url = error.config?.url;
-    const method = error.config?.method?.toUpperCase();
 
     if (error.response) {
-      // Backend responded with a non-2xx status
-      console.error(
-        `[API Error] ${method} ${url} → ${status}`,
-        data
-      );
-    } else if (error.request) {
-      // Request was sent but no response received (ECONNREFUSED, CORS, timeout)
-      console.error(
-        `[API Error] ${method} ${url} → No response received. ` +
-        `Is the backend running at ${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}? ` +
-        `Network error: ${error.message}`
-      );
+      console.error(`[API Error] ${method} ${url} → ${status}`, data);
+      if (!data || Object.keys(data).length === 0) {
+        console.warn(
+          'Backend returned an empty response – check the server logs for details.',
+        );
+      }
     } else {
-      // Request setup error
-      console.error(`[API Error] Request setup failed: ${error.message}`);
+      console.error(
+        `[API Error] ${method} ${url} → ${status} (network failure)`,
+      );
     }
-
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
