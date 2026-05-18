@@ -244,6 +244,7 @@ export default function YarnPage() {
             </DialogTitle>
           </DialogHeader>
           <YarnLotForm
+            key={editLot?.id || 'new'}
             initial={editLot}
             mills={mills}
             onSubmit={(data: YarnLotFormData) => {

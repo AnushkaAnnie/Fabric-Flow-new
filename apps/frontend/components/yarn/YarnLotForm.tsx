@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,27 +26,14 @@ export function YarnLotForm({
   onSubmit,
   isSubmitting,
 }: YarnLotFormProps) {
-  const [form, setForm] = useState({
-    hfCode: '',
-    millId: '',
-    totalWeight: '',
-    ratePerKg: '',
-    description: '',
-    count: '',
-  });
-
-  useEffect(() => {
-    if (initial) {
-      setForm({
-        hfCode: initial.hfCode || '',
-        millId: String(initial.millId || ''),
-        totalWeight: String(initial.totalWeight || ''),
-        ratePerKg: String(initial.ratePerKg || ''),
-        description: initial.description || '',
-        count: initial.count || '',
-      });
-    }
-  }, [initial]);
+  const [form, setForm] = useState(() => ({
+    hfCode: initial?.hfCode || '',
+    millId: initial?.millId ? String(initial.millId) : '',
+    totalWeight: initial?.totalWeight ? String(initial.totalWeight) : '',
+    ratePerKg: initial?.ratePerKg ? String(initial.ratePerKg) : '',
+    description: initial?.description || '',
+    count: initial?.count || '',
+  }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

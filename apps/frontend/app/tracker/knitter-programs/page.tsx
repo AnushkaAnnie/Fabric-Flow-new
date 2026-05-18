@@ -77,8 +77,10 @@ export default function KnitterProgramsPage() {
         programDate: new Date().toISOString().split('T')[0],
       });
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to record program';
+    onError: (error: Error) => {
+      const message =
+        (error as unknown as { response?: { data?: { message?: string } } })
+          .response?.data?.message || 'Failed to record program';
       toast.error(message);
     },
   });
