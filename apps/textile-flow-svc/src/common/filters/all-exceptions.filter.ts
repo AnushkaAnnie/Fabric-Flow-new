@@ -17,28 +17,34 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    // ----------  Log the real error ----------
+    // ---- Log the real error for the developer ----
     this.logger.error(
       `Unhandled exception on ${request.method} ${request.url}`,
-      exception instanceof Error ? exception.stack : exception,
+      exception instanceof Error ? exception.stack : String(exception),
     );
 
-    // ----------  Determine status ----------
+    // ---- Determine the status and message safely ----
     let status: number;
     let message: string | object;
 
-    if (exception instanceof HttpException) {
-      status = exception.getStatus();
-      message = exception.getResponse();
-    } else if (exception instanceof Error) {
-      status = HttpStatus.INTERNAL_SERVER_ERROR;
-      message = exception.message;
-    } else {
+    try {
+      if (exception instanceof HttpException) {
+        status = exception.getStatus();
+        message = exception.getResponse();
+      } else if (exception instanceof Error) {
+        status = HttpStatus.INTERNAL_SERVER_ERROR;
+        message = exception.message;
+      } else {
+        status = HttpStatus.INTERNAL_SERVER_ERROR;
+        message = 'Internal server error';
+      }
+    } catch (_e) {
+      // If even extracting the message fails, provide a generic fallback
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'Internal server error';
     }
 
-    // ----------  Send safe JSON ----------
+    // ---- Always return valid JSON ----
     response.status(status).json({
       statusCode: status,
       timestamp: new Date().toISOString(),
@@ -47,3 +53,4 @@ export class AllExceptionsFilter implements ExceptionFilter {
     });
   }
 }
+
