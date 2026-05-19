@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { PlusCircle, Pencil, Trash2, FileText } from 'lucide-react';
 import type { YarnInward, YarnInwardFormData, Knitter } from '@/types/entities';
 import type { Mill } from '@/types/yarn';
+import POPrint from '@/components/po/POPrint';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const SELECT_CLASS =
@@ -45,9 +46,9 @@ export default function YarnInwardPage() {
   const queryClient = useQueryClient();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [editRecord, setEditRecord]   = useState<YarnInward | null>(null);
-  const [poRecord,   setPoRecord]     = useState<YarnInward | null>(null);
-  const [formData,   setFormData]     = useState<YarnInwardFormData>(EMPTY_FORM);
+  const [editRecord, setEditRecord] = useState<YarnInward | null>(null);
+  const [poData, setPoData] = useState<YarnInward | null>(null);
+  const [formData, setFormData] = useState<YarnInwardFormData>(EMPTY_FORM);
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const { data: records = [] } = useQuery<YarnInward[]>({
@@ -106,20 +107,20 @@ export default function YarnInwardPage() {
   const openEditDialog = (record: YarnInward) => {
     setEditRecord(record);
     setFormData({
-      receiptDate:       record.receiptDate?.split('T')[0] ?? '',
-      millId:            String(record.millId ?? ''),
+      receiptDate: record.receiptDate?.split('T')[0] ?? '',
+      millId: String(record.millId ?? ''),
       deliveryKnitterId: String(record.deliveryKnitterId ?? ''),
-      hfBatch:           record.hfBatch ?? '',
-      yarnCount:         record.yarnCount ?? '',
-      yarnQuality:       record.yarnQuality ?? '',
-      rlVl:              record.rlVl ?? '',
-      numBags:           record.numBags != null ? String(record.numBags) : '',
-      bagWeight:         record.bagWeight != null ? String(record.bagWeight) : '60',
-      ratePerKg:         record.ratePerKg != null ? String(record.ratePerKg) : '',
-      cgstRate:          record.cgstRate != null ? String(record.cgstRate) : '2.5',
-      sgstRate:          record.sgstRate != null ? String(record.sgstRate) : '2.5',
-      purchaseAccount:   record.purchaseAccount ?? 'C.N.T.LLP',
-      remarks:           record.remarks ?? '',
+      hfBatch: record.hfBatch ?? '',
+      yarnCount: record.yarnCount ?? '',
+      yarnQuality: record.yarnQuality ?? '',
+      rlVl: record.rlVl ?? '',
+      numBags: record.numBags != null ? String(record.numBags) : '',
+      bagWeight: record.bagWeight != null ? String(record.bagWeight) : '60',
+      ratePerKg: record.ratePerKg != null ? String(record.ratePerKg) : '',
+      cgstRate: record.cgstRate != null ? String(record.cgstRate) : '2.5',
+      sgstRate: record.sgstRate != null ? String(record.sgstRate) : '2.5',
+      purchaseAccount: record.purchaseAccount ?? 'C.N.T.LLP',
+      remarks: record.remarks ?? '',
     });
   };
 
@@ -129,40 +130,48 @@ export default function YarnInwardPage() {
     }
   };
 
-  const handleGeneratePO = (record: YarnInward) => {
-    setPoRecord(record);
+  const handleGeneratePO = async (id: number) => {
+    try {
+      const { data } = await api.get<YarnInward>(`/yarn-inward/${id}`);
+      setPoData(data);
+      setTimeout(() => {
+        window.print();
+      }, 250);
+    } catch (err) {
+      toast.error('Failed to fetch PO details');
+    }
   };
 
   // ── Live calculation ───────────────────────────────────────────────────────
-  const numBagsVal   = parseInt(formData.numBags)    || 0;
+  const numBagsVal = parseInt(formData.numBags) || 0;
   const bagWeightVal = parseFloat(formData.bagWeight) || 0;
   const ratePerKgVal = parseFloat(formData.ratePerKg) || 0;
-  const cgstRateVal  = parseFloat(formData.cgstRate)  || 0;
-  const sgstRateVal  = parseFloat(formData.sgstRate)  || 0;
+  const cgstRateVal = parseFloat(formData.cgstRate) || 0;
+  const sgstRateVal = parseFloat(formData.sgstRate) || 0;
   const totalWeightCalc = numBagsVal * bagWeightVal;
   const taxableCostCalc = totalWeightCalc * ratePerKgVal;
-  const cgstAmountCalc  = taxableCostCalc * (cgstRateVal  / 100);
-  const sgstAmountCalc  = taxableCostCalc * (sgstRateVal  / 100);
-  const totalCostCalc   = taxableCostCalc + cgstAmountCalc + sgstAmountCalc;
+  const cgstAmountCalc = taxableCostCalc * (cgstRateVal / 100);
+  const sgstAmountCalc = taxableCostCalc * (sgstRateVal / 100);
+  const totalCostCalc = taxableCostCalc + cgstAmountCalc + sgstAmountCalc;
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload: Record<string, unknown> = {
-      receiptDate:       formData.receiptDate,
-      millId:            parseInt(formData.millId),
+      receiptDate: formData.receiptDate,
+      millId: parseInt(formData.millId),
       deliveryKnitterId: parseInt(formData.deliveryKnitterId),
-      hfBatch:           formData.hfBatch     || undefined,
-      yarnCount:         formData.yarnCount   || undefined,
-      yarnQuality:       formData.yarnQuality || undefined,
-      rlVl:              formData.rlVl        || undefined,
-      numBags:           formData.numBags     ? parseInt(formData.numBags)    : undefined,
-      bagWeight:         formData.bagWeight   ? parseFloat(formData.bagWeight): undefined,
-      ratePerKg:         parseFloat(formData.ratePerKg),
-      cgstRate:          formData.cgstRate    ? parseFloat(formData.cgstRate) : undefined,
-      sgstRate:          formData.sgstRate    ? parseFloat(formData.sgstRate) : undefined,
-      purchaseAccount:   formData.purchaseAccount || undefined,
-      remarks:           formData.remarks     || undefined,
+      hfBatch: formData.hfBatch || undefined,
+      yarnCount: formData.yarnCount || undefined,
+      yarnQuality: formData.yarnQuality || undefined,
+      rlVl: formData.rlVl || undefined,
+      numBags: formData.numBags ? parseInt(formData.numBags) : undefined,
+      bagWeight: formData.bagWeight ? parseFloat(formData.bagWeight) : undefined,
+      ratePerKg: parseFloat(formData.ratePerKg),
+      cgstRate: formData.cgstRate ? parseFloat(formData.cgstRate) : undefined,
+      sgstRate: formData.sgstRate ? parseFloat(formData.sgstRate) : undefined,
+      purchaseAccount: formData.purchaseAccount || undefined,
+      remarks: formData.remarks || undefined,
     };
 
     if (editRecord) {
@@ -211,8 +220,8 @@ export default function YarnInwardPage() {
             </TableHeader>
             <TableBody>
               {records.map((r) => {
-                const tw      = Number(r.totalWeight ?? 0);
-                const rate    = Number(r.ratePerKg   ?? 0);
+                const tw = Number(r.totalWeight ?? 0);
+                const rate = Number(r.ratePerKg ?? 0);
                 return (
                   <TableRow key={r.id}>
                     <TableCell>{new Date(r.receiptDate).toLocaleDateString()}</TableCell>
@@ -249,7 +258,7 @@ export default function YarnInwardPage() {
                         <Button
                           variant="outline" size="sm"
                           title="Generate PO"
-                          onClick={() => handleGeneratePO(r)}
+                          onClick={() => handleGeneratePO(r.id)}
                         >
                           <FileText className="h-3 w-3" />
                         </Button>
@@ -447,56 +456,33 @@ export default function YarnInwardPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── PO Preview Dialog ── */}
-      {poRecord && (
-        <Dialog open={!!poRecord} onOpenChange={() => setPoRecord(null)}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Purchase Order</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2 text-sm">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                <span className="text-slate-400">Date</span>
-                <span>{new Date(poRecord.receiptDate).toLocaleDateString()}</span>
-                <span className="text-slate-400">Mill</span>
-                <span>{poRecord.mill?.name ?? '–'}</span>
-                <span className="text-slate-400">Delivered To</span>
-                <span>{poRecord.deliveryKnitter?.name ?? '–'}</span>
-                <span className="text-slate-400">HF Batch</span>
-                <span>{poRecord.hfBatch ?? '–'}</span>
-                <span className="text-slate-400">Yarn Count</span>
-                <span>{poRecord.yarnCount ?? '–'}</span>
-                <span className="text-slate-400">Quality</span>
-                <span>{poRecord.yarnQuality ?? '–'}</span>
-                <span className="text-slate-400">RL / VL</span>
-                <span>{poRecord.rlVl ?? '–'}</span>
-                <span className="text-slate-400">Bags</span>
-                <span>{poRecord.numBags ?? '–'} × {fmt(poRecord.bagWeight)} kg</span>
-                <span className="text-slate-400">Total Weight</span>
-                <span className="font-semibold">{fmt(poRecord.totalWeight)} kg</span>
-                <span className="text-slate-400">Rate / kg</span>
-                <span>₹{fmt(poRecord.ratePerKg)}</span>
-                <span className="text-slate-400">Taxable Amount</span>
-                <span>₹{((Number(poRecord.totalWeight ?? 0)) * (Number(poRecord.ratePerKg ?? 0))).toFixed(2)}</span>
-                <span className="text-slate-400">CGST ({poRecord.cgstRate ?? 0}%)</span>
-                <span>₹{fmt(poRecord.cgstAmount)}</span>
-                <span className="text-slate-400">SGST ({poRecord.sgstRate ?? 0}%)</span>
-                <span>₹{fmt(poRecord.sgstAmount)}</span>
-              </div>
-              <div className="border-t border-slate-600 pt-3 flex justify-between text-base font-bold">
-                <span>Total Cost</span>
-                <span>₹{fmt(poRecord.totalCost)}</span>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-2">
-              <Button variant="outline" onClick={() => setPoRecord(null)}>Close</Button>
-              <Button onClick={() => window.print()}>
-                <FileText className="mr-2 h-4 w-4" /> Print
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+      {/* ── PO Print Overlay ── */}
+      {poData && (
+        <div className="hidden print:block absolute top-0 left-0 w-full bg-white">
+          <POPrint data={poData} />
+        </div>
       )}
+
+      {/* Global CSS overrides for printing */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #po-print, #po-print * {
+            visibility: visible;
+          }
+          #po-print {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: auto !important;
+            background: white !important;
+            color: black !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

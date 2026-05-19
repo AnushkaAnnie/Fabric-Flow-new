@@ -5,7 +5,7 @@ import { CreateYarnInwardDto } from '@textile-flow/shared';
 
 @Injectable()
 export class YarnInwardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(dto: CreateYarnInwardDto) {
     // Default values
