@@ -14,6 +14,7 @@ export * from './dyers';
 export * from './compacters';
 export * from './knitter-programs';
 export * from './dyeing-dispatch';
+export * from './dyeing-programs';
 
 export const MillResponseSchema = z.object({
   id: z.number().int().positive(),
