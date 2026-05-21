@@ -1,59 +1,43 @@
 import type { YarnInward } from '@/types/entities';
 
-// Robust Indian number-to-words helper (Lakhs & Crores)
-function numberToIndianWords(num: number): string {
+// Simple Indian number-to-words helper (for amount in words)
+function numberToIndianWords(n: number): string {
   const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
   const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
   const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const big = ['', 'Thousand', 'Lakh', 'Crore'];
 
-  function convert2(n: number): string {
-    if (n === 0) return '';
-    if (n < 10) return units[n];
-    if (n < 20) return teens[n - 10];
-    const unitPart = n % 10;
-    return tens[Math.floor(n / 10)] + (unitPart > 0 ? ' ' + units[unitPart] : '');
-  }
-
-  function convert3(n: number): string {
-    if (n === 0) return '';
+  function convertChunk(n: number): string {
     let str = '';
     if (n >= 100) {
-      str += units[Math.floor(n / 100)] + ' Hundred';
+      str += units[Math.floor(n / 100)] + ' Hundred ';
       n %= 100;
-      if (n > 0) str += ' ';
     }
-    str += convert2(n);
+    if (n >= 20) {
+      str += tens[Math.floor(n / 10)] + ' ';
+      n %= 10;
+      if (n > 0) str += units[n] + ' ';
+    } else if (n >= 10) {
+      str += teens[n - 10] + ' ';
+      n = 0;
+    } else if (n > 0) {
+      str += units[n] + ' ';
+    }
     return str.trim();
   }
 
-  const n = Math.floor(num);
   if (n === 0) return 'Zero';
-
-  let str = '';
-  const crore = Math.floor(n / 10000000);
-  let remaining = n % 10000000;
-  
-  if (crore > 0) {
-    str += numberToIndianWords(crore).replace(' Only', '') + ' Crore ';
+  const parts: string[] = [];
+  let i = 0;
+  while (n > 0) {
+    const chunk = n % 1000;
+    if (chunk > 0) {
+      parts.unshift(convertChunk(chunk) + (big[i] ? ' ' + big[i] : ''));
+    }
+    n = Math.floor(n / 1000);
+    i++;
   }
-
-  const lakh = Math.floor(remaining / 100000);
-  remaining %= 100000;
-  if (lakh > 0) {
-    str += convert2(lakh) + ' Lakh ';
-  }
-
-  const thousand = Math.floor(remaining / 1000);
-  remaining %= 1000;
-  if (thousand > 0) {
-    str += convert2(thousand) + ' Thousand ';
-  }
-
-  if (remaining > 0) {
-    str += convert3(remaining) + ' ';
-  }
-
-  return str.trim() + ' Only';
+  return parts.join(' ') + ' Only';
 }
 
 interface POPrintProps {

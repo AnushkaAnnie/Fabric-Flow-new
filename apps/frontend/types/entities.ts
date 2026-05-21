@@ -116,6 +116,7 @@ export interface YarnInward {
   yarnCount?: string | null;
   yarnQuality?: string | null;
   rlVl?: string | null;
+  description?: string | null;
   numBags?: number | null;
   bagWeight?: number | null;
   totalWeight: number;
@@ -139,6 +140,7 @@ export interface YarnInwardFormData {
   yarnCount: string;
   yarnQuality: string;
   rlVl: string;            // 'RL' | 'VL' | ''
+  description: string;
   numBags: string;
   bagWeight: string;       // default '60'
   ratePerKg: string;

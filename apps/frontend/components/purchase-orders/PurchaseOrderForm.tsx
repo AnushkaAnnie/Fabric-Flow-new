@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Plus, Trash2, FileText, Download } from 'lucide-react';
 import PurchaseOrderPreview from './PurchaseOrderPreview';
+import PurchaseOrderPrintTemplate from './PurchaseOrderPrintTemplate';
 import { generatePOPDF } from '@/lib/generatePOPDF';
 
 interface POItem {
@@ -555,12 +556,7 @@ export default function PurchaseOrderForm() {
                         {/* Hidden container specifically for exporting PDF of historical item */}
                         <div className="hidden">
                           <div id={`po-pdf-overlay-${po.id}`}>
-                            <PurchaseOrderPreview
-                              open={true}
-                              onClose={() => {}}
-                              data={po}
-                              onConfirm={() => {}}
-                            />
+                            <PurchaseOrderPrintTemplate data={po} />
                           </div>
                         </div>
                       </TableCell>

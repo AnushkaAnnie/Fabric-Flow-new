@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateYarnLotDto, UpdateYarnLotDto } from '@textile-flow/shared';
 
@@ -6,36 +10,55 @@ import { CreateYarnLotDto, UpdateYarnLotDto } from '@textile-flow/shared';
 export class YarnLotsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // ── Create ──────────────────────────────────────────────
   async create(dto: CreateYarnLotDto) {
-    const totalCost = dto.totalWeight * dto.ratePerKg;
+    const bags = dto.noOfBags || 0;
+    const bagWt = dto.bagWeight ?? 60;
+    const totalWeight = bags * bagWt;
+    const rate = dto.ratePerKg || 0;
+    const taxable = totalWeight * rate;
+    const cgstPct = dto.cgstRate ?? 2.5;
+    const sgstPct = dto.sgstRate ?? 2.5;
+    const cgstAmt = taxable * (cgstPct / 100);
+    const sgstAmt = taxable * (sgstPct / 100);
+    const totalCost = taxable + cgstAmt + sgstAmt;
 
     return this.prisma.yarnLot.create({
       data: {
-        hfCode: dto.hfCode,
-        description: dto.description,
-        millId: dto.millId,
-        count: dto.count,
-        ratePerKg: dto.ratePerKg,
-        totalWeight: dto.totalWeight,
+        ...dto,
+        totalWeight,
+        availableWeight: totalWeight,
+        ratePerKg: rate,
         totalCost,
-        availableWeight: dto.totalWeight,
+        cgstRate: cgstPct,
+        sgstRate: sgstPct,
+        cgstAmount: cgstAmt,
+        sgstAmount: sgstAmt,
       },
       include: { mill: true },
     });
   }
 
+  // ── Find all with optional filters ──────────────────────
   async findAll(filters?: { hfCode?: string; knitterId?: number }) {
+    const where: any = {};
+
+    if (filters?.hfCode) {
+      where.hfCode = { contains: filters.hfCode, mode: 'insensitive' };
+    }
+
     if (filters?.knitterId) {
       return this.prisma.yarnLot.findMany({
         where: {
           knitterStocks: { some: { knitterId: filters.knitterId } },
+          ...where,
         },
         include: {
           mill: true,
           knitterStocks: {
             where: { knitterId: filters.knitterId },
             select: {
-              knitter: { select: { name: true } },
+              knitter: { select: { id: true, name: true } },
               receivedWeight: true,
               remainingWeight: true,
             },
@@ -45,11 +68,6 @@ export class YarnLotsService {
       });
     }
 
-    const where: Record<string, any> = {};
-    if (filters?.hfCode) {
-      where['hfCode'] = { contains: filters.hfCode, mode: 'insensitive' };
-    }
-
     return this.prisma.yarnLot.findMany({
       where,
       include: { mill: true },
@@ -57,27 +75,43 @@ export class YarnLotsService {
     });
   }
 
+  // ── Find one ────────────────────────────────────────────
   async findOne(id: number) {
     const lot = await this.prisma.yarnLot.findUnique({
       where: { id },
-      include: { mill: true },
+      include: {
+        mill: true,
+        yarnReceipts: true,
+        knitterStocks: { include: { knitter: true } },
+      },
     });
     if (!lot) throw new NotFoundException('Yarn lot not found');
     return lot;
   }
 
+  // ── Update (edit) ───────────────────────────────────────
   async update(id: number, dto: UpdateYarnLotDto) {
     const existing = await this.findOne(id);
-    const updateData: Record<string, any> = { ...dto };
+    const updateData: any = { ...dto };
 
-    if (dto.totalWeight) {
-      updateData['totalCost'] =
-        dto.totalWeight * (dto.ratePerKg ?? existing.ratePerKg);
+    if (dto.noOfBags || dto.bagWeight) {
+      const bags = dto.noOfBags ?? existing.noOfBags ?? 0;
+      const bagWt = dto.bagWeight ?? existing.bagWeight ?? 60;
+      updateData.totalWeight = bags * bagWt;
+    }
+    if (updateData.totalWeight || dto.ratePerKg) {
+      const wt = updateData.totalWeight ?? existing.totalWeight;
+      const rate = dto.ratePerKg ?? existing.ratePerKg;
+      const taxable = wt * rate;
+      const cgst = dto.cgstRate ?? existing.cgstRate ?? 0;
+      const sgst = dto.sgstRate ?? existing.sgstRate ?? 0;
+      updateData.cgstAmount = taxable * (cgst / 100);
+      updateData.sgstAmount = taxable * (sgst / 100);
+      updateData.totalCost = taxable + updateData.cgstAmount + updateData.sgstAmount;
+    }
 
-      // if weight was zero and is now positive, it means physical receipt
-      if (existing.totalWeight === 0 && dto.totalWeight > 0) {
-        updateData['availableWeight'] = dto.totalWeight;
-      }
+    if (existing.totalWeight === 0 && updateData.totalWeight > 0) {
+      updateData.availableWeight = updateData.totalWeight;
     }
 
     return this.prisma.yarnLot.update({
@@ -87,8 +121,50 @@ export class YarnLotsService {
     });
   }
 
+  // ── Delete ──────────────────────────────────────────────
   async remove(id: number) {
     await this.findOne(id);
     return this.prisma.yarnLot.delete({ where: { id } });
+  }
+
+  // ── Issue to Knitter (yarn → knitter stock) ──────────────
+  async issue(id: number, knitterId: number, weight: number) {
+    return this.prisma.$transaction(async (tx) => {
+      const lot = await tx.yarnLot.findUniqueOrThrow({ where: { id } });
+      if (lot.availableWeight < weight) {
+        throw new BadRequestException(
+          `Insufficient inventory. Available: ${lot.availableWeight} kg, requested: ${weight} kg`,
+        );
+      }
+
+      await tx.yarnLot.update({
+        where: { id },
+        data: { availableWeight: { decrement: weight } },
+      });
+
+      await tx.knitterStock.upsert({
+        where: {
+          knitterId_yarnLotId: {
+            knitterId,
+            yarnLotId: id,
+          },
+        },
+        create: {
+          knitterId,
+          yarnLotId: id,
+          receivedWeight: weight,
+          remainingWeight: weight,
+        },
+        update: {
+          receivedWeight: { increment: weight },
+          remainingWeight: { increment: weight },
+        },
+      });
+
+      return tx.yarnLot.findUnique({
+        where: { id },
+        include: { mill: true },
+      });
+    });
   }
 }

@@ -8,6 +8,7 @@ export const CreateYarnInwardSchema = z.object({
   yarnCount: z.string().optional(),
   yarnQuality: z.string().optional(),
   rlVl: z.enum(['RL', 'VL']).optional(),
+  description: z.string().optional(),
   numBags: z.number().int().positive().optional(),
   bagWeight: z.number().positive().optional(), // default 60 in service
   ratePerKg: z.number().positive(),

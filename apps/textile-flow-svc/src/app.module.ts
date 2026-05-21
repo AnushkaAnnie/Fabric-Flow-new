@@ -10,7 +10,6 @@ import { WashTypesModule } from './wash-types/wash-types.module';
 import { YarnLotsModule } from './yarn-lots/yarn-lots.module';
 import { KnitterStockModule } from './knitter-stock/knitter-stock.module';
 import { DeliveryNotesModule } from './delivery-notes/delivery-notes.module';
-import { KnitterProgramsModule } from './knitter-programs/knitter-programs.module';
 import { GreyFabricLotsModule } from './grey-fabric-lots/grey-fabric-lots.module';
 import { DyeingProgramsModule } from './dyeing-programs/dyeing-programs.module';
 import { MillsModule } from './mills/mills.module';
@@ -20,11 +19,15 @@ import { DevAuthGuard } from './common/guards/dev-auth.guard';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
-import { YarnInwardModule } from './yarn-inward/yarn-inward.module';
 import { MemosModule } from './memos/memos.module';
-import { GreyFabricInwardModule } from './grey-fabric-inward/grey-fabric-inward.module';
-import { DyeingDispatchModule } from './dyeing-dispatch/dyeing-dispatch.module';
 import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
+import { YarnReceiptsModule } from './yarn-receipts/yarn-receipts.module';
+import { KnittingsModule } from './knittings/knittings.module';
+import { KnittingLotsModule } from './knitting-lots/knitting-lots.module';
+import { DyeingsModule } from './dyeings/dyeings.module';
+import { DyeingOrdersModule } from './dyeing-orders/dyeing-orders.module';
+import { CompactingsModule } from './compactings/compactings.module';
+import { InhouseKnittedFabricsModule } from './inhouse-knitted-fabrics/inhouse-knitted-fabrics.module';
 
 
 @Module({
@@ -37,17 +40,20 @@ import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
     YarnLotsModule,
     KnitterStockModule,
     DeliveryNotesModule,
-    KnitterProgramsModule,
     GreyFabricLotsModule,
     DyeingProgramsModule,
     MillsModule,
     PrismaModule,
     AuditLogsModule,
-    YarnInwardModule,
     MemosModule,
-    GreyFabricInwardModule,
-    DyeingDispatchModule,
     PurchaseOrdersModule,
+    YarnReceiptsModule,
+    KnittingsModule,
+    KnittingLotsModule,
+    DyeingsModule,
+    DyeingOrdersModule,
+    CompactingsModule,
+    InhouseKnittedFabricsModule,
   ],
 
   controllers: [AppController],

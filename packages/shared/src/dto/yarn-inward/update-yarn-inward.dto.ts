@@ -8,6 +8,7 @@ export const UpdateYarnInwardSchema = z.object({
   yarnCount: z.string().optional(),
   yarnQuality: z.string().optional(),
   rlVl: z.enum(['RL', 'VL']).optional(),
+  description: z.string().optional(),
   numBags: z.number().int().positive().optional(),
   bagWeight: z.number().positive().optional(),
   ratePerKg: z.number().positive().optional(),

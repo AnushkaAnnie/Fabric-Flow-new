@@ -8,25 +8,25 @@ import {
   Body,
   Query,
   ParseIntPipe,
-  UsePipes,
 } from '@nestjs/common';
 import { YarnLotsService } from './yarn-lots.service';
+import type {
+  CreateYarnLotDto,
+  UpdateYarnLotDto,
+} from '@textile-flow/shared';
 import {
   CreateYarnLotSchema,
   UpdateYarnLotSchema,
-  type CreateYarnLotDto,
-  type UpdateYarnLotDto,
 } from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 
 @Controller('yarn-lots')
 export class YarnLotsController {
-  constructor(private readonly yarnLotsService: YarnLotsService) {}
+  constructor(private readonly service: YarnLotsService) {}
 
   @Post()
-  @UsePipes(new ZodValidationPipe(CreateYarnLotSchema))
-  create(@Body() dto: CreateYarnLotDto) {
-    return this.yarnLotsService.create(dto);
+  create(@Body(new ZodValidationPipe(CreateYarnLotSchema)) dto: CreateYarnLotDto) {
+    return this.service.create(dto);
   }
 
   @Get()
@@ -34,28 +34,34 @@ export class YarnLotsController {
     @Query('hfCode') hfCode?: string,
     @Query('knitterId') knitterId?: string,
   ) {
-    return this.yarnLotsService.findAll({
-      hfCode,
-      knitterId: knitterId ? parseInt(knitterId, 10) : undefined,
-    });
+    const knitterIdNum = knitterId ? parseInt(knitterId, 10) : undefined;
+    return this.service.findAll({ hfCode, knitterId: knitterIdNum });
   }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.yarnLotsService.findOne(id);
+    return this.service.findOne(id);
   }
 
-  // FIX RC3: Changed @Put to @Patch to match frontend updateMutation
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(UpdateYarnLotSchema)) dto: UpdateYarnLotDto,
   ) {
-    return this.yarnLotsService.update(id, dto);
+    return this.service.update(id, dto);
   }
 
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
-    return this.yarnLotsService.remove(id);
+    return this.service.remove(id);
+  }
+
+  @Post(':id/issue')
+  issue(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('knitterId', ParseIntPipe) knitterId: number,
+    @Body('weight', ParseIntPipe) weight: number,
+  ) {
+    return this.service.issue(id, knitterId, weight);
   }
 }

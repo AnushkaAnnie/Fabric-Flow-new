@@ -1,23 +1,18 @@
 import { z } from 'zod';
 
-const MemoLineSchema = z.object({
-  yarnLotId: z.number().int().positive(),
-  knitterId: z.number().int().positive(),
-  yarnCount: z.string().optional(),
-  dia: z.string().optional(),
-  gg: z.string().optional(),
-  loopLength: z.string().optional(),
-  fabricName: z.string().optional(),
-  fabricColour: z.string().optional(),
-  expectedRolls: z.number().int().positive().optional(),
-  preAssignedDyerId: z.number().int().positive().optional(),
-});
+const MemoLineSchema = z
+  .object({
+    knittingLotId: z.number().int().positive(),
+    sentWeight: z.number().positive(),
+  })
+  .describe('Memo lines for new knitting-based dyeing dispatch');
 
 export const CreateMemoSchema = z.object({
+  memoNo: z.number().int().positive().optional(),
   issueDate: z.string().optional(),
-  programmeRef: z.string().optional(),
-  account: z.string().optional(),
+  dyerId: z.number().int().positive(),
   remarks: z.string().optional(),
-  lines: z.array(MemoLineSchema).min(1, 'Memo must have at least one line'),
+  lines: z.array(MemoLineSchema).min(1),
 });
+
 export type CreateMemoDto = z.infer<typeof CreateMemoSchema>;

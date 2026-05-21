@@ -16,7 +16,8 @@ import { Label } from '@/components/ui/label';
 import { PlusCircle, Pencil, Trash2, FileText } from 'lucide-react';
 import type { YarnInward, YarnInwardFormData, Knitter } from '@/types/entities';
 import type { Mill } from '@/types/yarn';
-import POPrint from '@/components/po/POPrint';
+import YarnPOPreviewModal from '@/components/po/YarnPOPreviewModal';
+import type { YarnPOData } from '@/components/po/YarnPOPrint';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const SELECT_CLASS =
@@ -30,6 +31,7 @@ const EMPTY_FORM: YarnInwardFormData = {
   yarnCount: '',
   yarnQuality: '',
   rlVl: '',
+  description: '',
   numBags: '',
   bagWeight: '60',
   ratePerKg: '',
@@ -47,7 +49,8 @@ export default function YarnInwardPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editRecord, setEditRecord] = useState<YarnInward | null>(null);
-  const [poData, setPoData] = useState<YarnInward | null>(null);
+  const [poData, setPoData] = useState<YarnPOData | null>(null);
+  const [poPreviewOpen, setPoPreviewOpen] = useState(false);
   const [formData, setFormData] = useState<YarnInwardFormData>(EMPTY_FORM);
 
   // ── Queries ────────────────────────────────────────────────────────────────
@@ -114,6 +117,7 @@ export default function YarnInwardPage() {
       yarnCount: record.yarnCount ?? '',
       yarnQuality: record.yarnQuality ?? '',
       rlVl: record.rlVl ?? '',
+      description: record.description ?? '',
       numBags: record.numBags != null ? String(record.numBags) : '',
       bagWeight: record.bagWeight != null ? String(record.bagWeight) : '60',
       ratePerKg: record.ratePerKg != null ? String(record.ratePerKg) : '',
@@ -132,12 +136,10 @@ export default function YarnInwardPage() {
 
   const handleGeneratePO = async (id: number) => {
     try {
-      const { data } = await api.get<YarnInward>(`/yarn-inward/${id}`);
+      const { data } = await api.get<YarnPOData>(`/yarn-inward/${id}`);
       setPoData(data);
-      setTimeout(() => {
-        window.print();
-      }, 250);
-    } catch (err) {
+      setPoPreviewOpen(true);
+    } catch {
       toast.error('Failed to fetch PO details');
     }
   };
@@ -165,6 +167,7 @@ export default function YarnInwardPage() {
       yarnCount: formData.yarnCount || undefined,
       yarnQuality: formData.yarnQuality || undefined,
       rlVl: formData.rlVl || undefined,
+      description: formData.description || undefined,
       numBags: formData.numBags ? parseInt(formData.numBags) : undefined,
       bagWeight: formData.bagWeight ? parseFloat(formData.bagWeight) : undefined,
       ratePerKg: parseFloat(formData.ratePerKg),
@@ -202,42 +205,37 @@ export default function YarnInwardPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
+                <TableHead>PO No.</TableHead>
                 <TableHead>Mill</TableHead>
                 <TableHead>Delivered To</TableHead>
                 <TableHead>HF Batch</TableHead>
                 <TableHead>Count</TableHead>
-                <TableHead>RL/VL</TableHead>
+                <TableHead>Quality</TableHead>
+                <TableHead>Description</TableHead>
                 <TableHead>Bags</TableHead>
                 <TableHead>Bag Wt</TableHead>
                 <TableHead>Total Wt</TableHead>
                 <TableHead>Rate</TableHead>
-                <TableHead>Taxable</TableHead>
-                <TableHead>CGST</TableHead>
-                <TableHead>SGST</TableHead>
-                <TableHead>Total Cost</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {records.map((r) => {
-                const tw = Number(r.totalWeight ?? 0);
-                const rate = Number(r.ratePerKg ?? 0);
-                return (
+              {records.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell>{new Date(r.receiptDate).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-mono text-xs font-semibold text-blue-400">
+                      PO-{String(r.id).padStart(4, '0')}
+                    </TableCell>
                     <TableCell>{r.mill?.name ?? '–'}</TableCell>
                     <TableCell>{r.deliveryKnitter?.name ?? '–'}</TableCell>
                     <TableCell>{r.hfBatch ?? '–'}</TableCell>
                     <TableCell>{r.yarnCount ?? '–'}</TableCell>
                     <TableCell>{r.rlVl ?? '–'}</TableCell>
+                    <TableCell>{r.description ?? '–'}</TableCell>
                     <TableCell>{r.numBags ?? '–'}</TableCell>
                     <TableCell>{fmt(r.bagWeight)} kg</TableCell>
                     <TableCell>{fmt(r.totalWeight)} kg</TableCell>
                     <TableCell>₹{fmt(r.ratePerKg)}</TableCell>
-                    <TableCell>₹{(tw * rate).toFixed(2)}</TableCell>
-                    <TableCell>₹{fmt(r.cgstAmount)}</TableCell>
-                    <TableCell>₹{fmt(r.sgstAmount)}</TableCell>
-                    <TableCell className="font-semibold">₹{fmt(r.totalCost)}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button
@@ -265,8 +263,7 @@ export default function YarnInwardPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                );
-              })}
+              ))}
             </TableBody>
           </Table>
         </CardContent>
@@ -343,17 +340,26 @@ export default function YarnInwardPage() {
               </div>
             </div>
 
-            {/* Row 4 – RL/VL */}
-            <div>
-              <Label htmlFor="rlVl">RL / VL</Label>
-              <select id="rlVl" className={SELECT_CLASS}
-                value={formData.rlVl}
-                onChange={(e) => setFormData({ ...formData, rlVl: e.target.value })}
-              >
-                <option value="">Select…</option>
-                <option value="RL">RL</option>
-                <option value="VL">VL</option>
-              </select>
+            {/* Row 4 – Quality & Description */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="rlVl">Quality</Label>
+                <select id="rlVl" className={SELECT_CLASS}
+                  value={formData.rlVl}
+                  onChange={(e) => setFormData({ ...formData, rlVl: e.target.value })}
+                >
+                  <option value="">Select…</option>
+                  <option value="RL">RL</option>
+                  <option value="VL">VL</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Input id="description" placeholder="Optional description..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
             </div>
 
             {/* Row 5 – Bags + Bag Weight */}
@@ -456,33 +462,11 @@ export default function YarnInwardPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── PO Print Overlay ── */}
-      {poData && (
-        <div className="hidden print:block absolute top-0 left-0 w-full bg-white">
-          <POPrint data={poData} />
-        </div>
-      )}
-
-      {/* Global CSS overrides for printing */}
-      <style>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #po-print, #po-print * {
-            visibility: visible;
-          }
-          #po-print {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100% !important;
-            height: auto !important;
-            background: white !important;
-            color: black !important;
-          }
-        }
-      `}</style>
+      {/* ── PO Preview Modal ── */}
+      <YarnPOPreviewModal
+        data={poPreviewOpen ? poData : null}
+        onClose={() => { setPoPreviewOpen(false); setPoData(null); }}
+      />
     </div>
   );
 }
