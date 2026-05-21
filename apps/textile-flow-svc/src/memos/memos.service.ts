@@ -25,7 +25,10 @@ export class MemosService {
           where: { id: line.knittingLotId },
           include: { entries: true },
         });
-        if (!lot) throw new BadRequestException(`Knitting lot ${line.knittingLotId} not found`);
+        if (!lot)
+          throw new BadRequestException(
+            `Knitting lot ${line.knittingLotId} not found`,
+          );
 
         const memoLine = await tx.memoLine.create({
           data: {
@@ -50,14 +53,20 @@ export class MemosService {
 
       return tx.memo.findUnique({
         where: { id: memo.id },
-        include: { lines: { include: { knittingLot: true, dyeing: true } }, dyer: true },
+        include: {
+          lines: { include: { knittingLot: true, dyeing: true } },
+          dyer: true,
+        },
       });
     });
   }
 
   async findAll() {
     return this.prisma.memo.findMany({
-      include: { lines: { include: { knittingLot: true, dyeing: true } }, dyer: true },
+      include: {
+        lines: { include: { knittingLot: true, dyeing: true } },
+        dyer: true,
+      },
       orderBy: { memoNo: 'desc' },
     });
   }
@@ -65,7 +74,10 @@ export class MemosService {
   async findOne(id: number) {
     return this.prisma.memo.findUniqueOrThrow({
       where: { id },
-      include: { lines: { include: { knittingLot: true, dyeing: true } }, dyer: true },
+      include: {
+        lines: { include: { knittingLot: true, dyeing: true } },
+        dyer: true,
+      },
     });
   }
 

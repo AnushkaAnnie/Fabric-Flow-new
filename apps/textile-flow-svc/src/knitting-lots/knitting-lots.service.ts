@@ -7,7 +7,11 @@ export class KnittingLotsService {
 
   async findAll() {
     return this.prisma.knittingLot.findMany({
-      include: { entries: { include: { colour: true } }, dyer: true, knitting: true },
+      include: {
+        entries: { include: { colour: true } },
+        dyer: true,
+        knitting: true,
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -15,7 +19,11 @@ export class KnittingLotsService {
   async findOne(id: number) {
     const lot = await this.prisma.knittingLot.findUnique({
       where: { id },
-      include: { entries: { include: { colour: true } }, dyer: true, knitting: true },
+      include: {
+        entries: { include: { colour: true } },
+        dyer: true,
+        knitting: true,
+      },
     });
     if (!lot) throw new NotFoundException('Knitting lot not found');
     return lot;

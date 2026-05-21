@@ -7,7 +7,9 @@ export class CompactingsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateCompactingDto) {
-    const dyeing = await this.prisma.dyeing.findUnique({ where: { lotNo: dto.lotNo } });
+    const dyeing = await this.prisma.dyeing.findUnique({
+      where: { lotNo: dto.lotNo },
+    });
     if (!dyeing) throw new BadRequestException('Lot not found in dyeing');
 
     const processLoss = dto.finalWeight

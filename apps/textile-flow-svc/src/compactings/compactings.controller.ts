@@ -9,7 +9,10 @@ export class CompactingsController {
   constructor(private readonly service: CompactingsService) {}
 
   @Post()
-  create(@Body(new ZodValidationPipe(CreateCompactingSchema)) dto: CreateCompactingDto) {
+  create(
+    @Body(new ZodValidationPipe(CreateCompactingSchema))
+    dto: CreateCompactingDto,
+  ) {
     return this.service.create(dto);
   }
 

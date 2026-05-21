@@ -9,7 +9,10 @@ export class DyeingOrdersController {
   constructor(private readonly service: DyeingOrdersService) {}
 
   @Post()
-  create(@Body(new ZodValidationPipe(CreateDyeingOrderSchema)) dto: CreateDyeingOrderDto) {
+  create(
+    @Body(new ZodValidationPipe(CreateDyeingOrderSchema))
+    dto: CreateDyeingOrderDto,
+  ) {
     return this.service.create(dto);
   }
 

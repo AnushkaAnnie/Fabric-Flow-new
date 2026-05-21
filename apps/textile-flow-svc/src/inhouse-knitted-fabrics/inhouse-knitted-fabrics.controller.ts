@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Delete, Param, Body, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Body,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { InhouseKnittedFabricsService } from './inhouse-knitted-fabrics.service';
 import type { CreateInhouseKnittedFabricDto } from '@textile-flow/shared';
 import { CreateInhouseKnittedFabricSchema } from '@textile-flow/shared';
@@ -9,7 +17,10 @@ export class InhouseKnittedFabricsController {
   constructor(private readonly service: InhouseKnittedFabricsService) {}
 
   @Post()
-  create(@Body(new ZodValidationPipe(CreateInhouseKnittedFabricSchema)) dto: CreateInhouseKnittedFabricDto) {
+  create(
+    @Body(new ZodValidationPipe(CreateInhouseKnittedFabricSchema))
+    dto: CreateInhouseKnittedFabricDto,
+  ) {
     return this.service.create(dto);
   }
 

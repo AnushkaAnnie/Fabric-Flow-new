@@ -5,12 +5,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateYarnLotDto, UpdateYarnLotDto } from '@textile-flow/shared';
+import { Prisma, YarnLot } from '@prisma/client';
 
 @Injectable()
 export class YarnLotsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ── Create ──────────────────────────────────────────────
   async create(dto: CreateYarnLotDto) {
     const bags = dto.noOfBags || 0;
     const bagWt = dto.bagWeight ?? 60;
@@ -25,7 +25,16 @@ export class YarnLotsService {
 
     return this.prisma.yarnLot.create({
       data: {
-        ...dto,
+        hfCode: dto.hfCode,
+        purchaseOrderNo: dto.purchaseOrderNo,
+        invoiceNo: dto.invoiceNo,
+        deliveryTo: dto.deliveryTo,
+        millId: dto.millId,
+        description: dto.description,
+        count: dto.count,
+        quality: dto.quality,
+        noOfBags: bags,
+        bagWeight: bagWt,
         totalWeight,
         availableWeight: totalWeight,
         ratePerKg: rate,
@@ -39,9 +48,8 @@ export class YarnLotsService {
     });
   }
 
-  // ── Find all with optional filters ──────────────────────
   async findAll(filters?: { hfCode?: string; knitterId?: number }) {
-    const where: { hfCode?: { contains: string; mode: 'insensitive' } } = {};
+    const where: Prisma.YarnLotWhereInput = {};
 
     if (filters?.hfCode) {
       where.hfCode = { contains: filters.hfCode, mode: 'insensitive' };
@@ -75,7 +83,6 @@ export class YarnLotsService {
     });
   }
 
-  // ── Find one ────────────────────────────────────────────
   async findOne(id: number) {
     const lot = await this.prisma.yarnLot.findUnique({
       where: { id },
@@ -89,37 +96,50 @@ export class YarnLotsService {
     return lot;
   }
 
-  // ── Update (edit) ───────────────────────────────────────
   async update(id: number, dto: UpdateYarnLotDto) {
     const existing = await this.findOne(id);
-    const updateData: Record<string, unknown> = { ...dto };
 
-    // typed local so arithmetic never operates on `unknown`
-    // (updateData is Record<string,unknown>; reading back gives unknown)
-    let computedTotalWeight: number | undefined;
+    // Build typed update — no any
+    const updateData: Prisma.YarnLotUpdateInput = {};
 
-    if (dto.noOfBags || dto.bagWeight) {
+    // Map DTO fields explicitly
+    if (dto.hfCode !== undefined) updateData.hfCode = dto.hfCode;
+    if (dto.purchaseOrderNo !== undefined) updateData.purchaseOrderNo = dto.purchaseOrderNo;
+    if (dto.invoiceNo !== undefined) updateData.invoiceNo = dto.invoiceNo;
+    if (dto.deliveryTo !== undefined) updateData.deliveryTo = dto.deliveryTo;
+    if (dto.millId !== undefined) updateData.mill = { connect: { id: dto.millId } };
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.count !== undefined) updateData.count = dto.count;
+    if (dto.quality !== undefined) updateData.quality = dto.quality;
+    if (dto.noOfBags !== undefined) updateData.noOfBags = dto.noOfBags;
+    if (dto.bagWeight !== undefined) updateData.bagWeight = dto.bagWeight;
+    if (dto.ratePerKg !== undefined) updateData.ratePerKg = dto.ratePerKg;
+    if (dto.cgstRate !== undefined) updateData.cgstRate = dto.cgstRate;
+    if (dto.sgstRate !== undefined) updateData.sgstRate = dto.sgstRate;
+    if (dto.status !== undefined) updateData.status = dto.status;
+
+    // Recalculate weight if bags or bagWeight change
+    if (dto.noOfBags !== undefined || dto.bagWeight !== undefined) {
       const bags = dto.noOfBags ?? existing.noOfBags ?? 0;
-      const bagWt = dto.bagWeight ?? existing.bagWeight ?? 60;
-      computedTotalWeight = bags * bagWt;
-      updateData.totalWeight = computedTotalWeight;
+      const bagWt = dto.bagWeight ?? (existing.bagWeight != null ? Number(existing.bagWeight) : 60);
+      updateData.totalWeight = bags * bagWt;
     }
 
-    if (computedTotalWeight !== undefined || dto.ratePerKg) {
-      const wt: number = computedTotalWeight ?? existing.totalWeight;
-      const rate: number = dto.ratePerKg ?? existing.ratePerKg ?? 0;
-      const taxable = wt * rate;
-      const cgst: number = dto.cgstRate ?? existing.cgstRate ?? 0;
-      const sgst: number = dto.sgstRate ?? existing.sgstRate ?? 0;
-      const cgstAmount = taxable * (cgst / 100);
-      const sgstAmount = taxable * (sgst / 100);
-      updateData.cgstAmount = cgstAmount;
-      updateData.sgstAmount = sgstAmount;
-      updateData.totalCost = taxable + cgstAmount + sgstAmount;
-    }
+    // Recalculate taxes whenever totalWeight or rate changes
+    const newWeight = updateData.totalWeight !== undefined
+      ? (updateData.totalWeight as number)
+      : existing.totalWeight;
+    const rate = dto.ratePerKg !== undefined ? dto.ratePerKg : existing.ratePerKg;
+    const taxable = newWeight * rate;
+    const cgstPct = dto.cgstRate !== undefined ? dto.cgstRate : (existing.cgstRate ?? 2.5);
+    const sgstPct = dto.sgstRate !== undefined ? dto.sgstRate : (existing.sgstRate ?? 2.5);
+    updateData.cgstAmount = taxable * (cgstPct / 100);
+    updateData.sgstAmount = taxable * (sgstPct / 100);
+    updateData.totalCost = taxable + (updateData.cgstAmount as number) + (updateData.sgstAmount as number);
 
-    if (existing.totalWeight === 0 && (computedTotalWeight ?? 0) > 0) {
-      updateData.availableWeight = computedTotalWeight;
+    // If the lot was empty and now has weight, set it as available
+    if (existing.totalWeight === 0 && newWeight > 0) {
+      updateData.availableWeight = newWeight;
     }
 
     return this.prisma.yarnLot.update({
@@ -129,13 +149,11 @@ export class YarnLotsService {
     });
   }
 
-  // ── Delete ──────────────────────────────────────────────
   async remove(id: number) {
     await this.findOne(id);
     return this.prisma.yarnLot.delete({ where: { id } });
   }
 
-  // ── Issue to Knitter (yarn → knitter stock) ──────────────
   async issue(id: number, knitterId: number, weight: number) {
     return this.prisma.$transaction(async (tx) => {
       const lot = await tx.yarnLot.findUniqueOrThrow({ where: { id } });

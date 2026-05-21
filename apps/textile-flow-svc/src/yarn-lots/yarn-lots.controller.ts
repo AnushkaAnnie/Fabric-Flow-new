@@ -10,14 +10,8 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { YarnLotsService } from './yarn-lots.service';
-import type {
-  CreateYarnLotDto,
-  UpdateYarnLotDto,
-} from '@textile-flow/shared';
-import {
-  CreateYarnLotSchema,
-  UpdateYarnLotSchema,
-} from '@textile-flow/shared';
+import type { CreateYarnLotDto, UpdateYarnLotDto } from '@textile-flow/shared';
+import { CreateYarnLotSchema, UpdateYarnLotSchema } from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 
 @Controller('yarn-lots')
@@ -25,7 +19,9 @@ export class YarnLotsController {
   constructor(private readonly service: YarnLotsService) {}
 
   @Post()
-  create(@Body(new ZodValidationPipe(CreateYarnLotSchema)) dto: CreateYarnLotDto) {
+  create(
+    @Body(new ZodValidationPipe(CreateYarnLotSchema)) dto: CreateYarnLotDto,
+  ) {
     return this.service.create(dto);
   }
 

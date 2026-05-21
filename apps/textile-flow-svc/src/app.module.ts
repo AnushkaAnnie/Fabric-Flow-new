@@ -29,7 +29,6 @@ import { DyeingOrdersModule } from './dyeing-orders/dyeing-orders.module';
 import { CompactingsModule } from './compactings/compactings.module';
 import { InhouseKnittedFabricsModule } from './inhouse-knitted-fabrics/inhouse-knitted-fabrics.module';
 
-
 @Module({
   imports: [
     KnittersModule,

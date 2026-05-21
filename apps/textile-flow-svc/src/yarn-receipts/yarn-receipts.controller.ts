@@ -9,7 +9,10 @@ export class YarnReceiptsController {
   constructor(private readonly service: YarnReceiptsService) {}
 
   @Post()
-  create(@Body(new ZodValidationPipe(CreateYarnReceiptSchema)) dto: CreateYarnReceiptDto) {
+  create(
+    @Body(new ZodValidationPipe(CreateYarnReceiptSchema))
+    dto: CreateYarnReceiptDto,
+  ) {
     return this.service.create(dto);
   }
 

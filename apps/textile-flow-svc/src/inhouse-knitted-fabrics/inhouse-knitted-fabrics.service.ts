@@ -26,7 +26,8 @@ export class InhouseKnittedFabricsService {
     const record = await this.prisma.inhouseKnittedFabric.findUnique({
       where: { id },
     });
-    if (!record) throw new NotFoundException('Inhouse knitted fabric not found');
+    if (!record)
+      throw new NotFoundException('Inhouse knitted fabric not found');
     return record;
   }
 
