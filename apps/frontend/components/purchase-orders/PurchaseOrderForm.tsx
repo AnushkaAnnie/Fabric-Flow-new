@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import type { PurchaseOrder, CreatePurchaseOrderInput } from '@/types/purchase-order';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -92,10 +93,11 @@ export default function PurchaseOrderForm() {
   });
 
   // Watch items to dynamically calculate totals and weights
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchedItems = watch('items');
 
   // Query existing POs for review and listing
-  const { data: purchaseOrders = [] } = useQuery<any[]>({
+  const { data: purchaseOrders = [] } = useQuery<PurchaseOrder[]>({
     queryKey: ['purchase-orders'],
     queryFn: async () => {
       const response = await api.get('/purchase-orders');
@@ -105,16 +107,16 @@ export default function PurchaseOrderForm() {
 
   // Create PO Mutation
   const createMutation = useMutation({
-    mutationFn: async (data: POFormData) => {
+    mutationFn: async (data: CreatePurchaseOrderInput) => {
       const response = await api.post('/purchase-orders', data);
-      return response.data;
+      return response.data as PurchaseOrder;
     },
     onSuccess: () => {
       toast.success('Purchase Order saved successfully!');
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       form.reset(EMPTY_FORM);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error(err);
       toast.error('Failed to save Purchase Order to database');
     },
