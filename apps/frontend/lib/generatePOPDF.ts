@@ -3,7 +3,6 @@ export async function generatePOPDF(poNumber: string) {
   if (!element) return;
 
   // Dynamically import html2pdf.js on the client-side to prevent SSR ReferenceError
-  // @ts-expect-error dynamic import types for html2pdf are missing
   const html2pdf = (await import('html2pdf.js')).default;
 
   const options = {

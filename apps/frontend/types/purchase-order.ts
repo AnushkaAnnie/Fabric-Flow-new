@@ -2,14 +2,16 @@ export interface PurchaseOrderItem {
   description: string;
   hsnCode?: string;
   quantity?: number;
-  rate?: number;
+  rate: number;
   amount?: number;
   // Existing form uses bags/bagWeight/totalWeight; keep flexible
-  bags?: number;
-  bagWeight?: number;
-  totalWeight?: number;
-  cgst?: number;
-  sgst?: number;
+  bags: number;
+  bagWeight: number;
+  totalWeight: number;
+  cgst: number;
+  sgst: number;
+  count: string;
+  quality: string;
 }
 
 export interface PurchaseOrder {
