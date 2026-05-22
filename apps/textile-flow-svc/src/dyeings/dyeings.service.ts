@@ -28,7 +28,7 @@ export class DyeingsService {
 
   async update(id: number, dto: UpdateDyeingDto) {
     const existing = await this.findOne(id);
-    const data: any = { ...dto };
+    const data: Record<string, unknown> = { ...dto };
 
     if (dto.finalWeight !== undefined) {
       const initial = dto.initialWeight ?? existing.initialWeight;

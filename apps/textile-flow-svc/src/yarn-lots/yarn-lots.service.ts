@@ -41,7 +41,7 @@ export class YarnLotsService {
 
   // ── Find all with optional filters ──────────────────────
   async findAll(filters?: { hfCode?: string; knitterId?: number }) {
-    const where: any = {};
+    const where: { hfCode?: { contains: string; mode: 'insensitive' } } = {};
 
     if (filters?.hfCode) {
       where.hfCode = { contains: filters.hfCode, mode: 'insensitive' };
@@ -92,7 +92,7 @@ export class YarnLotsService {
   // ── Update (edit) ───────────────────────────────────────
   async update(id: number, dto: UpdateYarnLotDto) {
     const existing = await this.findOne(id);
-    const updateData: any = { ...dto };
+    const updateData: Record<string, unknown> = { ...dto };
 
     if (dto.noOfBags || dto.bagWeight) {
       const bags = dto.noOfBags ?? existing.noOfBags ?? 0;
