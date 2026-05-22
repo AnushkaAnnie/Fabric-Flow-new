@@ -94,17 +94,23 @@ export class YarnLotsService {
     const existing = await this.findOne(id);
     const updateData: Record<string, unknown> = { ...dto };
 
+    // typed local so arithmetic never operates on `unknown`
+    // (updateData is Record<string,unknown>; reading back gives unknown)
+    let computedTotalWeight: number | undefined;
+
     if (dto.noOfBags || dto.bagWeight) {
       const bags = dto.noOfBags ?? existing.noOfBags ?? 0;
       const bagWt = dto.bagWeight ?? existing.bagWeight ?? 60;
-      updateData.totalWeight = bags * bagWt;
+      computedTotalWeight = bags * bagWt;
+      updateData.totalWeight = computedTotalWeight;
     }
-    if (updateData.totalWeight || dto.ratePerKg) {
-      const wt = updateData.totalWeight ?? existing.totalWeight;
-      const rate = dto.ratePerKg ?? existing.ratePerKg;
+
+    if (computedTotalWeight !== undefined || dto.ratePerKg) {
+      const wt: number = computedTotalWeight ?? existing.totalWeight;
+      const rate: number = dto.ratePerKg ?? existing.ratePerKg ?? 0;
       const taxable = wt * rate;
-      const cgst = dto.cgstRate ?? existing.cgstRate ?? 0;
-      const sgst = dto.sgstRate ?? existing.sgstRate ?? 0;
+      const cgst: number = dto.cgstRate ?? existing.cgstRate ?? 0;
+      const sgst: number = dto.sgstRate ?? existing.sgstRate ?? 0;
       const cgstAmount = taxable * (cgst / 100);
       const sgstAmount = taxable * (sgst / 100);
       updateData.cgstAmount = cgstAmount;
@@ -112,8 +118,8 @@ export class YarnLotsService {
       updateData.totalCost = taxable + cgstAmount + sgstAmount;
     }
 
-    if (existing.totalWeight === 0 && updateData.totalWeight > 0) {
-      updateData.availableWeight = updateData.totalWeight;
+    if (existing.totalWeight === 0 && (computedTotalWeight ?? 0) > 0) {
+      updateData.availableWeight = computedTotalWeight;
     }
 
     return this.prisma.yarnLot.update({
