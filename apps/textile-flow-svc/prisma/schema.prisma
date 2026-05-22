@@ -129,9 +129,14 @@ model WashType {
 model YarnLot {
   id              Int      @id @default(autoincrement())
   hfCode          String   @map("hf_code")
+  purchaseOrderNo String?  @map("purchase_order_no")
+  invoiceNo       String?  @map("invoice_no")
+  deliveryTo      String?  @map("delivery_to")
   description     String?
   millId          Int      @map("mill_id")
   count           String?
+  quality         String?
+  status          String?  @default("ACTIVE")
   ratePerKg       Float    @map("rate_per_kg")
   totalWeight     Float    @map("total_weight")
   totalCost       Float    @map("total_cost")

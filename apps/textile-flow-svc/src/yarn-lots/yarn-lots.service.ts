@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateYarnLotDto, UpdateYarnLotDto } from '@textile-flow/shared';
-import { Prisma, YarnLot } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class YarnLotsService {
