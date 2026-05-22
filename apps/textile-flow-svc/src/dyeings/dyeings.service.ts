@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateDyeingDto } from '@textile-flow/shared';
 import { Prisma, Dyeing } from '@prisma/client';
+import { dyeingStatusFromDc } from '../common/adapters/workflow-status.adapter';
 
 @Injectable()
 export class DyeingsService {
@@ -9,7 +10,24 @@ export class DyeingsService {
 
   async findAll() {
     return this.prisma.dyeing.findMany({
-      include: { dyer: true, colour: true, washType: true, compacter: true },
+      include: {
+        dyer: true,
+        colour: true,
+        washType: true,
+        compacter: true,
+        memoLine: {
+          include: {
+            memo: true,
+            knittingLot: {
+              include: {
+                knitting: { include: { knitter: true } },
+                entries: { include: { colour: true } },
+              },
+            },
+            greyFabricLot: { include: { knitter: true } },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -46,15 +64,44 @@ export class DyeingsService {
       }
     }
 
-    // Auto-set status when company DC and date are present
-    if (dto.companyDcNo && (dto.dateGiven || existing.dateGiven)) {
-      data.status = 'In Dyeing';
+    const knitterDcNo =
+      dto.knitterDcNo !== undefined ? dto.knitterDcNo : existing.knitterDcNo;
+    const companyDcNo =
+      dto.companyDcNo !== undefined ? dto.companyDcNo : existing.companyDcNo;
+
+    if (dto.status === undefined) {
+      data.status = dyeingStatusFromDc(knitterDcNo, companyDcNo);
     }
 
-    return this.prisma.dyeing.update({
-      where: { id },
-      data,
-      include: { dyer: true, colour: true, washType: true, compacter: true },
+    if (dto.finalWeight !== undefined) {
+      data.status = 'Completed';
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.dyeing.update({
+        where: { id },
+        data,
+        include: { dyer: true, colour: true, washType: true, compacter: true },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          tableName: 'dyeings',
+          recordId: String(id),
+          action: 'UPDATE',
+          oldData: {
+            status: existing.status,
+            finalWeight: existing.finalWeight,
+            processLoss: existing.processLoss,
+            knitterDcNo: existing.knitterDcNo,
+            companyDcNo: existing.companyDcNo,
+          },
+          newData: data as Prisma.InputJsonObject,
+          performedBy: 'system',
+        },
+      });
+
+      return updated;
     });
   }
 

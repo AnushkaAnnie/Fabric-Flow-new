@@ -21,6 +21,11 @@ import { DyeingsModule } from './dyeings/dyeings.module';
 import { DyeingOrdersModule } from './dyeing-orders/dyeing-orders.module';
 import { CompactingsModule } from './compactings/compactings.module';
 import { InhouseKnittedFabricsModule } from './inhouse-knitted-fabrics/inhouse-knitted-fabrics.module';
+import { GreyFabricLotsModule } from './grey-fabric-lots/grey-fabric-lots.module';
+import { YarnInwardModule } from './yarn-inward/yarn-inward.module';
+import { KnitterProgramsModule } from './knitter-programs/knitter-programs.module';
+import { DyeingDispatchModule } from './dyeing-dispatch/dyeing-dispatch.module';
+import { AuthModule } from './auth/auth.module';
 import { DevAuthGuard } from './common/guards/dev-auth.guard';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
@@ -28,6 +33,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 @Module({
   imports: [
     PrismaModule,
+    AuthModule,
     MillsModule,
     KnittersModule,
     DyersModule,
@@ -46,6 +52,10 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     DyeingOrdersModule,
     CompactingsModule,
     InhouseKnittedFabricsModule,
+    GreyFabricLotsModule,
+    YarnInwardModule,
+    KnitterProgramsModule,
+    DyeingDispatchModule,
   ],
 
   controllers: [AppController],

@@ -7,8 +7,11 @@ import {
 export const MemoLineSchema = z.object({
   id: z.union([z.string(), z.number()]),
   memoId: z.union([z.string(), z.number()]),
-  yarnLotId: z.union([z.string(), z.number()]),
-  knitterId: z.union([z.string(), z.number()]),
+  yarnLotId: z.union([z.string(), z.number()]).optional(),
+  knitterId: z.union([z.string(), z.number()]).optional(),
+  knittingLotId: z.union([z.string(), z.number()]).nullable().optional(),
+  greyFabricLotId: z.union([z.string(), z.number()]).nullable().optional(),
+  sentWeight: z.coerce.number().optional(),
   yarnCount: z.string().nullable().optional(),
   dia: z.string().nullable().optional(),
   gg: z.string().nullable().optional(),

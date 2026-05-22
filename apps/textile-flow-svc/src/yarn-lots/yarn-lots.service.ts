@@ -6,6 +6,10 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateYarnLotDto, UpdateYarnLotDto } from '@textile-flow/shared';
 import { Prisma } from '@prisma/client';
+import {
+  toOldYarnLookupShape,
+  yarnStatusFromInvoice,
+} from '../common/adapters/workflow-status.adapter';
 
 @Injectable()
 export class YarnLotsService {
@@ -28,6 +32,7 @@ export class YarnLotsService {
         hfCode: dto.hfCode,
         purchaseOrderNo: dto.purchaseOrderNo,
         invoiceNo: dto.invoiceNo,
+        status: yarnStatusFromInvoice(dto.invoiceNo),
         deliveryTo: dto.deliveryTo,
         millId: dto.millId,
         description: dto.description,
@@ -117,6 +122,9 @@ export class YarnLotsService {
     if (dto.cgstRate !== undefined) updateData.cgstRate = dto.cgstRate;
     if (dto.sgstRate !== undefined) updateData.sgstRate = dto.sgstRate;
     if (dto.status !== undefined) updateData.status = dto.status;
+    if (dto.invoiceNo !== undefined && dto.status === undefined) {
+      updateData.status = yarnStatusFromInvoice(dto.invoiceNo);
+    }
 
     // Recalculate weight if bags or bagWeight change
     if (dto.noOfBags !== undefined || dto.bagWeight !== undefined) {
@@ -154,7 +162,41 @@ export class YarnLotsService {
     return this.prisma.yarnLot.delete({ where: { id } });
   }
 
+  async findByHfCode(hfCode: string) {
+    const lots = await this.prisma.yarnLot.findMany({
+      where: { hfCode: { equals: hfCode, mode: 'insensitive' } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return lots.map(toOldYarnLookupShape);
+  }
+
+  async findByPurchaseOrderNo(purchaseOrderNo: string) {
+    const lots = await this.prisma.yarnLot.findMany({
+      where: {
+        purchaseOrderNo: { equals: purchaseOrderNo, mode: 'insensitive' },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return lots.map(toOldYarnLookupShape);
+  }
+
+  async listHfCodes() {
+    const lots = await this.prisma.yarnLot.findMany({
+      distinct: ['hfCode'],
+      select: { hfCode: true },
+      orderBy: { hfCode: 'asc' },
+    });
+
+    return lots.map((lot) => lot.hfCode);
+  }
+
   async issue(id: number, knitterId: number, weight: number) {
+    if (weight <= 0) {
+      throw new BadRequestException('Issue weight must be greater than zero');
+    }
+
     return this.prisma.$transaction(async (tx) => {
       const lot = await tx.yarnLot.findUniqueOrThrow({ where: { id } });
       if (lot.availableWeight < weight) {
@@ -184,6 +226,23 @@ export class YarnLotsService {
         update: {
           receivedWeight: { increment: weight },
           remainingWeight: { increment: weight },
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          tableName: 'yarn_lots',
+          recordId: String(id),
+          action: 'UPDATE',
+          oldData: {
+            availableWeight: lot.availableWeight,
+          },
+          newData: {
+            issuedToKnitterId: knitterId,
+            issuedWeight: weight,
+            availableWeight: lot.availableWeight - weight,
+          },
+          performedBy: 'system',
         },
       });
 

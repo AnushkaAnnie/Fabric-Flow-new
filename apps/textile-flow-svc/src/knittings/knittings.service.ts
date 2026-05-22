@@ -16,6 +16,10 @@ export class KnittingsService {
   async create(dto: CreateKnittingDto) {
     return this.prisma.$transaction(async (tx) => {
       for (const usage of dto.yarnUsages) {
+        if (usage.quantity <= 0) {
+          throw new BadRequestException('Yarn usage must be greater than zero');
+        }
+
         const stock = await tx.knitterStock.findFirst({
           where: {
             knitterId: dto.knitterNameId,
@@ -33,6 +37,11 @@ export class KnittingsService {
           where: { id: stock.id },
           data: { remainingWeight: { decrement: usage.quantity } },
         });
+      }
+
+      const colour = await tx.colour.findFirst({ orderBy: { id: 'asc' } });
+      if (!colour) {
+        throw new BadRequestException('At least one colour is required');
       }
 
       const knitting = await tx.knitting.create({
@@ -61,15 +70,10 @@ export class KnittingsService {
             quantity: usage.quantity,
           },
         });
-
-        await tx.yarnLot.update({
-          where: { id: usage.yarnLotId },
-          data: { availableWeight: { decrement: usage.quantity } },
-        });
       }
 
       const lotNo = `KL-${knitting.id}`;
-      await tx.knittingLot.create({
+      const knittingLot = await tx.knittingLot.create({
         data: {
           lotNo,
           knittingId: knitting.id,
@@ -78,10 +82,37 @@ export class KnittingsService {
           jobWorkNo: null,
           entries: {
             create: {
-              colourId: 1,
+              colourId: colour.id,
               weight: dto.greyFabricWeight,
             },
           },
+        },
+      });
+
+      await tx.greyFabricLot.create({
+        data: {
+          lotNumber: lotNo,
+          knitterId: dto.knitterNameId,
+          greyWeight: dto.greyFabricWeight,
+          rollCount: dto.noOfRolls,
+          source: 'KNITTED',
+          status: 'AVAILABLE',
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          tableName: 'knittings',
+          recordId: String(knitting.id),
+          action: 'CREATE',
+          oldData: undefined,
+          newData: {
+            knittingId: knitting.id,
+            knittingLotId: knittingLot.id,
+            greyWeight: dto.greyFabricWeight,
+            yarnUsages: dto.yarnUsages,
+          },
+          performedBy: 'system',
         },
       });
 

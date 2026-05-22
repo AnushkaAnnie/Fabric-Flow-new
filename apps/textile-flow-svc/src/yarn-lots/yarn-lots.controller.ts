@@ -8,6 +8,7 @@ import {
   Body,
   Query,
   ParseIntPipe,
+  ParseFloatPipe,
 } from '@nestjs/common';
 import { YarnLotsService } from './yarn-lots.service';
 import type { CreateYarnLotDto, UpdateYarnLotDto } from '@textile-flow/shared';
@@ -34,6 +35,21 @@ export class YarnLotsController {
     return this.service.findAll({ hfCode, knitterId: knitterIdNum });
   }
 
+  @Get('hf/:hfCode')
+  findByHf(@Param('hfCode') hfCode: string) {
+    return this.service.findByHfCode(hfCode);
+  }
+
+  @Get('po/:purchaseOrderNo')
+  findByPurchaseOrder(@Param('purchaseOrderNo') purchaseOrderNo: string) {
+    return this.service.findByPurchaseOrderNo(purchaseOrderNo);
+  }
+
+  @Get('list/hf-codes')
+  listHfCodes() {
+    return this.service.listHfCodes();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
@@ -56,7 +72,7 @@ export class YarnLotsController {
   issue(
     @Param('id', ParseIntPipe) id: number,
     @Body('knitterId', ParseIntPipe) knitterId: number,
-    @Body('weight', ParseIntPipe) weight: number,
+    @Body('weight', ParseFloatPipe) weight: number,
   ) {
     return this.service.issue(id, knitterId, weight);
   }

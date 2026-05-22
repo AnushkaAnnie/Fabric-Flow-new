@@ -19,7 +19,7 @@ export const UpdateYarnLotSchema = z.object({
   sgstRate: z.number().min(0).optional(),
   cgstAmount: z.number().min(0).optional(),
   sgstAmount: z.number().min(0).optional(),
-  status: z.enum(['ACTIVE', 'CLOSED']).optional(),
+  status: z.enum(['Pending', 'Received', 'In Dyeing', 'Completed']).optional(),
 });
 
 export type UpdateYarnLotDto = z.infer<typeof UpdateYarnLotSchema>;

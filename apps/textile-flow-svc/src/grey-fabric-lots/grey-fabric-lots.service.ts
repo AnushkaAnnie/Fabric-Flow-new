@@ -5,7 +5,11 @@ import { PrismaService } from '../prisma/prisma.service';
 export class GreyFabricLotsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.greyFabricLot.findMany();
+  findAll(status?: string) {
+    return this.prisma.greyFabricLot.findMany({
+      where: status ? { status: status as never } : undefined,
+      include: { knitter: true, knitterProgram: { include: { yarnLot: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 }
