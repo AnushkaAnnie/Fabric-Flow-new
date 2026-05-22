@@ -105,9 +105,11 @@ export class YarnLotsService {
       const taxable = wt * rate;
       const cgst = dto.cgstRate ?? existing.cgstRate ?? 0;
       const sgst = dto.sgstRate ?? existing.sgstRate ?? 0;
-      updateData.cgstAmount = taxable * (cgst / 100);
-      updateData.sgstAmount = taxable * (sgst / 100);
-      updateData.totalCost = taxable + updateData.cgstAmount + updateData.sgstAmount;
+      const cgstAmount = taxable * (cgst / 100);
+      const sgstAmount = taxable * (sgst / 100);
+      updateData.cgstAmount = cgstAmount;
+      updateData.sgstAmount = sgstAmount;
+      updateData.totalCost = taxable + cgstAmount + sgstAmount;
     }
 
     if (existing.totalWeight === 0 && updateData.totalWeight > 0) {
