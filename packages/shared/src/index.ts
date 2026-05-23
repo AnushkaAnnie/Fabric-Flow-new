@@ -5,4 +5,4 @@ export * from "./contracts/yarn.contracts";
 export * from "./contracts/memo.contracts";
 export * from "./contracts/delivery-note.contracts";
 export * from "./contracts/grey-fabric.contracts";
-
+export * from "./contracts/workflow.contracts";

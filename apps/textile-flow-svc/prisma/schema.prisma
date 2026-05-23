@@ -568,3 +568,22 @@ model PurchaseOrderItem {
 
   @@map("purchase_order_items")
 }
+
+enum WorkflowStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model WorkflowEvent {
+  id          Int           @id @default(autoincrement())
+  entityId    String
+  entityType  String
+  status      WorkflowStatus
+  payload     Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("workflow_events")
+}
