@@ -1,13 +1,26 @@
-// src/workflow/workflow.module.ts
 import { Module } from '@nestjs/common';
-import { WorkflowService } from './workflow.service';
-import { WorkflowController } from './workflow.controller';
 import { PrismaModule } from '../prisma/prisma.module';
+import { WorkflowStatusService } from './workflow-status.service';
+import { WorkflowTransitionService } from './workflow-transition.service';
+import { WorkflowEventsService } from './workflow-events.service';
+import { BalanceService } from './balance.service';
+import { AutofillService } from './autofill.service';
 
 @Module({
   imports: [PrismaModule],
-  providers: [WorkflowService],
-  controllers: [WorkflowController],
-  exports: [WorkflowService],
+  providers: [
+    WorkflowStatusService,
+    WorkflowTransitionService,
+    WorkflowEventsService,
+    BalanceService,
+    AutofillService,
+  ],
+  exports: [
+    WorkflowStatusService,
+    WorkflowTransitionService,
+    WorkflowEventsService,
+    BalanceService,
+    AutofillService,
+  ],
 })
 export class WorkflowModule {}

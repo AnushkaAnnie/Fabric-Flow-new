@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
 import { CompactingsService } from './compactings.service';
 import type { CreateCompactingDto } from '@textile-flow/shared';
 import { CreateCompactingSchema } from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import { UpdateCompactingDto } from './dto/update-compacting.dto';
 
 @Controller('compactings')
 export class CompactingsController {
@@ -19,5 +20,13 @@ export class CompactingsController {
   @Get()
   findAll() {
     return this.service.findAll();
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateCompactingDto,
+  ) {
+    return this.service.update(+id, dto);
   }
 }
