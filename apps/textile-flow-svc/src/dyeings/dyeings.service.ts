@@ -3,10 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UpdateDyeingDto } from '@textile-flow/shared';
 import { Prisma } from '@prisma/client';
 import { dyeingStatusFromDc } from '../common/adapters/workflow-status.adapter';
+import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
 
 @Injectable()
 export class DyeingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflowTransition: WorkflowTransitionService,
+  ) {}
 
   async findAll() {
     return this.prisma.dyeing.findMany({
@@ -57,12 +61,10 @@ export class DyeingsService {
     if (dto.status !== undefined) data.status = dto.status;
     if (dto.dateGiven !== undefined) data.dateGiven = new Date(dto.dateGiven);
 
-    // Process loss calculation
+    // Process loss = absolute weight difference (greyWeight - dyedWeight) in kg
     if (dto.finalWeight !== undefined) {
-      const initial = dto.initialWeight ?? existing.initialWeight;
-      if (initial > 0) {
-        data.processLoss = ((initial - dto.finalWeight) / initial) * 100;
-      }
+      const greyWeight = dto.initialWeight ?? existing.initialWeight;
+      data.processLoss = Number((greyWeight - dto.finalWeight).toFixed(3));
     }
 
     const knitterDcNo =
@@ -78,12 +80,26 @@ export class DyeingsService {
       data.status = 'Completed';
     }
 
+    const oldStatus = existing.status ?? 'Pending';
+
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.dyeing.update({
         where: { id },
         data,
         include: { dyer: true, colour: true, washType: true, compacter: true },
       });
+
+      // Log status change via WorkflowTransitionService
+      const newStatus =
+        typeof data.status === 'string' ? data.status : oldStatus;
+      if (newStatus !== oldStatus) {
+        await this.workflowTransition.transition(
+          'Dyeing',
+          id,
+          oldStatus,
+          newStatus,
+        );
+      }
 
       await tx.auditLog.create({
         data: {

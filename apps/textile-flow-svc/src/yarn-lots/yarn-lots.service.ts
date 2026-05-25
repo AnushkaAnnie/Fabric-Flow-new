@@ -152,9 +152,7 @@ export class YarnLotsService {
     updateData.cgstAmount = taxable * (cgstPct / 100);
     updateData.sgstAmount = taxable * (sgstPct / 100);
     updateData.totalCost =
-      taxable +
-      (updateData.cgstAmount as number) +
-      (updateData.sgstAmount as number);
+      taxable + updateData.cgstAmount + updateData.sgstAmount;
 
     // If the lot was empty and now has weight, set it as available
     if (existing.totalWeight === 0 && newWeight > 0) {

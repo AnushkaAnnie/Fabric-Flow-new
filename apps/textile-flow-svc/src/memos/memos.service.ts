@@ -5,10 +5,14 @@ import {
 } from '../prisma/prisma.service';
 import { CreateMemoDto } from '@textile-flow/shared';
 import { dyeingStatusFromDc } from '../common/adapters/workflow-status.adapter';
+import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
 
 @Injectable()
 export class MemosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workflowTransition: WorkflowTransitionService,
+  ) {}
 
   async create(dto: CreateMemoDto) {
     return this.prisma.$transaction(async (tx) => {
@@ -35,6 +39,7 @@ export class MemosService {
       for (const line of dto.lines) {
         const resolved = await this.resolveMemoLine(tx, line);
         const lineDyerId = line.preAssignedDyerId ?? fallbackDyer;
+        const initialStatus = dyeingStatusFromDc(null, null);
 
         const memoLine = await tx.memoLine.create({
           data: {
@@ -45,7 +50,7 @@ export class MemosService {
           },
         });
 
-        await tx.dyeing.create({
+        const dyeing = await tx.dyeing.create({
           data: {
             lotNo: resolved.lotNo,
             memoLineId: memoLine.id,
@@ -54,10 +59,18 @@ export class MemosService {
             colourId: resolved.colourId,
             initialWeight: line.sentWeight ?? resolved.sentWeight,
             sourceType: resolved.sourceType,
-            status: dyeingStatusFromDc(null, null),
+            status: initialStatus,
             noOfRolls: resolved.noOfRolls,
           },
         });
+
+        // Log dyeing creation via workflow
+        await this.workflowTransition.transition(
+          'Dyeing',
+          dyeing.id,
+          '',
+          initialStatus,
+        );
 
         if (resolved.greyFabricLotId) {
           await tx.greyFabricLot.update({
@@ -77,6 +90,9 @@ export class MemosService {
           performedBy: 'system',
         },
       });
+
+      // Log memo creation via workflow
+      await this.workflowTransition.transition('Memo', memo.id, '', 'Pending');
 
       return tx.memo.findUnique({
         where: { id: memo.id },

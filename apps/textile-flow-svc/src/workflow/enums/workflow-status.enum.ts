@@ -1,7 +1,10 @@
-// src/workflow/enums/workflow-status.enum.ts
+// Canonical operational workflow statuses — kept in sync with
+// packages/shared/src/contracts/workflow.contracts.ts WorkflowStatus enum
 export enum WorkflowStatus {
-  PENDING = 'PENDING',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
+  PENDING = 'Pending',
+  SENT = 'Sent',
+  RECEIVED = 'Received',
+  IN_DYEING = 'In Dyeing',
+  COMPLETED = 'Completed',
+  CANCELLED = 'Cancelled',
 }
