@@ -32,7 +32,7 @@ export class DyeingsService {
     });
   }
 
-  async findOne(id: number): Promise<Dyeing & { dyer?: any; colour?: any; washType?: any; compacter?: any }> {
+  async findOne(id: number) {
     const dyeing = await this.prisma.dyeing.findUnique({
       where: { id },
       include: { dyer: true, colour: true, washType: true, compacter: true },
