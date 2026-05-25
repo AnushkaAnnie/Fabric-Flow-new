@@ -1,5 +1,5 @@
 // src/workflow/entities/workflow-event.entity.ts
-import { WorkflowStatus } from '../enums/workflow-status.enum';
+import { WorkflowStatus } from '@textile-flow/shared';
 
 export class WorkflowEventEntity {
   id: number;

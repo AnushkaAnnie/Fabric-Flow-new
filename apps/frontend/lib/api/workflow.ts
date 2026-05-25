@@ -3,7 +3,7 @@ import {
   WorkflowEventSchema,
   type WorkflowEvent,
   type CreateWorkflowEventDto,
-  type WorkflowStatus,
+  WorkflowStatus,
 } from "@textile-flow/shared";
 
 export async function createWorkflowEvent(
