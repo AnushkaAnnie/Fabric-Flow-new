@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateDyeingDto } from '@textile-flow/shared';
-import { Prisma, Dyeing } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { dyeingStatusFromDc } from '../common/adapters/workflow-status.adapter';
 
 @Injectable()
@@ -51,7 +51,8 @@ export class DyeingsService {
     if (dto.finalWeight !== undefined) data.finalWeight = dto.finalWeight;
     if (dto.knitterDcNo !== undefined) data.knitterDcNo = dto.knitterDcNo;
     if (dto.companyDcNo !== undefined) data.companyDcNo = dto.companyDcNo;
-    if (dto.compacterId !== undefined) data.compacterId = Number(dto.compacterId);
+    if (dto.compacterId !== undefined)
+      data.compacterId = Number(dto.compacterId);
     if (dto.washTypeId !== undefined) data.washTypeId = Number(dto.washTypeId);
     if (dto.status !== undefined) data.status = dto.status;
     if (dto.dateGiven !== undefined) data.dateGiven = new Date(dto.dateGiven);
