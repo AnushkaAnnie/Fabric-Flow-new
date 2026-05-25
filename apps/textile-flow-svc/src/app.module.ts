@@ -23,6 +23,11 @@ import { CompactingsModule } from './compactings/compactings.module';
 import { InhouseKnittedFabricsModule } from './inhouse-knitted-fabrics/inhouse-knitted-fabrics.module';
 import { GreyFabricLotsModule } from './grey-fabric-lots/grey-fabric-lots.module';
 import { WorkflowModule } from './workflow/workflow.module';
+import { YarnInwardModule } from './yarn-inward/yarn-inward.module';
+import { KnitterProgramsModule } from './knitter-programs/knitter-programs.module';
+import { DyeingDispatchModule } from './dyeing-dispatch/dyeing-dispatch.module';
+import { DyeingProgramsModule } from './dyeing-programs/dyeing-programs.module';
+import { AuditLogsModule } from './audit-logs/audit-logs.module';
 
 import { AuthModule } from './auth/auth.module';
 import { DevAuthGuard } from './common/guards/dev-auth.guard';
@@ -53,7 +58,11 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     InhouseKnittedFabricsModule,
     GreyFabricLotsModule,
     WorkflowModule,
-
+    YarnInwardModule,
+    KnitterProgramsModule,
+    DyeingDispatchModule,
+    DyeingProgramsModule,
+    AuditLogsModule,
   ],
 
   controllers: [AppController],
