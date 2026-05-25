@@ -3,10 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AutofillService {
-
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async getYarnLotDetails(hfCode: string) {
     return this.prisma.yarnLot.findFirst({

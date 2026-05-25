@@ -37,6 +37,8 @@ jobs:
         run: npx turbo run db:generate --filter=textile-flow-svc
         env:
           DATABASE_URL: "postgresql://fabric:secret@localhost:5432/stub_db"
+          PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
+          PRISMA_GENERATE_SKIP_AUTOINSTALL: "1"
 
       - name: Lint
         run: npx turbo run lint

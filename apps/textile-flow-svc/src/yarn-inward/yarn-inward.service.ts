@@ -3,10 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  CreateYarnInwardDto,
-  UpdateYarnInwardDto,
-} from '@textile-flow/shared';
+import { CreateYarnInwardDto, UpdateYarnInwardDto } from '@textile-flow/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { yarnStatusFromInvoice } from '../common/adapters/workflow-status.adapter';
 
@@ -20,7 +17,9 @@ export class YarnInwardService {
       const bagWeight = dto.bagWeight ?? 60;
       const totalWeight = bags * bagWeight;
       if (totalWeight <= 0) {
-        throw new BadRequestException('Total yarn weight must be greater than zero');
+        throw new BadRequestException(
+          'Total yarn weight must be greater than zero',
+        );
       }
 
       const rate = dto.ratePerKg ?? 0;

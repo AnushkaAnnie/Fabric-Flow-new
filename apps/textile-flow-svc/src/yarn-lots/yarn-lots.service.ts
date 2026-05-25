@@ -109,10 +109,12 @@ export class YarnLotsService {
 
     // Map DTO fields explicitly
     if (dto.hfCode !== undefined) updateData.hfCode = dto.hfCode;
-    if (dto.purchaseOrderNo !== undefined) updateData.purchaseOrderNo = dto.purchaseOrderNo;
+    if (dto.purchaseOrderNo !== undefined)
+      updateData.purchaseOrderNo = dto.purchaseOrderNo;
     if (dto.invoiceNo !== undefined) updateData.invoiceNo = dto.invoiceNo;
     if (dto.deliveryTo !== undefined) updateData.deliveryTo = dto.deliveryTo;
-    if (dto.millId !== undefined) updateData.mill = { connect: { id: dto.millId } };
+    if (dto.millId !== undefined)
+      updateData.mill = { connect: { id: dto.millId } };
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.count !== undefined) updateData.count = dto.count;
     if (dto.quality !== undefined) updateData.quality = dto.quality;
@@ -129,21 +131,30 @@ export class YarnLotsService {
     // Recalculate weight if bags or bagWeight change
     if (dto.noOfBags !== undefined || dto.bagWeight !== undefined) {
       const bags = dto.noOfBags ?? existing.noOfBags ?? 0;
-      const bagWt = dto.bagWeight ?? (existing.bagWeight != null ? Number(existing.bagWeight) : 60);
+      const bagWt =
+        dto.bagWeight ??
+        (existing.bagWeight != null ? Number(existing.bagWeight) : 60);
       updateData.totalWeight = bags * bagWt;
     }
 
     // Recalculate taxes whenever totalWeight or rate changes
-    const newWeight = updateData.totalWeight !== undefined
-      ? (updateData.totalWeight as number)
-      : existing.totalWeight;
-    const rate = dto.ratePerKg !== undefined ? dto.ratePerKg : existing.ratePerKg;
+    const newWeight =
+      updateData.totalWeight !== undefined
+        ? (updateData.totalWeight as number)
+        : existing.totalWeight;
+    const rate =
+      dto.ratePerKg !== undefined ? dto.ratePerKg : existing.ratePerKg;
     const taxable = newWeight * rate;
-    const cgstPct = dto.cgstRate !== undefined ? dto.cgstRate : (existing.cgstRate ?? 2.5);
-    const sgstPct = dto.sgstRate !== undefined ? dto.sgstRate : (existing.sgstRate ?? 2.5);
+    const cgstPct =
+      dto.cgstRate !== undefined ? dto.cgstRate : (existing.cgstRate ?? 2.5);
+    const sgstPct =
+      dto.sgstRate !== undefined ? dto.sgstRate : (existing.sgstRate ?? 2.5);
     updateData.cgstAmount = taxable * (cgstPct / 100);
     updateData.sgstAmount = taxable * (sgstPct / 100);
-    updateData.totalCost = taxable + (updateData.cgstAmount as number) + (updateData.sgstAmount as number);
+    updateData.totalCost =
+      taxable +
+      (updateData.cgstAmount as number) +
+      (updateData.sgstAmount as number);
 
     // If the lot was empty and now has weight, set it as available
     if (existing.totalWeight === 0 && newWeight > 0) {

@@ -9,7 +9,8 @@ type AuthUser = {
 
 @Injectable()
 export class AuthService {
-  private readonly jwtSecret = process.env.JWT_SECRET ?? 'fabric-flow-dev-secret';
+  private readonly jwtSecret =
+    process.env.JWT_SECRET ?? 'fabric-flow-dev-secret';
 
   login(username?: string, password?: string) {
     const configuredUser = process.env.AUTH_USERNAME ?? 'admin';

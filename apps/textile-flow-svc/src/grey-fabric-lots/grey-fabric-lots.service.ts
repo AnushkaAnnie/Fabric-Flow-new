@@ -8,7 +8,10 @@ export class GreyFabricLotsService {
   findAll(status?: string) {
     return this.prisma.greyFabricLot.findMany({
       where: status ? { status: status as never } : undefined,
-      include: { knitter: true, knitterProgram: { include: { yarnLot: true } } },
+      include: {
+        knitter: true,
+        knitterProgram: { include: { yarnLot: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }

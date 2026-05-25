@@ -23,10 +23,7 @@ export class CompactingsController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdateCompactingDto,
-  ) {
+  update(@Param('id') id: string, @Body() dto: UpdateCompactingDto) {
     return this.service.update(+id, dto);
   }
 }

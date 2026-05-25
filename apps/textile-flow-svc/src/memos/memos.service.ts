@@ -199,11 +199,10 @@ export class MemosService {
     );
   }
 
-  private async firstColourId(
-    tx: PrismaTransaction,
-  ) {
+  private async firstColourId(tx: PrismaTransaction) {
     const colour = await tx.colour.findFirst({ orderBy: { id: 'asc' } });
-    if (!colour) throw new BadRequestException('At least one colour is required');
+    if (!colour)
+      throw new BadRequestException('At least one colour is required');
     return colour.id;
   }
 

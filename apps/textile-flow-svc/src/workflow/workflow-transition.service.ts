@@ -3,10 +3,7 @@ import { WorkflowEventsService } from './workflow-events.service';
 
 @Injectable()
 export class WorkflowTransitionService {
-
-  constructor(
-    private readonly workflowEvents: WorkflowEventsService,
-  ) {}
+  constructor(private readonly workflowEvents: WorkflowEventsService) {}
 
   async transition(
     entityType: string,

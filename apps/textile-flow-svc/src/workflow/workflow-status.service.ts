@@ -11,13 +11,11 @@ export enum WorkflowStatus {
 
 @Injectable()
 export class WorkflowStatusService {
-
   deriveDyeingStatus(
     knitterDcNo?: string | null,
     companyDcNo?: string | null,
     finalWeight?: number | null,
   ): WorkflowStatus {
-
     if (finalWeight) {
       return WorkflowStatus.COMPLETED;
     }
@@ -37,7 +35,6 @@ export class WorkflowStatusService {
     knitterDcNo?: string | null,
     companyDcNo?: string | null,
   ): WorkflowStatus {
-
     if (knitterDcNo && companyDcNo) {
       return WorkflowStatus.IN_DYEING;
     }
