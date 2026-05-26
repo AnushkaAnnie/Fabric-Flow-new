@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateDyeingDto, WorkflowStatus } from '@textile-flow/shared';
 import { Prisma } from '@prisma/client';
-import { dyeingStatusFromDc } from '../common/adapters/workflow-status.adapter';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
 
 @Injectable()
@@ -72,10 +71,18 @@ export class DyeingsService {
     const companyDcNo =
       dto.companyDcNo !== undefined ? dto.companyDcNo : existing.companyDcNo;
 
+    // Explicit IN_DYEING transition when both DCs are present
     if (dto.status === undefined) {
-      data.status = dyeingStatusFromDc(knitterDcNo, companyDcNo);
+      if (knitterDcNo && companyDcNo) {
+        data.status = WorkflowStatus.IN_DYEING;
+      } else if (knitterDcNo) {
+        data.status = WorkflowStatus.SENT;
+      } else {
+        data.status = WorkflowStatus.PENDING;
+      }
     }
 
+    // Completion always overrides
     if (dto.finalWeight !== undefined) {
       data.status = WorkflowStatus.COMPLETED;
     }
@@ -89,7 +96,7 @@ export class DyeingsService {
         include: { dyer: true, colour: true, washType: true, compacter: true },
       });
 
-      // Log status change via WorkflowTransitionService
+      // Log explicit status transition
       const newStatus =
         typeof data.status === 'string' ? data.status : oldStatus;
       if (newStatus !== oldStatus) {

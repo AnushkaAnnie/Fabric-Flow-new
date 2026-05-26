@@ -205,7 +205,9 @@ model Knitting {
   gauge               String?
   fabricDescriptionId Int                   @map("fabric_description_id")
   greyFabricWeight    Float                 @map("grey_fabric_weight")
-  receivedWeight      Float                 @map("received_weight")
+  receivedWeight      Float?                @map("received_weight")
+  shortage            Float?                @map("shortage")
+  status              String?               @map("status")
   noOfRolls           Int                   @map("no_of_rolls")
   dateGiven           DateTime              @map("date_given")
   createdAt           DateTime              @default(now()) @map("created_at")
@@ -436,6 +438,7 @@ model Compacting {
   colour      Colour?   @relation(fields: [colourId], references: [id])
   finalWeight Float?    @map("final_weight")
   processLoss Float?    @map("process_loss")
+  status      String?   @map("status")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
