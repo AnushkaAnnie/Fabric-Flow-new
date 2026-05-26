@@ -6,12 +6,14 @@ import {
 import { CreateMemoDto, WorkflowStatus } from '@textile-flow/shared';
 import { dyeingStatusFromDc } from '../common/adapters/workflow-status.adapter';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
+import { InventoryService } from '../inventory/inventory.service';
 
 @Injectable()
 export class MemosService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly workflowTransition: WorkflowTransitionService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   async create(dto: CreateMemoDto) {
@@ -78,6 +80,19 @@ export class MemosService {
             data: { status: WorkflowStatus.SENT },
           });
         }
+
+        await this.inventoryService.postInventoryMovement(
+          {
+            entityType: 'Memo',
+            entityId: memo.id,
+            itemType: 'GREY',
+            outwardWeight: line.sentWeight ?? resolved.sentWeight,
+            lotNo: resolved.lotNo,
+            stage: 'DYEING',
+            remarks: 'Grey fabric sent to dyeing',
+          },
+          tx,
+        );
       }
 
       await tx.auditLog.create({

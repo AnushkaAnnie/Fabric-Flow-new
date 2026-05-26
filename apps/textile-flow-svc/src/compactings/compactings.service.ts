@@ -6,12 +6,14 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCompactingDto, WorkflowStatus } from '@textile-flow/shared';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
+import { InventoryService } from '../inventory/inventory.service';
 
 @Injectable()
 export class CompactingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly workflowTransition: WorkflowTransitionService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   async create(dto: CreateCompactingDto) {
@@ -68,6 +70,18 @@ export class CompactingsService {
         },
       });
 
+      await this.inventoryService.postInventoryMovement(
+        {
+          entityType: 'Compacting',
+          entityId: compacting.id,
+          itemType: 'DYED',
+          outwardWeight: dyeing.finalWeight ?? 0,
+          lotNo: compacting.lotNo,
+          remarks: 'Dyed fabric sent for compacting',
+        },
+        tx,
+      );
+
       return compacting;
     });
   }
@@ -123,6 +137,37 @@ export class CompactingsService {
         oldStatus,
         WorkflowStatus.COMPLETED,
       );
+
+      await this.inventoryService.postInventoryMovement(
+        {
+          entityType: 'Compacting',
+          entityId: updated.id,
+          itemType: 'COMPACT',
+          inwardWeight: finalWeight,
+          lotNo: updated.lotNo,
+          stage: 'COMPACT',
+          remarks: 'Compacted fabric received',
+        },
+        tx,
+      );
+
+      if (
+        processLoss !== null &&
+        processLoss !== undefined &&
+        processLoss > 0
+      ) {
+        await this.inventoryService.postInventoryMovement(
+          {
+            entityType: 'Compacting',
+            entityId: updated.id,
+            itemType: 'LOSS',
+            outwardWeight: processLoss,
+            lotNo: updated.lotNo,
+            remarks: 'Compacting process loss',
+          },
+          tx,
+        );
+      }
 
       return updated;
     });

@@ -600,3 +600,25 @@ model WorkflowEvent {
 
   @@map("workflow_events")
 }
+
+model InventoryLedger {
+  id              Int       @id @default(autoincrement())
+  entityType      String
+  entityId        Int
+  itemType        String
+  inwardWeight    Float?
+  outwardWeight   Float?
+  balanceWeight   Float
+  referenceNo     String?
+  lotNo           String?
+  stage           String?
+  remarks         String?
+  createdAt       DateTime  @default(now())
+
+  @@index([entityType, entityId])
+  @@index([itemType])
+  @@index([lotNo])
+  @@index([stage])
+  @@map("inventory_ledgers")
+}
+

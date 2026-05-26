@@ -3,12 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UpdateDyeingDto, WorkflowStatus } from '@textile-flow/shared';
 import { Prisma } from '@prisma/client';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
+import { InventoryService } from '../inventory/inventory.service';
 
 @Injectable()
 export class DyeingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly workflowTransition: WorkflowTransitionService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   async findAll() {
@@ -106,6 +108,39 @@ export class DyeingsService {
           oldStatus,
           newStatus,
         );
+      }
+
+      if (dto.finalWeight !== undefined && existing.finalWeight === null) {
+        await this.inventoryService.postInventoryMovement(
+          {
+            entityType: 'Dyeing',
+            entityId: updated.id,
+            itemType: 'DYED',
+            inwardWeight: dto.finalWeight,
+            lotNo: updated.lotNo,
+            stage: 'DYED',
+            remarks: 'Dyed fabric received',
+          },
+          tx,
+        );
+
+        if (
+          updated.processLoss !== null &&
+          updated.processLoss !== undefined &&
+          updated.processLoss > 0
+        ) {
+          await this.inventoryService.postInventoryMovement(
+            {
+              entityType: 'Dyeing',
+              entityId: updated.id,
+              itemType: 'LOSS',
+              outwardWeight: updated.processLoss,
+              lotNo: updated.lotNo,
+              remarks: 'Dyeing process loss',
+            },
+            tx,
+          );
+        }
       }
 
       await tx.auditLog.create({

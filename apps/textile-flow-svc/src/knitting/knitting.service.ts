@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WorkflowStatus } from '@textile-flow/shared';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
+import { InventoryService } from '../inventory/inventory.service';
 
 @Injectable()
 export class KnittingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly workflowTransition: WorkflowTransitionService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   /**
@@ -44,6 +46,20 @@ export class KnittingService {
         knitting.id,
         knitting.status ?? WorkflowStatus.PENDING,
         WorkflowStatus.RECEIVED,
+      );
+
+      await this.inventoryService.postInventoryMovement(
+        {
+          entityType: 'Knitting',
+          entityId: updated.id,
+          itemType: 'GREY',
+          inwardWeight: receivedWeight,
+          referenceNo: updated.dcNo ?? undefined,
+          lotNo: `KL-${updated.id}`,
+          stage: 'GREY',
+          remarks: 'Grey fabric received',
+        },
+        tx,
       );
 
       return updated;

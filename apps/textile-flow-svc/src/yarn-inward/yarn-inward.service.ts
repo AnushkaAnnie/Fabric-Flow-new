@@ -6,10 +6,14 @@ import {
 import { CreateYarnInwardDto, UpdateYarnInwardDto } from '@textile-flow/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { yarnStatusFromInvoice } from '../common/adapters/workflow-status.adapter';
+import { InventoryService } from '../inventory/inventory.service';
 
 @Injectable()
 export class YarnInwardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly inventoryService: InventoryService,
+  ) {}
 
   create(dto: CreateYarnInwardDto) {
     return this.prisma.$transaction(async (tx) => {
@@ -105,6 +109,18 @@ export class YarnInwardService {
           performedBy: 'system',
         },
       });
+
+      await this.inventoryService.postInventoryMovement(
+        {
+          entityType: 'YarnPurchase',
+          entityId: inward.id,
+          itemType: 'YARN',
+          inwardWeight: totalWeight,
+          referenceNo: inward.hfBatch ?? undefined,
+          remarks: 'Yarn Purchase',
+        },
+        tx,
+      );
 
       return tx.yarnInward.findUnique({
         where: { id: inward.id },

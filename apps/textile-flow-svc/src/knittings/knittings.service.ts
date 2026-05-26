@@ -6,12 +6,16 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateKnittingDto } from '@textile-flow/shared';
+import { InventoryService } from '../inventory/inventory.service';
 
 @Injectable()
 export class KnittingsService {
   private readonly logger = new Logger(KnittingsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly inventoryService: InventoryService,
+  ) {}
 
   async create(dto: CreateKnittingDto) {
     return this.prisma.$transaction(async (tx) => {
@@ -115,6 +119,18 @@ export class KnittingsService {
           performedBy: 'system',
         },
       });
+
+      await this.inventoryService.postInventoryMovement(
+        {
+          entityType: 'Knitting',
+          entityId: knitting.id,
+          itemType: 'YARN',
+          outwardWeight: knitting.totalYarnQty,
+          referenceNo: knitting.dcNo ?? undefined,
+          remarks: 'Yarn issued for knitting',
+        },
+        tx,
+      );
 
       return tx.knitting.findUnique({
         where: { id: knitting.id },
