@@ -619,6 +619,20 @@ model InventoryLedger {
   @@index([itemType])
   @@index([lotNo])
   @@index([stage])
+  @@index([itemType, createdAt])
+  @@index([lotNo, itemType])
   @@map("inventory_ledgers")
+}
+
+model InventorySnapshot {
+  id            Int      @id @default(autoincrement())
+  snapshotDate  DateTime
+  itemType      String
+  balanceWeight Float
+  createdAt     DateTime @default(now())
+
+  @@index([snapshotDate])
+  @@index([itemType])
+  @@map("inventory_snapshots")
 }
 
