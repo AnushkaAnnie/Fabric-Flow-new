@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { UpdateDyeingDto } from '@textile-flow/shared';
+import { UpdateDyeingDto, WorkflowStatus } from '@textile-flow/shared';
 import { Prisma } from '@prisma/client';
 import { dyeingStatusFromDc } from '../common/adapters/workflow-status.adapter';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
@@ -77,10 +77,10 @@ export class DyeingsService {
     }
 
     if (dto.finalWeight !== undefined) {
-      data.status = 'Completed';
+      data.status = WorkflowStatus.COMPLETED;
     }
 
-    const oldStatus = existing.status ?? 'Pending';
+    const oldStatus = existing.status ?? WorkflowStatus.PENDING;
 
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.dyeing.update({

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCompactingDto } from '@textile-flow/shared';
+import { CreateCompactingDto, WorkflowStatus } from '@textile-flow/shared';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
 
 @Injectable()
@@ -45,8 +45,8 @@ export class CompactingsService {
       await this.workflowTransition.transition(
         'Compacting',
         compacting.id,
-        'Pending',
-        'Completed',
+        WorkflowStatus.PENDING,
+        WorkflowStatus.COMPLETED,
       );
 
       await tx.auditLog.create({
@@ -104,8 +104,8 @@ export class CompactingsService {
     await this.workflowTransition.transition(
       'Compacting',
       id,
-      'Pending',
-      'Completed',
+      WorkflowStatus.PENDING,
+      WorkflowStatus.COMPLETED,
     );
 
     return updated;

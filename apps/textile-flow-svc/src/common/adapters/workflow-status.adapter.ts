@@ -1,13 +1,8 @@
+import { WorkflowStatus } from '@textile-flow/shared';
+
 export const YarnLotStatus = {
   PENDING: 'Pending',
   RECEIVED: 'Received',
-} as const;
-
-export const DyeingStatus = {
-  PENDING: 'Pending',
-  AWAITING_DC: 'Pending',
-  IN_DYEING: 'In Dyeing',
-  COMPLETED: 'Completed',
 } as const;
 
 export function yarnStatusFromInvoice(invoiceNo?: string | null): string {
@@ -21,8 +16,8 @@ export function dyeingStatusFromDc(
   companyDcNo?: string | null,
 ): string {
   return knitterDcNo && companyDcNo
-    ? DyeingStatus.IN_DYEING
-    : DyeingStatus.PENDING;
+    ? WorkflowStatus.IN_DYEING
+    : WorkflowStatus.PENDING;
 }
 
 export function toOldYarnLookupShape(lot: {

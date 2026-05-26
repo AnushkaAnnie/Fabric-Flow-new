@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { MemosService } from '../memos/memos.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { WorkflowStatus } from '@textile-flow/shared';
 
 type CreateDyeingDispatchBody = {
   dispatchDate?: string;
@@ -51,9 +52,9 @@ export class DyeingDispatchService {
         receivedDate: line.dyeing?.updatedAt,
         processLossPercent: line.dyeing?.processLoss,
         status:
-          line.dyeing?.status === 'Completed'
+          line.dyeing?.status === WorkflowStatus.COMPLETED
             ? 'RECEIVED'
-            : line.dyeing?.status === 'In Dyeing'
+            : line.dyeing?.status === WorkflowStatus.IN_DYEING
               ? 'DISPATCHED'
               : 'DISPATCHED',
         greyFabricLot: line.greyFabricLot,

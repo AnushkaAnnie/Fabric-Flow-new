@@ -3,7 +3,7 @@ import {
   PrismaService,
   type PrismaTransaction,
 } from '../prisma/prisma.service';
-import { CreateMemoDto } from '@textile-flow/shared';
+import { CreateMemoDto, WorkflowStatus } from '@textile-flow/shared';
 import { dyeingStatusFromDc } from '../common/adapters/workflow-status.adapter';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
 
@@ -92,7 +92,12 @@ export class MemosService {
       });
 
       // Log memo creation via workflow
-      await this.workflowTransition.transition('Memo', memo.id, '', 'Pending');
+      await this.workflowTransition.transition(
+        'Memo',
+        memo.id,
+        '',
+        WorkflowStatus.PENDING,
+      );
 
       return tx.memo.findUnique({
         where: { id: memo.id },
