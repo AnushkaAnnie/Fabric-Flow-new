@@ -332,7 +332,7 @@ model GreyFabricLot {
   greyWeight         Decimal              @db.Decimal(10, 2) @map("grey_weight")
   rollCount          Int?                 @map("roll_count")
   source             GreyFabricLotSource  @default(KNITTED)
-  status             GreyFabricLotStatus  @default(AVAILABLE)
+  status             String               @default("AVAILABLE")
   greyFabricInwardId Int?                 @map("grey_fabric_inward_id")
   greyFabricInward   GreyFabricInward?    @relation(fields: [greyFabricInwardId], references: [id])
   memoLines          MemoLine[]

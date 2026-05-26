@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { WorkflowStatus } from '../../workflow/enums/workflow-status.enum';
 
 export const UpdateYarnLotSchema = z.object({
   hfCode: z.string().min(1).optional(),
@@ -19,7 +20,9 @@ export const UpdateYarnLotSchema = z.object({
   sgstRate: z.number().min(0).optional(),
   cgstAmount: z.number().min(0).optional(),
   sgstAmount: z.number().min(0).optional(),
-  status: z.enum(['Pending', 'Received', 'In Dyeing', 'Completed']).optional(),
+  receivedWeight: z.number().optional(),
+  shortage: z.number().optional(),
+  status: z.nativeEnum(WorkflowStatus).optional(),
 });
 
 export type UpdateYarnLotDto = z.infer<typeof UpdateYarnLotSchema>;

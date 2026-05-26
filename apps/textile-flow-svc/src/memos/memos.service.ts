@@ -75,7 +75,7 @@ export class MemosService {
         if (resolved.greyFabricLotId) {
           await tx.greyFabricLot.update({
             where: { id: resolved.greyFabricLotId },
-            data: { status: 'DISPATCHED' },
+            data: { status: WorkflowStatus.SENT },
           });
         }
       }

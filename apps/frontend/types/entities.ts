@@ -1,3 +1,7 @@
+import { WorkflowStatus } from '@textile-flow/shared';
+
+export type EntityWorkflowStatus = WorkflowStatus;
+
 // ===================== Delivery Note =====================
 export interface DeliveryNote {
   id: number;
@@ -209,7 +213,7 @@ export interface DyeingDispatchLine {
   receivedWeight?: number;
   receivedDate?: string;
   processLossPercent?: number;
-  status: 'DISPATCHED' | 'RECEIVED' | 'CANCELLED';
+  status: EntityWorkflowStatus;
   greyFabricLot?: GreyFabricLot;
 }
 
@@ -226,6 +230,6 @@ export interface GreyFabricLot {
   greyWeight: number;
   rollCount?: number;
   source: 'KNITTED' | 'PURCHASED';
-  status: 'AVAILABLE' | 'DISPATCHED' | 'CONSUMED' | 'DELETED';
+  status: EntityWorkflowStatus;
   knitter?: { id: number; name: string };
 }

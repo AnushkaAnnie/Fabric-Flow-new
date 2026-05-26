@@ -53,10 +53,10 @@ export class DyeingDispatchService {
         processLossPercent: line.dyeing?.processLoss,
         status:
           line.dyeing?.status === WorkflowStatus.COMPLETED
-            ? 'RECEIVED'
+            ? WorkflowStatus.RECEIVED
             : line.dyeing?.status === WorkflowStatus.IN_DYEING
-              ? 'DISPATCHED'
-              : 'DISPATCHED',
+              ? WorkflowStatus.SENT
+              : WorkflowStatus.SENT,
         greyFabricLot: line.greyFabricLot,
       })),
     }));
