@@ -31,6 +31,8 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { KnittingModule } from './knitting/knitting.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { LotTrackerModule } from './lot-tracker/lot-tracker.module';
+import { ProductionPlanningModule } from './production-planning/production-planning.module';
+
 
 import { AuthModule } from './auth/auth.module';
 import { DevAuthGuard } from './common/guards/dev-auth.guard';
@@ -69,7 +71,9 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     KnittingModule,
     InventoryModule,
     LotTrackerModule,
+    ProductionPlanningModule,
   ],
+
 
   controllers: [AppController],
   providers: [

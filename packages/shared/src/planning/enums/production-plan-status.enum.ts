@@ -1,0 +1,13 @@
+export enum ProductionPlanStatus {
+  PENDING = 'PENDING',
+
+  ISSUED = 'ISSUED',
+
+  IN_PROGRESS = 'IN_PROGRESS',
+
+  COMPLETED = 'COMPLETED',
+
+  CANCELLED = 'CANCELLED',
+
+  HOLD = 'HOLD',
+}
