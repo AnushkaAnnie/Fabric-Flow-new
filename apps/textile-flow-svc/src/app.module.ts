@@ -33,7 +33,6 @@ import { InventoryModule } from './inventory/inventory.module';
 import { LotTrackerModule } from './lot-tracker/lot-tracker.module';
 import { ProductionPlanningModule } from './production-planning/production-planning.module';
 
-
 import { AuthModule } from './auth/auth.module';
 import { DevAuthGuard } from './common/guards/dev-auth.guard';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -73,7 +72,6 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     LotTrackerModule,
     ProductionPlanningModule,
   ],
-
 
   controllers: [AppController],
   providers: [

@@ -1,37 +1,22 @@
 import { Module } from '@nestjs/common';
 
-import { PrismaModule }
-  from '../prisma/prisma.module';
+import { PrismaModule } from '../prisma/prisma.module';
 
-import { InventoryModule }
-  from '../inventory/inventory.module';
+import { InventoryModule } from '../inventory/inventory.module';
 
-import { LotTrackerModule }
-  from '../lot-tracker/lot-tracker.module';
+import { LotTrackerModule } from '../lot-tracker/lot-tracker.module';
 
-import { ProductionPlanningService }
-  from './production-planning.service';
+import { ProductionPlanningService } from './production-planning.service';
 
-import { ProductionPlanningController }
-  from './production-planning.controller';
+import { ProductionPlanningController } from './production-planning.controller';
 
 @Module({
-  imports: [
-    PrismaModule,
-    InventoryModule,
-    LotTrackerModule,
-  ],
+  imports: [PrismaModule, InventoryModule, LotTrackerModule],
 
-  providers: [
-    ProductionPlanningService,
-  ],
+  providers: [ProductionPlanningService],
 
-  controllers: [
-    ProductionPlanningController,
-  ],
+  controllers: [ProductionPlanningController],
 
-  exports: [
-    ProductionPlanningService,
-  ],
+  exports: [ProductionPlanningService],
 })
 export class ProductionPlanningModule {}

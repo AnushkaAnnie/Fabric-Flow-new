@@ -9,23 +9,18 @@ import {
   Delete,
 } from '@nestjs/common';
 
-import { ProductionPlanningService }
-  from './production-planning.service';
+import { ProductionPlanningService } from './production-planning.service';
 
-import { CreateProductionPlanDto }
-  from './dto/create-production-plan.dto';
+import { CreateProductionPlanDto } from './dto/create-production-plan.dto';
 
-import { UpdateProductionPlanDto }
-  from './dto/update-production-plan.dto';
+import { UpdateProductionPlanDto } from './dto/update-production-plan.dto';
 
-import { CreateJobCardDto }
-  from './dto/create-job-card.dto';
+import { CreateJobCardDto } from './dto/create-job-card.dto';
 
 @Controller('production-planning')
 export class ProductionPlanningController {
   constructor(
-    private readonly productionPlanningService:
-      ProductionPlanningService,
+    private readonly productionPlanningService: ProductionPlanningService,
   ) {}
 
   @Post()
@@ -33,8 +28,7 @@ export class ProductionPlanningController {
     @Body()
     dto: CreateProductionPlanDto,
   ) {
-    return this.productionPlanningService
-      .createPlan(dto);
+    return this.productionPlanningService.createPlan(dto);
   }
 
   @Patch(':id')
@@ -45,11 +39,7 @@ export class ProductionPlanningController {
     @Body()
     dto: UpdateProductionPlanDto,
   ) {
-    return this.productionPlanningService
-      .updatePlan(
-        Number(id),
-        dto,
-      );
+    return this.productionPlanningService.updatePlan(Number(id), dto);
   }
 
   @Post('job-card')
@@ -57,8 +47,7 @@ export class ProductionPlanningController {
     @Body()
     dto: CreateJobCardDto,
   ) {
-    return this.productionPlanningService
-      .createJobCard(dto);
+    return this.productionPlanningService.createJobCard(dto);
   }
 
   @Patch('job-card/:id/start')
@@ -66,10 +55,7 @@ export class ProductionPlanningController {
     @Param('id')
     id: string,
   ) {
-    return this.productionPlanningService
-      .startJobCard(
-        Number(id),
-      );
+    return this.productionPlanningService.startJobCard(Number(id));
   }
 
   @Patch('job-card/:id/complete')
@@ -80,37 +66,31 @@ export class ProductionPlanningController {
     @Body('completedWeight')
     completedWeight: number,
   ) {
-    return this.productionPlanningService
-      .completeJobCard(
-        Number(id),
-        completedWeight,
-      );
+    return this.productionPlanningService.completeJobCard(
+      Number(id),
+      completedWeight,
+    );
   }
 
   @Get('today')
   async todayPlans() {
-    return this.productionPlanningService
-      .getTodayPlans();
+    return this.productionPlanningService.getTodayPlans();
   }
 
   @Get('delayed')
   async delayedPlans() {
-    return this.productionPlanningService
-      .getDelayedPlans();
+    return this.productionPlanningService.getDelayedPlans();
   }
 
   @Get('summary')
   async summary() {
-    return this.productionPlanningService
-      .getSummary();
+    return this.productionPlanningService.getSummary();
   }
 
   @Get('events')
   async events() {
-    return this.productionPlanningService
-      .getEvents();
+    return this.productionPlanningService.getEvents();
   }
-
 
   @Get()
   async plans(
@@ -126,18 +106,15 @@ export class ProductionPlanningController {
     @Query('stage')
     stage?: string,
   ) {
-    return this.productionPlanningService
-      .getPlans({
-        page:
-          Number(page ?? 1),
+    return this.productionPlanningService.getPlans({
+      page: Number(page ?? 1),
 
-        limit:
-          Number(limit ?? 20),
+      limit: Number(limit ?? 20),
 
-        status,
+      status,
 
-        stage,
-      });
+      stage,
+    });
   }
 
   @Get('job-cards')
@@ -151,16 +128,13 @@ export class ProductionPlanningController {
     @Query('status')
     status?: string,
   ) {
-    return this.productionPlanningService
-      .getJobCards({
-        page:
-          Number(page ?? 1),
+    return this.productionPlanningService.getJobCards({
+      page: Number(page ?? 1),
 
-        limit:
-          Number(limit ?? 20),
+      limit: Number(limit ?? 20),
 
-        status,
-      });
+      status,
+    });
   }
 
   @Delete(':id')
@@ -168,9 +142,6 @@ export class ProductionPlanningController {
     @Param('id')
     id: string,
   ) {
-    return this.productionPlanningService
-      .cancelPlan(
-        Number(id),
-      );
+    return this.productionPlanningService.cancelPlan(Number(id));
   }
 }

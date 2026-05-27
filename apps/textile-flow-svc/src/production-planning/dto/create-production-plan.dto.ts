@@ -6,9 +6,7 @@ import {
   IsEnum,
 } from 'class-validator';
 
-import {
-  ProductionPriority,
-} from '@textile-flow/shared';
+import { ProductionPriority } from '@textile-flow/shared';
 
 export class CreateProductionPlanDto {
   @IsString()
