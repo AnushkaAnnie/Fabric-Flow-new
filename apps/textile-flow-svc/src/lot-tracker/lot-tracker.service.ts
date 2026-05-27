@@ -4,14 +4,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { LotStatus } from '@textile-flow/shared';
-import { WorkflowStatus } from '@textile-flow/shared';
+import { LotStatus, WorkflowStatus } from '@textile-flow/shared';
+import { InventoryService } from '../inventory/inventory.service';
 
 const DELAY_THRESHOLD_DAYS = 7;
 
 @Injectable()
 export class LotTrackerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly inventoryService: InventoryService,
+  ) {}
 
   /**
    * Evaluates and persists the current status of a lot by aggregating
@@ -83,6 +86,13 @@ export class LotTrackerService {
       );
     }
 
+    // ---- Inventory-aware balance checks (for COMPLETED gate) ----
+    const [greyBalance, dyedBalance] = await Promise.all([
+      this.inventoryService.getLotBalance(lotNo, 'GREY'),
+      this.inventoryService.getLotBalance(lotNo, 'DYED'),
+    ]);
+    const hasRemainingBalance = greyBalance > 0 || dyedBalance > 0;
+
     // ---- Partial / Completed detection ----
     const completedCompactings = compactings.filter(
       (c) => c.status === (WorkflowStatus.COMPLETED as string),
@@ -92,10 +102,12 @@ export class LotTrackerService {
       currentStatus = LotStatus.PARTIAL;
     }
 
+    // Only mark COMPLETED when inventory is fully consumed
     if (
       compactings.length > 0 &&
       completedCompactings.length === compactings.length &&
-      dyeings.every((d) => d.status === (WorkflowStatus.COMPLETED as string))
+      dyeings.every((d) => d.status === (WorkflowStatus.COMPLETED as string)) &&
+      !hasRemainingBalance
     ) {
       currentStatus = LotStatus.COMPLETED;
       activeStage = 'COMPLETED';
@@ -119,6 +131,20 @@ export class LotTrackerService {
       latestActivity !== null
         ? this.isDelayed(latestActivity)
         : false;
+
+    // ---- Status-change event logging ----
+    const existing = await this.prisma.lotTracker.findUnique({
+      where: { lotNo },
+    });
+
+    if (existing?.currentStatus !== currentStatus) {
+      await this.createLotEvent({
+        lotNo,
+        eventType: 'STATUS_CHANGED',
+        previousStatus: existing?.currentStatus,
+        newStatus: currentStatus,
+      });
+    }
 
     // ---- Upsert the tracker record ----
     return this.prisma.lotTracker.upsert({
@@ -159,11 +185,68 @@ export class LotTrackerService {
     return diffDays > DELAY_THRESHOLD_DAYS;
   }
 
-  /** Return all lot tracker records */
-  async findAll() {
-    return this.prisma.lotTracker.findMany({
-      orderBy: { updatedAt: 'desc' },
+  /** Log a lifecycle event for a lot */
+  async createLotEvent({
+    lotNo,
+    eventType,
+    previousStatus,
+    newStatus,
+    remarks,
+  }: {
+    lotNo: string;
+    eventType: string;
+    previousStatus?: string;
+    newStatus?: string;
+    remarks?: string;
+  }) {
+    return this.prisma.lotEvent.create({
+      data: { lotNo, eventType, previousStatus, newStatus, remarks },
     });
+  }
+
+  /** Return paginated lot tracker records with optional filtering */
+  async getAllLots({
+    page = 1,
+    limit = 20,
+    status,
+    delayed,
+  }: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    delayed?: boolean;
+  }) {
+    const where: {
+      currentStatus?: string;
+      delayed?: boolean;
+    } = {};
+
+    if (status) {
+      where.currentStatus = status;
+    }
+    if (delayed !== undefined) {
+      where.delayed = delayed;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.lotTracker.findMany({
+        where,
+        orderBy: { updatedAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.lotTracker.count({ where }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   /** Return a single lot tracker by lotNo */
@@ -190,5 +273,101 @@ export class LotTrackerService {
       where: { activeStage: stage.toUpperCase() },
       orderBy: { updatedAt: 'desc' },
     });
+  }
+
+  /** Return lot lifecycle event history */
+  async getLotHistory(lotNo: string) {
+    return this.prisma.lotEvent.findMany({
+      where: { lotNo },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /** Dashboard summary: counts + global inventory balances */
+  async getDashboardSummary() {
+    const [
+      totalLots,
+      pendingLots,
+      completedLots,
+      delayedLots,
+      activeLots,
+      totalGreyBalance,
+      totalDyedBalance,
+      totalCompactBalance,
+    ] = await Promise.all([
+      this.prisma.lotTracker.count(),
+      this.prisma.lotTracker.count({
+        where: { currentStatus: LotStatus.PENDING },
+      }),
+      this.prisma.lotTracker.count({
+        where: { currentStatus: LotStatus.COMPLETED },
+      }),
+      this.prisma.lotTracker.count({ where: { delayed: true } }),
+      this.prisma.lotTracker.count({
+        where: {
+          currentStatus: {
+            in: [
+              LotStatus.IN_KNITTING as string,
+              LotStatus.IN_DYEING as string,
+              LotStatus.IN_COMPACTING as string,
+              LotStatus.PARTIAL as string,
+            ],
+          },
+        },
+      }),
+      this.inventoryService.getCurrentBalance('GREY'),
+      this.inventoryService.getCurrentBalance('DYED'),
+      this.inventoryService.getCurrentBalance('COMPACT'),
+    ]);
+
+    return {
+      totalLots,
+      pendingLots,
+      completedLots,
+      delayedLots,
+      activeLots,
+      totalGreyBalance,
+      totalDyedBalance,
+      totalCompactBalance,
+    };
+  }
+
+  /** Re-evaluate every known KnittingLot to bring all trackers up to date */
+  async reconcileAllLots() {
+    const lots = await this.prisma.knittingLot.findMany({
+      distinct: ['lotNo'],
+      select: { lotNo: true },
+    });
+
+    for (const lot of lots) {
+      await this.evaluateLot(lot.lotNo);
+    }
+
+    return { reconciled: lots.length };
+  }
+
+  /**
+   * Delete tracker records whose lotNo no longer exists in KnittingLot.
+   * Keeps the database free from stale entries after data corrections.
+   */
+  async cleanupOrphanTrackers() {
+    const trackers = await this.prisma.lotTracker.findMany({
+      select: { id: true, lotNo: true },
+    });
+
+    let deleted = 0;
+
+    for (const tracker of trackers) {
+      const exists = await this.prisma.knittingLot.findFirst({
+        where: { lotNo: tracker.lotNo },
+      });
+
+      if (!exists) {
+        await this.prisma.lotTracker.delete({ where: { id: tracker.id } });
+        deleted++;
+      }
+    }
+
+    return { deleted };
   }
 }

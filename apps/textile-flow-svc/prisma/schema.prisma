@@ -657,3 +657,17 @@ model LotTracker {
   @@index([activeStage])
   @@map("lot_trackers")
 }
+
+model LotEvent {
+  id             Int       @id @default(autoincrement())
+  lotNo          String    @map("lot_no")
+  eventType      String    @map("event_type")
+  previousStatus String?   @map("previous_status")
+  newStatus      String?   @map("new_status")
+  remarks        String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([lotNo])
+  @@index([eventType])
+  @@map("lot_events")
+}
