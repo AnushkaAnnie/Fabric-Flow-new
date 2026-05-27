@@ -105,6 +105,13 @@ export class ProductionPlanningController {
       .getSummary();
   }
 
+  @Get('events')
+  async events() {
+    return this.productionPlanningService
+      .getEvents();
+  }
+
+
   @Get()
   async plans(
     @Query('page')

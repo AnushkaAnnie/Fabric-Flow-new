@@ -747,4 +747,30 @@ model JobCard {
   @@index([machineNo, status])
 }
 
+model ProductionEvent {
+  id               Int       @id @default(autoincrement())
+  productionPlanId Int?
+  jobCardId        Int?
+  eventType        String
+  message          String
+  metadata         Json?
+  createdAt        DateTime  @default(now())
+
+  @@index([productionPlanId])
+  @@index([jobCardId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model InventoryTransaction {
+  id              Int      @id @default(autoincrement())
+  referenceType   String
+  referenceNumber String
+  transactionType String
+  quantity        Float
+  remarks         String?
+  createdAt       DateTime @default(now())
+}
+
+
 
