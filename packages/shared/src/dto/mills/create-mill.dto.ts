@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { gstinRegex } from '../index';
+import { gstinRegex } from '../constants';
 
 const pincodeSchema = z
   .string()
