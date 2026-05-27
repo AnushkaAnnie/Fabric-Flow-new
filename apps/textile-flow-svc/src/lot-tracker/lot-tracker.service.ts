@@ -85,7 +85,7 @@ export class LotTrackerService {
 
     // ---- Partial / Completed detection ----
     const completedCompactings = compactings.filter(
-      (c) => c.status === WorkflowStatus.COMPLETED,
+      (c) => c.status === (WorkflowStatus.COMPLETED as string),
     );
 
     if (completedWeight > 0 && completedWeight < totalWeight) {
@@ -95,7 +95,7 @@ export class LotTrackerService {
     if (
       compactings.length > 0 &&
       completedCompactings.length === compactings.length &&
-      dyeings.every((d) => d.status === WorkflowStatus.COMPLETED)
+      dyeings.every((d) => d.status === (WorkflowStatus.COMPLETED as string))
     ) {
       currentStatus = LotStatus.COMPLETED;
       activeStage = 'COMPLETED';
@@ -106,7 +106,7 @@ export class LotTrackerService {
       ...knittings.map((x) => x.updatedAt),
       ...dyeings.map((x) => x.updatedAt),
       ...compactings.map((x) => x.updatedAt),
-    ].filter(Boolean) as Date[];
+    ].filter(Boolean);
 
     const latestActivity =
       latestDates.length > 0
@@ -114,8 +114,8 @@ export class LotTrackerService {
         : null;
 
     const delayed =
-      currentStatus !== LotStatus.COMPLETED &&
-      currentStatus !== LotStatus.CANCELLED &&
+      currentStatus !== (LotStatus.COMPLETED as string) &&
+      currentStatus !== (LotStatus.CANCELLED as string) &&
       latestActivity !== null
         ? this.isDelayed(latestActivity)
         : false;
@@ -134,7 +134,7 @@ export class LotTrackerService {
         delayed,
         startedAt: knittingLots[0]?.createdAt ?? null,
         completedAt:
-          currentStatus === LotStatus.COMPLETED ? new Date() : null,
+          currentStatus === (LotStatus.COMPLETED as string) ? new Date() : null,
         lastActivityAt: latestActivity,
       },
       update: {
@@ -146,7 +146,7 @@ export class LotTrackerService {
         balanceWeight,
         delayed,
         completedAt:
-          currentStatus === LotStatus.COMPLETED ? new Date() : null,
+          currentStatus === (LotStatus.COMPLETED as string) ? new Date() : null,
         lastActivityAt: latestActivity,
       },
     });
@@ -171,7 +171,8 @@ export class LotTrackerService {
     const tracker = await this.prisma.lotTracker.findUnique({
       where: { lotNo },
     });
-    if (!tracker) throw new NotFoundException(`Lot tracker for ${lotNo} not found`);
+    if (!tracker)
+      throw new NotFoundException(`Lot tracker for ${lotNo} not found`);
     return tracker;
   }
 
