@@ -3,7 +3,12 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsEnum,
 } from 'class-validator';
+
+import {
+  ProductionPriority,
+} from '@textile-flow/shared';
 
 export class CreateProductionPlanDto {
   @IsString()
@@ -18,8 +23,8 @@ export class CreateProductionPlanDto {
   @IsDateString()
   plannedDate: string;
 
-  @IsString()
-  priority: string;
+  @IsEnum(ProductionPriority)
+  priority: ProductionPriority;
 
   @IsOptional()
   @IsString()

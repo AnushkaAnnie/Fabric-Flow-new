@@ -101,12 +101,15 @@ export class ProductionPlanningService {
         },
       });
 
-    await this.reserveProductionInventory({
+    await this.createProductionReservation({
       lotNo:
         dto.lotNo,
 
-      weight:
+      quantity:
         dto.plannedWeight,
+
+      productionPlanId:
+        created.id,
     });
 
     await this.logEvent({
@@ -556,6 +559,22 @@ export class ProductionPlanningService {
         `Job card ${job.jobCardNo} completed`,
     });
 
+    if (
+      result.status ===
+      ProductionPlanStatus.COMPLETED
+    ) {
+      await this.completeProductionInventory({
+        lotNo:
+          job.productionPlan.lotNo,
+
+        quantity:
+          completedWeight,
+
+        productionPlanId:
+          job.productionPlanId,
+      });
+    }
+
     await this.lotTrackerService
       .evaluateLot(
         job.productionPlan.lotNo,
@@ -877,25 +896,70 @@ export class ProductionPlanningService {
     });
   }
 
-  async reserveProductionInventory({
+  async createProductionReservation({
     lotNo,
-    weight,
+    quantity,
+    productionPlanId,
   }: {
     lotNo: string;
-    weight: number;
+    quantity: number;
+    productionPlanId: number;
   }) {
-    return this.prisma.inventoryTransaction.create({
+    const latest = await this.prisma.inventoryLedger.findFirst({
+      where: { itemType: 'GREY' },
+      orderBy: { createdAt: 'desc' },
+    });
+    const balanceWeight = latest?.balanceWeight ?? 0;
+
+    return this.prisma.inventoryLedger.create({
       data: {
-        referenceType:
-          'PRODUCTION_PLAN',
-        referenceNumber:
-          lotNo,
-        transactionType:
-          'RESERVED',
-        quantity:
-          weight,
-        remarks:
-          'Reserved for production planning',
+        lotNo,
+        transactionType: 'RESERVED',
+        quantity,
+        referenceType: 'PRODUCTION_PLAN',
+        referenceId: productionPlanId,
+        remarks: 'Reserved for production planning',
+
+        // Required fields
+        entityType: 'PRODUCTION_PLAN',
+        entityId: productionPlanId,
+        itemType: 'GREY',
+        balanceWeight,
+      },
+    });
+  }
+
+  async completeProductionInventory({
+    lotNo,
+    quantity,
+    productionPlanId,
+  }: {
+    lotNo: string;
+    quantity: number;
+    productionPlanId: number;
+  }) {
+    const latest = await this.prisma.inventoryLedger.findFirst({
+      where: { itemType: 'GREY' },
+      orderBy: { createdAt: 'desc' },
+    });
+    const currentBalance = latest?.balanceWeight ?? 0;
+    const balanceWeight = Number((currentBalance - quantity).toFixed(3));
+
+    return this.prisma.inventoryLedger.create({
+      data: {
+        lotNo,
+        transactionType: 'CONSUMED',
+        quantity,
+        referenceType: 'PRODUCTION_COMPLETION',
+        referenceId: productionPlanId,
+        remarks: 'Production completed inventory consumption',
+
+        // Required fields
+        entityType: 'PRODUCTION_COMPLETION',
+        entityId: productionPlanId,
+        itemType: 'GREY',
+        outwardWeight: quantity,
+        balanceWeight,
       },
     });
   }

@@ -615,6 +615,12 @@ model InventoryLedger {
   remarks         String?
   createdAt       DateTime  @default(now())
 
+  // New fields for production planning reservations
+  transactionType String?
+  quantity        Float?
+  referenceType   String?
+  referenceId     Int?
+
   @@index([entityType, entityId])
   @@index([itemType])
   @@index([lotNo])
@@ -762,15 +768,6 @@ model ProductionEvent {
   @@index([createdAt])
 }
 
-model InventoryTransaction {
-  id              Int      @id @default(autoincrement())
-  referenceType   String
-  referenceNumber String
-  transactionType String
-  quantity        Float
-  remarks         String?
-  createdAt       DateTime @default(now())
-}
 
 
 
