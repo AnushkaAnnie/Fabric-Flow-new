@@ -94,6 +94,42 @@ export default function MasterDataSidebar() {
           Dyeing Dispatch
         </Link>
       </nav>
+
+      <h2 className="mb-4 mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">MES / Planning</h2>
+      <nav className="space-y-1">
+        <Link
+          href="/production-planning"
+          className={`block rounded px-3 py-2 text-sm ${
+            pathname === "/production-planning" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          Production Plans
+        </Link>
+        <Link
+          href="/production-planning/job-cards"
+          className={`block rounded px-3 py-2 text-sm ${
+            pathname === "/production-planning/job-cards" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          Job Cards
+        </Link>
+        <Link
+          href="/production-planning/dashboard"
+          className={`block rounded px-3 py-2 text-sm ${
+            pathname === "/production-planning/dashboard" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          MES Dashboard
+        </Link>
+        <Link
+          href="/production-planning/events"
+          className={`block rounded px-3 py-2 text-sm ${
+            pathname === "/production-planning/events" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          Event Timeline
+        </Link>
+      </nav>
     </aside>
   );
 }
