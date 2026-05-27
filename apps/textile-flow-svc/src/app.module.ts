@@ -30,6 +30,7 @@ import { DyeingProgramsModule } from './dyeing-programs/dyeing-programs.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { KnittingModule } from './knitting/knitting.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { LotTrackerModule } from './lot-tracker/lot-tracker.module';
 
 import { AuthModule } from './auth/auth.module';
 import { DevAuthGuard } from './common/guards/dev-auth.guard';
@@ -67,6 +68,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     AuditLogsModule,
     KnittingModule,
     InventoryModule,
+    LotTrackerModule,
   ],
 
   controllers: [AppController],

@@ -7,6 +7,7 @@ import { CreateMemoDto, WorkflowStatus } from '@textile-flow/shared';
 import { dyeingStatusFromDc } from '../common/adapters/workflow-status.adapter';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
 import { InventoryService } from '../inventory/inventory.service';
+import { LotTrackerService } from '../lot-tracker/lot-tracker.service';
 
 @Injectable()
 export class MemosService {
@@ -14,10 +15,12 @@ export class MemosService {
     private readonly prisma: PrismaService,
     private readonly workflowTransition: WorkflowTransitionService,
     private readonly inventoryService: InventoryService,
+    private readonly lotTrackerService: LotTrackerService,
   ) {}
 
   async create(dto: CreateMemoDto) {
-    return this.prisma.$transaction(async (tx) => {
+    const collectedLotNos: string[] = [];
+    const result = await this.prisma.$transaction(async (tx) => {
       const last = await tx.memo.findFirst({ orderBy: { memoNo: 'desc' } });
       const memoNo = dto.memoNo ?? (last?.memoNo ?? 39) + 1;
       const fallbackDyer =
@@ -40,6 +43,7 @@ export class MemosService {
 
       for (const line of dto.lines) {
         const resolved = await this.resolveMemoLine(tx, line);
+        collectedLotNos.push(resolved.lotNo);
         const lineDyerId = line.preAssignedDyerId ?? fallbackDyer;
         const initialStatus = dyeingStatusFromDc(null, null);
 
@@ -133,6 +137,15 @@ export class MemosService {
         },
       });
     });
+
+    // After transaction: evaluate lot tracker for all dispatched lots
+    for (const lotNo of collectedLotNos) {
+      await this.lotTrackerService.evaluateLot(lotNo).catch(() => {
+        // Non-blocking
+      });
+    }
+
+    return result;
   }
 
   private async resolveMemoLine(

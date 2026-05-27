@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateCompactingDto, WorkflowStatus } from '@textile-flow/shared';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
 import { InventoryService } from '../inventory/inventory.service';
+import { LotTrackerService } from '../lot-tracker/lot-tracker.service';
 
 @Injectable()
 export class CompactingsService {
@@ -14,6 +15,7 @@ export class CompactingsService {
     private readonly prisma: PrismaService,
     private readonly workflowTransition: WorkflowTransitionService,
     private readonly inventoryService: InventoryService,
+    private readonly lotTrackerService: LotTrackerService,
   ) {}
 
   async create(dto: CreateCompactingDto) {
@@ -98,7 +100,7 @@ export class CompactingsService {
    * Process loss is calculated from the original GREY FABRIC weight, not the dyed weight.
    */
   async completeCompacting(compactingId: number, finalWeight: number) {
-    return this.prisma.$transaction(async (tx) => {
+    const compacted = await this.prisma.$transaction(async (tx) => {
       const compacting = await tx.compacting.findUnique({
         where: { id: compactingId },
         include: { dyeing: true },
@@ -171,6 +173,16 @@ export class CompactingsService {
 
       return updated;
     });
+
+    // After transaction: evaluate lot tracker via dyeing's lotNo
+    const dyeingLotNo = compacted.dyeing?.lotNo;
+    if (dyeingLotNo) {
+      await this.lotTrackerService.evaluateLot(dyeingLotNo).catch(() => {
+        // Non-blocking
+      });
+    }
+
+    return compacted;
   }
 
   /**

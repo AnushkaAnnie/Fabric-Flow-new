@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { WorkflowStatus } from '@textile-flow/shared';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
 import { InventoryService } from '../inventory/inventory.service';
+import { LotTrackerService } from '../lot-tracker/lot-tracker.service';
 
 @Injectable()
 export class KnittingService {
@@ -10,6 +11,7 @@ export class KnittingService {
     private readonly prisma: PrismaService,
     private readonly workflowTransition: WorkflowTransitionService,
     private readonly inventoryService: InventoryService,
+    private readonly lotTrackerService: LotTrackerService,
   ) {}
 
   /**
@@ -18,7 +20,7 @@ export class KnittingService {
    * Transitions status to RECEIVED and logs the workflow event.
    */
   async receiveYarn(knittingId: number, receivedWeight: number) {
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       const knitting = await tx.knitting.findUnique({
         where: { id: knittingId },
       });
@@ -32,7 +34,7 @@ export class KnittingService {
         (knitting.greyFabricWeight - receivedWeight).toFixed(3),
       );
 
-      const updated = await tx.knitting.update({
+      const result = await tx.knitting.update({
         where: { id: knittingId },
         data: {
           receivedWeight,
@@ -51,19 +53,32 @@ export class KnittingService {
       await this.inventoryService.postInventoryMovement(
         {
           entityType: 'Knitting',
-          entityId: updated.id,
+          entityId: result.id,
           itemType: 'GREY',
           inwardWeight: receivedWeight,
-          referenceNo: updated.dcNo ?? undefined,
-          lotNo: `KL-${updated.id}`,
+          referenceNo: result.dcNo ?? undefined,
+          lotNo: `KL-${result.id}`,
           stage: 'GREY',
           remarks: 'Grey fabric received',
         },
         tx,
       );
 
-      return updated;
+      return result;
     });
+
+    // After transaction: find KnittingLot to get lotNo for lot tracking
+    const kLot = await this.prisma.knittingLot.findFirst({
+      where: { knittingId: updated.id },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (kLot?.lotNo) {
+      await this.lotTrackerService.evaluateLot(kLot.lotNo).catch(() => {
+        // Non-blocking: lot tracker failure should not break the main flow
+      });
+    }
+
+    return updated;
   }
 
   async findAll() {

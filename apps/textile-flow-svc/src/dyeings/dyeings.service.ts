@@ -4,6 +4,7 @@ import { UpdateDyeingDto, WorkflowStatus } from '@textile-flow/shared';
 import { Prisma } from '@prisma/client';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
 import { InventoryService } from '../inventory/inventory.service';
+import { LotTrackerService } from '../lot-tracker/lot-tracker.service';
 
 @Injectable()
 export class DyeingsService {
@@ -11,6 +12,7 @@ export class DyeingsService {
     private readonly prisma: PrismaService,
     private readonly workflowTransition: WorkflowTransitionService,
     private readonly inventoryService: InventoryService,
+    private readonly lotTrackerService: LotTrackerService,
   ) {}
 
   async findAll() {
@@ -91,7 +93,7 @@ export class DyeingsService {
 
     const oldStatus = existing.status ?? WorkflowStatus.PENDING;
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.dyeing.update({
         where: { id },
         data,
@@ -162,6 +164,15 @@ export class DyeingsService {
 
       return updated;
     });
+
+    // After transaction: update lot tracker if dyeing was completed
+    if (dto.finalWeight !== undefined) {
+      await this.lotTrackerService.evaluateLot(existing.lotNo).catch(() => {
+        // Non-blocking
+      });
+    }
+
+    return result;
   }
 
   async remove(id: number) {

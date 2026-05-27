@@ -636,3 +636,24 @@ model InventorySnapshot {
   @@map("inventory_snapshots")
 }
 
+model LotTracker {
+  id                Int       @id @default(autoincrement())
+  lotNo             String    @unique @map("lot_no")
+  currentStatus     String    @default("PENDING") @map("current_status")
+  activeStage       String?   @map("active_stage")
+  completionPercent Float     @default(0) @map("completion_percent")
+  totalWeight       Float     @default(0) @map("total_weight")
+  completedWeight   Float     @default(0) @map("completed_weight")
+  balanceWeight     Float     @default(0) @map("balance_weight")
+  delayed           Boolean   @default(false)
+  startedAt         DateTime? @map("started_at")
+  completedAt       DateTime? @map("completed_at")
+  lastActivityAt    DateTime? @map("last_activity_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([currentStatus])
+  @@index([delayed])
+  @@index([activeStage])
+  @@map("lot_trackers")
+}
