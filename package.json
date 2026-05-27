@@ -23,11 +23,6 @@
     "packages/*"
   ],
   "dependencies": {
-    "@hookform/resolvers": "^5.4.0",
-    "@prisma/client": "^7.8.0",
-    "@tanstack/react-table": "^8.21.3",
-    "react-hook-form": "^7.76.1",
-    "sonner": "^2.0.7",
-    "zod": "^4.4.3"
+    "@prisma/client": "^7.8.0"
   }
 }
