@@ -1,6 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { ProductionPlanStatus, JobCardStatus, Prisma } from '@prisma/client';
+import {
+  ProductionPlanStatus,
+  JobCardStatus,
+  ProductionPriority,
+  Prisma,
+} from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -50,6 +55,10 @@ export class ProductionPlanningService {
     }
 
     const delayed = new Date(dto.plannedDate).getTime() < Date.now();
+
+    if (!Object.values(ProductionPriority).includes(dto.priority)) {
+      throw new BadRequestException('Invalid priority');
+    }
 
     const created = await this.prisma.productionPlan.create({
       data: {
