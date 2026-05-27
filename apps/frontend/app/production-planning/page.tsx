@@ -1,9 +1,20 @@
 'use client';
 import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -11,6 +22,11 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+import {
+  createProductionPlanSchema,
+  type CreateProductionPlanInput,
+} from '@/validators/create-production-plan';
 import { PlusCircle, Trash2, Calendar, ClipboardList, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface ProductionPlan {
@@ -43,14 +59,18 @@ export default function ProductionPlanningPage() {
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  // New Plan form data
-  const [planForm, setPlanForm] = useState({
-    lotNo: '',
-    stage: 'KNITTING',
-    plannedWeight: '',
-    plannedDate: new Date().toISOString().split('T')[0],
-    priority: 'NORMAL',
-    remarks: '',
+  const form = useForm<CreateProductionPlanInput>({
+    resolver: zodResolver(createProductionPlanSchema),
+
+    defaultValues: {
+      lotNo: '',
+
+      stage: '',
+
+      plannedWeight: 0,
+
+      priority: 'MEDIUM',
+    },
   });
 
   // New Job Card form data
@@ -83,6 +103,7 @@ export default function ProductionPlanningPage() {
       const response = await api.get(`/production-planning?${params.toString()}`);
       return response.data;
     },
+    refetchInterval: 30000,
   });
 
   // Fetch knitting lots for dropdown
@@ -95,11 +116,11 @@ export default function ProductionPlanningPage() {
   });
 
   // Mutations
-  const createPlanMutation = useMutation<ProductionPlan, Error, typeof planForm>({
-    mutationFn: async (form) => {
+  const createPlanMutation = useMutation<ProductionPlan, Error, CreateProductionPlanInput>({
+    mutationFn: async (values) => {
       const response = await api.post('/production-planning', {
-        ...form,
-        plannedWeight: parseFloat(form.plannedWeight),
+        ...values,
+        plannedDate: new Date().toISOString().split('T')[0],
       });
       return response.data;
     },
@@ -109,13 +130,11 @@ export default function ProductionPlanningPage() {
       queryClient.invalidateQueries({ queryKey: ['production-events'] });
       toast.success('Production plan created successfully');
       setCreateOpen(false);
-      setPlanForm({
+      form.reset({
         lotNo: '',
-        stage: 'KNITTING',
-        plannedWeight: '',
-        plannedDate: new Date().toISOString().split('T')[0],
-        priority: 'NORMAL',
-        remarks: '',
+        stage: '',
+        plannedWeight: 0,
+        priority: 'MEDIUM',
       });
     },
     onError: (error: unknown) => {
@@ -168,13 +187,8 @@ export default function ProductionPlanningPage() {
     },
   });
 
-  const handleCreatePlan = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!planForm.lotNo) {
-      toast.error('Please select a Knitting Lot');
-      return;
-    }
-    createPlanMutation.mutate(planForm);
+  const handleCreatePlan = (values: CreateProductionPlanInput) => {
+    createPlanMutation.mutate(values);
   };
 
   const handleCreateJobCard = (e: React.FormEvent) => {
@@ -206,6 +220,7 @@ export default function ProductionPlanningPage() {
   const pagination = plansData?.pagination;
 
   return (
+    <ProtectedRoute>
     <div className="p-6 space-y-8">
       <div className="flex items-center justify-between">
         <div>
@@ -413,100 +428,114 @@ export default function ProductionPlanningPage() {
               Create Production Plan
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreatePlan} className="space-y-4 pt-2">
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Knitting Lot *</label>
-              <select
-                required
-                value={planForm.lotNo}
-                onChange={(e) => setPlanForm({ ...planForm, lotNo: e.target.value })}
-                className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="">Select a lot...</option>
-                {knittingLots.map((lot) => (
-                  <option key={lot.id} value={lot.lotNo}>
-                    {lot.lotNo}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleCreatePlan)} className="space-y-4 pt-2">
+              <FormField
+                control={form.control}
+                name="lotNo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lot No</FormLabel>
 
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Stage *</label>
-              <select
-                required
-                value={planForm.stage}
-                onChange={(e) => setPlanForm({ ...planForm, stage: e.target.value })}
-                className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="KNITTING">Knitting</option>
-                <option value="DYEING">Dyeing</option>
-                <option value="COMPACTING">Compacting</option>
-                <option value="FINISHING">Finishing</option>
-              </select>
-            </div>
+                    <FormControl>
+                      <select
+                        {...field}
+                        className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="">Select a lot...</option>
+                        {knittingLots.map((lot) => (
+                          <option key={lot.id} value={lot.lotNo}>
+                            {lot.lotNo}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Planned Weight (kg) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  value={planForm.plannedWeight}
-                  onChange={(e) => setPlanForm({ ...planForm, plannedWeight: e.target.value })}
-                  className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="e.g. 150"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Planned Date *</label>
-                <input
-                  type="date"
-                  required
-                  value={planForm.plannedDate}
-                  onChange={(e) => setPlanForm({ ...planForm, plannedDate: e.target.value })}
-                  className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Priority *</label>
-              <select
-                required
-                value={planForm.priority}
-                onChange={(e) => setPlanForm({ ...planForm, priority: e.target.value })}
-                className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="LOW">Low</option>
-                <option value="NORMAL">Normal</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Remarks</label>
-              <textarea
-                value={planForm.remarks}
-                onChange={(e) => setPlanForm({ ...planForm, remarks: e.target.value })}
-                rows={2}
-                className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Planning notes..."
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="flex gap-4 justify-end pt-2">
-              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} className="border-slate-750 text-slate-300 hover:bg-slate-800">
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createPlanMutation.isPending} className="bg-blue-600 hover:bg-blue-500">
-                {createPlanMutation.isPending ? 'Creating...' : 'Create Plan'}
-              </Button>
-            </div>
-          </form>
+              <FormField
+                control={form.control}
+                name="stage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Stage</FormLabel>
+
+                    <FormControl>
+                      <select
+                        {...field}
+                        className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="">Select a stage...</option>
+                        <option value="KNITTING">Knitting</option>
+                        <option value="DYEING">Dyeing</option>
+                        <option value="COMPACTING">Compacting</option>
+                        <option value="FINISHING">Finishing</option>
+                      </select>
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Priority</FormLabel>
+
+                    <FormControl>
+                      <select
+                        {...field}
+                        className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="LOW">Low</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="HIGH">High</option>
+                        <option value="URGENT">Urgent</option>
+                      </select>
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="plannedWeight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Planned Weight</FormLabel>
+
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        step="0.01"
+                        className="border-slate-700/60 bg-slate-800/80 text-slate-200 focus-visible:ring-blue-500"
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex gap-4 justify-end pt-2">
+                <Button type="button" variant="outline" onClick={() => setCreateOpen(false)} className="border-slate-750 text-slate-300 hover:bg-slate-800">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createPlanMutation.isPending} className="bg-blue-600 hover:bg-blue-500">
+                  {createPlanMutation.isPending ? 'Creating...' : 'Create Plan'}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
@@ -599,5 +628,6 @@ export default function ProductionPlanningPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </ProtectedRoute>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
@@ -34,29 +35,35 @@ export default function DashboardPage() {
   const { data: summary, isLoading: summaryLoading } = useQuery<Summary>({
     queryKey: ['production-summary'],
     queryFn: async () => (await api.get('/production-planning/summary')).data,
+    refetchInterval: 30000,
   });
 
   // Fetch delayed plans
   const { data: delayedPlans = [], isLoading: delayedLoading } = useQuery<Plan[]>({
     queryKey: ['production-delayed'],
     queryFn: async () => (await api.get('/production-planning/delayed')).data,
+    refetchInterval: 30000,
   });
 
   // Fetch today's plans
   const { data: todayPlans = [], isLoading: todayLoading } = useQuery<Plan[]>({
     queryKey: ['production-today'],
     queryFn: async () => (await api.get('/production-planning/today')).data,
+    refetchInterval: 30000,
   });
 
   if (summaryLoading) {
     return (
-      <div className="p-6 min-h-[50vh] flex items-center justify-center text-slate-400">
-        <RefreshCw className="h-6 w-6 animate-spin mr-2" /> Loading MES metrics...
-      </div>
+      <ProtectedRoute>
+        <div className="p-6 min-h-[50vh] flex items-center justify-center text-slate-400">
+          <RefreshCw className="h-6 w-6 animate-spin mr-2" /> Loading MES metrics...
+        </div>
+      </ProtectedRoute>
     );
   }
 
   return (
+    <ProtectedRoute>
     <div className="p-6 space-y-8">
       <div>
         <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
@@ -245,5 +252,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

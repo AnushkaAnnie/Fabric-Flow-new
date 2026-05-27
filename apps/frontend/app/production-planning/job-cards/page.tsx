@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Button } from '@/components/ui/button';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -63,6 +64,7 @@ export default function JobCardsPage() {
       const response = await api.get(`/production-planning/job-cards?${params.toString()}`);
       return response.data;
     },
+    refetchInterval: 30000,
   });
 
   // Start Job Card Mutation
@@ -138,6 +140,7 @@ export default function JobCardsPage() {
   const pagination = jobCardsData?.pagination;
 
   return (
+    <ProtectedRoute>
     <div className="p-6 space-y-8">
       <div>
         <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
@@ -381,5 +384,6 @@ export default function JobCardsPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </ProtectedRoute>
   );
 }

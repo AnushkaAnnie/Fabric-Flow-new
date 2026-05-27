@@ -1,6 +1,7 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   RefreshCw, ClipboardPlus, Play, CheckCircle2, Ban, Calendar, Activity, Info
@@ -20,6 +21,7 @@ export default function EventsPage() {
   const { data: events = [], isLoading } = useQuery<ProductionEvent[]>({
     queryKey: ['production-events'],
     queryFn: async () => (await api.get('/production-planning/events')).data,
+    refetchInterval: 30000,
   });
 
   const getEventIcon = (type: string) => {
@@ -57,6 +59,7 @@ export default function EventsPage() {
   };
 
   return (
+    <ProtectedRoute>
     <div className="p-6 space-y-8">
       <div>
         <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
@@ -134,5 +137,6 @@ export default function EventsPage() {
         </CardContent>
       </Card>
     </div>
+    </ProtectedRoute>
   );
 }
