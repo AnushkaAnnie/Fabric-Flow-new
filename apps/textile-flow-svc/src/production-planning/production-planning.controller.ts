@@ -5,6 +5,8 @@ import {
   Param,
   Patch,
   Post,
+  Query,
+  Delete,
 } from '@nestjs/common';
 
 import { ProductionPlanningService }
@@ -101,5 +103,67 @@ export class ProductionPlanningController {
   async summary() {
     return this.productionPlanningService
       .getSummary();
+  }
+
+  @Get()
+  async plans(
+    @Query('page')
+    page?: string,
+
+    @Query('limit')
+    limit?: string,
+
+    @Query('status')
+    status?: string,
+
+    @Query('stage')
+    stage?: string,
+  ) {
+    return this.productionPlanningService
+      .getPlans({
+        page:
+          Number(page ?? 1),
+
+        limit:
+          Number(limit ?? 20),
+
+        status,
+
+        stage,
+      });
+  }
+
+  @Get('job-cards')
+  async jobCards(
+    @Query('page')
+    page?: string,
+
+    @Query('limit')
+    limit?: string,
+
+    @Query('status')
+    status?: string,
+  ) {
+    return this.productionPlanningService
+      .getJobCards({
+        page:
+          Number(page ?? 1),
+
+        limit:
+          Number(limit ?? 20),
+
+        status,
+      });
+  }
+
+  @Delete(':id')
+  async cancelPlan(
+    @Param('id')
+    id: string,
+  ) {
+    return this.productionPlanningService
+      .cancelPlan(
+        Number(id),
+      );
   }
 }

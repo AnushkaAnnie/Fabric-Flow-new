@@ -5,6 +5,7 @@ import {
 
 import {
   ProductionPlanStatus,
+  JobCardStatus,
 } from '@textile-flow/shared';
 
 import { PrismaService }
@@ -86,7 +87,7 @@ export class ProductionPlanningService {
           new Date(dto.plannedDate),
 
         priority:
-          dto.priority,
+          dto.priority as any,
 
         remarks:
           dto.remarks,
@@ -94,7 +95,7 @@ export class ProductionPlanningService {
         delayed,
 
         status:
-          ProductionPlanStatus.PENDING,
+          ProductionPlanStatus.PENDING as any,
       },
     });
   }
@@ -120,7 +121,7 @@ export class ProductionPlanningService {
 
         data: {
           status:
-            dto.status,
+            dto.status as any,
 
           completedWeight:
             dto.completedWeight,
@@ -151,6 +152,58 @@ export class ProductionPlanningService {
     return updated;
   }
 
+  async validateMachineCapacity({
+    machineNo,
+    plannedDate,
+  }: {
+    machineNo: string;
+    plannedDate: Date;
+  }) {
+    const start =
+      new Date(plannedDate);
+
+    start.setHours(
+      0,
+      0,
+      0,
+      0,
+    );
+
+    const end =
+      new Date(plannedDate);
+
+    end.setHours(
+      23,
+      59,
+      59,
+      999,
+    );
+
+    const existing =
+      await this.prisma.jobCard.count({
+        where: {
+          machineNo,
+
+          createdAt: {
+            gte: start,
+
+            lte: end,
+          },
+
+          status: {
+            not:
+              JobCardStatus.COMPLETED as any,
+          },
+        },
+      });
+
+    if (existing >= 5) {
+      throw new BadRequestException(
+        'Machine capacity exceeded',
+      );
+    }
+  }
+
   async createJobCard(
     dto: CreateJobCardDto,
   ) {
@@ -166,6 +219,27 @@ export class ProductionPlanningService {
       throw new BadRequestException(
         'Production plan not found',
       );
+    }
+
+    if (
+      plan.status ===
+      (ProductionPlanStatus.CANCELLED as any)
+    ) {
+      throw new BadRequestException(
+        'Cannot create job card for cancelled plan',
+      );
+    }
+
+    if (
+      dto.machineNo
+    ) {
+      await this.validateMachineCapacity({
+        machineNo:
+          dto.machineNo,
+
+        plannedDate:
+          plan.plannedDate,
+      });
     }
 
     return this.prisma.jobCard.create({
@@ -195,7 +269,7 @@ export class ProductionPlanningService {
           new Date(),
 
         status:
-          ProductionPlanStatus.ISSUED,
+          JobCardStatus.ISSUED as any,
       },
     });
   }
@@ -203,12 +277,32 @@ export class ProductionPlanningService {
   async startJobCard(
     id: number,
   ) {
+    const existing =
+      await this.prisma.jobCard.findUnique({
+        where: { id },
+      });
+
+    if (!existing) {
+      throw new BadRequestException(
+        'Job card not found',
+      );
+    }
+
+    if (
+      existing.status ===
+      (JobCardStatus.COMPLETED as any)
+    ) {
+      throw new BadRequestException(
+        'Completed job card cannot be started',
+      );
+    }
+
     return this.prisma.jobCard.update({
       where: { id },
 
       data: {
         status:
-          ProductionPlanStatus.IN_PROGRESS,
+          JobCardStatus.IN_PROGRESS as any,
 
         startedAt:
           new Date(),
@@ -235,58 +329,87 @@ export class ProductionPlanningService {
       );
     }
 
-    await this.prisma.jobCard.update({
-      where: { id },
-
-      data: {
-        completedWeight,
-
-        completedAt:
-          new Date(),
-
-        status:
-          ProductionPlanStatus.COMPLETED,
-      },
-    });
-
-    const totalCompleted =
-      await this.prisma.jobCard.aggregate({
-        where: {
-          productionPlanId:
-            job.productionPlanId,
-        },
-
-        _sum: {
-          completedWeight: true,
-        },
-      });
-
-    const completed =
-      Number(
-        totalCompleted._sum
-          .completedWeight ?? 0,
+    if (
+      job.status ===
+      (JobCardStatus.COMPLETED as any)
+    ) {
+      throw new BadRequestException(
+        'Job card already completed',
       );
+    }
 
-    const status =
-      completed >=
-      job.productionPlan
-        .plannedWeight
-        ? ProductionPlanStatus.COMPLETED
-        : ProductionPlanStatus.IN_PROGRESS;
+    if (
+      completedWeight >
+      job.targetWeight
+    ) {
+      throw new BadRequestException(
+        'Completed weight exceeds target weight',
+      );
+    }
 
-    await this.prisma.productionPlan.update({
-      where: {
-        id:
-          job.productionPlanId,
-      },
+    const result =
+      await this.prisma.$transaction(
+        async (tx) => {
+          await tx.jobCard.update({
+            where: { id },
 
-      data: {
-        completedWeight:
-          completed,
+            data: {
+              completedWeight,
 
-        status,
-      },
-    });
+              completedAt:
+                new Date(),
+
+              status:
+                JobCardStatus.COMPLETED as any,
+            },
+          });
+
+          const totalCompleted =
+            await tx.jobCard.aggregate({
+              where: {
+                productionPlanId:
+                  job.productionPlanId,
+              },
+
+              _sum: {
+                completedWeight: true,
+              },
+            });
+
+          const completed =
+            Number(
+              totalCompleted._sum
+                .completedWeight ?? 0,
+            );
+
+          const status =
+            completed >=
+            job.productionPlan
+              .plannedWeight
+              ? (ProductionPlanStatus.COMPLETED as any)
+              : (ProductionPlanStatus.IN_PROGRESS as any);
+
+          return tx.productionPlan.update({
+            where: {
+              id:
+                job.productionPlanId,
+            },
+
+            data: {
+              completedWeight:
+                completed,
+
+              status,
+
+              actualEndDate:
+                status ===
+                (ProductionPlanStatus.COMPLETED as any)
+                  ? new Date()
+                  : null,
+            },
+          });
+        },
+      );
 
     await this.lotTrackerService
       .evaluateLot(
@@ -294,9 +417,41 @@ export class ProductionPlanningService {
       )
       .catch(() => {});
 
-    return {
-      success: true,
-    };
+    return result;
+  }
+
+  async refreshDelayedStatuses() {
+    const today =
+      new Date();
+
+    await this.prisma.productionPlan.updateMany({
+      where: {
+        plannedDate: {
+          lt: today,
+        },
+
+        status: {
+          not:
+            ProductionPlanStatus.COMPLETED as any,
+        },
+      },
+
+      data: {
+        delayed: true,
+      },
+    });
+
+    await this.prisma.productionPlan.updateMany({
+      where: {
+        plannedDate: {
+          gte: today,
+        },
+      },
+
+      data: {
+        delayed: false,
+      },
+    });
   }
 
   async getTodayPlans() {
@@ -333,20 +488,210 @@ export class ProductionPlanningService {
   }
 
   async getDelayedPlans() {
+    await this.refreshDelayedStatuses();
+
     return this.prisma.productionPlan.findMany({
       where: {
         delayed: true,
 
         status: {
           not:
-            ProductionPlanStatus.COMPLETED,
+            ProductionPlanStatus.COMPLETED as any,
         },
+      },
+
+      include: {
+        jobCards: true,
       },
 
       orderBy: {
         plannedDate: 'asc',
       },
     });
+  }
+
+  async getPlans({
+    page = 1,
+
+    limit = 20,
+
+    status,
+
+    stage,
+  }: {
+    page?: number;
+
+    limit?: number;
+
+    status?: string;
+
+    stage?: string;
+  }) {
+    const where: any = {};
+
+    if (status) {
+      where.status =
+        status as any;
+    }
+
+    if (stage) {
+      where.stage =
+        stage;
+    }
+
+    const [data, total] =
+      await Promise.all([
+        this.prisma.productionPlan.findMany({
+          where,
+
+          include: {
+            jobCards: true,
+          },
+
+          orderBy: {
+            plannedDate: 'desc',
+          },
+
+          skip:
+            (page - 1) * limit,
+
+          take:
+            limit,
+        }),
+
+        this.prisma.productionPlan.count({
+          where,
+        }),
+      ]);
+
+    return {
+      data,
+
+      pagination: {
+        total,
+
+        page,
+
+        limit,
+
+        totalPages:
+          Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getJobCards({
+    page = 1,
+
+    limit = 20,
+
+    status,
+  }: {
+    page?: number;
+
+    limit?: number;
+
+    status?: string;
+  }) {
+    const where: any = {};
+
+    if (status) {
+      where.status =
+        status as any;
+    }
+
+    const [data, total] =
+      await Promise.all([
+        this.prisma.jobCard.findMany({
+          where,
+
+          include: {
+            productionPlan: true,
+          },
+
+          orderBy: {
+            createdAt: 'desc',
+          },
+
+          skip:
+            (page - 1) * limit,
+
+          take:
+            limit,
+        }),
+
+        this.prisma.jobCard.count({
+          where,
+        }),
+      ]);
+
+    return {
+      data,
+
+      pagination: {
+        total,
+
+        page,
+
+        limit,
+
+        totalPages:
+          Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async cancelPlan(
+    id: number,
+  ) {
+    const plan =
+      await this.prisma.productionPlan.findUnique({
+        where: { id },
+      });
+
+    if (!plan) {
+      throw new BadRequestException(
+        'Production plan not found',
+      );
+    }
+
+    if (
+      plan.status ===
+      (ProductionPlanStatus.COMPLETED as any)
+    ) {
+      throw new BadRequestException(
+        'Completed plan cannot be cancelled',
+      );
+    }
+
+    return this.prisma.$transaction(
+      async (tx) => {
+        await tx.jobCard.updateMany({
+          where: {
+            productionPlanId: id,
+
+            status: {
+              not:
+                JobCardStatus.COMPLETED as any,
+            },
+          },
+
+          data: {
+            status:
+              JobCardStatus.CANCELLED as any,
+          },
+        });
+
+        return tx.productionPlan.update({
+          where: { id },
+
+          data: {
+            status:
+              ProductionPlanStatus.CANCELLED as any,
+          },
+        });
+      },
+    );
   }
 
   async getSummary() {
@@ -364,21 +709,21 @@ export class ProductionPlanningService {
       this.prisma.productionPlan.count({
         where: {
           status:
-            ProductionPlanStatus.COMPLETED,
+            ProductionPlanStatus.COMPLETED as any,
         },
       }),
 
       this.prisma.productionPlan.count({
         where: {
           status:
-            ProductionPlanStatus.PENDING,
+            ProductionPlanStatus.PENDING as any,
         },
       }),
 
       this.prisma.productionPlan.count({
         where: {
           status:
-            ProductionPlanStatus.IN_PROGRESS,
+            ProductionPlanStatus.IN_PROGRESS as any,
         },
       }),
     ]);

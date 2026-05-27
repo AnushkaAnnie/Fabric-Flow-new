@@ -672,25 +672,49 @@ model LotEvent {
   @@map("lot_events")
 }
 
+enum ProductionPlanStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum JobCardStatus {
+  PENDING
+  ISSUED
+  IN_PROGRESS
+  COMPLETED
+  HOLD
+  CANCELLED
+}
+
+enum ProductionPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
 model ProductionPlan {
-  id                Int       @id @default(autoincrement())
-  planNo            String    @unique
+  id                Int                  @id @default(autoincrement())
+  planNo            String               @unique
   lotNo             String
   stage             String
   plannedWeight     Float
-  completedWeight   Float     @default(0)
+  completedWeight   Float                @default(0)
   plannedDate       DateTime
   actualStartDate   DateTime?
   actualEndDate     DateTime?
-  priority          String
-  status            String
-  delayed           Boolean   @default(false)
+  priority          ProductionPriority
+  status            ProductionPlanStatus
+  delayed           Boolean              @default(false)
   remarks           String?
   createdBy         String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
   jobCards          JobCard[]
 
+  @@unique([lotNo, stage, plannedDate])
   @@index([lotNo])
   @@index([status])
   @@index([stage])
@@ -700,25 +724,27 @@ model ProductionPlan {
 }
 
 model JobCard {
-  id                 Int       @id @default(autoincrement())
-  jobCardNo          String    @unique
+  id                 Int            @id @default(autoincrement())
+  jobCardNo          String         @unique
   productionPlanId   Int
   machineNo          String?
   operatorName       String?
   shift              String?
   targetWeight       Float
-  completedWeight    Float     @default(0)
+  completedWeight    Float          @default(0)
   issuedAt           DateTime?
   startedAt          DateTime?
   completedAt        DateTime?
-  status             String
+  status             JobCardStatus
   remarks            String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
   productionPlan     ProductionPlan @relation(fields: [productionPlanId], references: [id], onDelete: Cascade)
 
   @@index([jobCardNo])
   @@index([machineNo])
   @@index([status])
+  @@index([machineNo, status])
 }
+
 

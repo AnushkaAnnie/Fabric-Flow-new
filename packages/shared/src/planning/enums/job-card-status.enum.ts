@@ -1,9 +1,13 @@
-export enum ProductionPlanStatus {
+export enum JobCardStatus {
   PENDING = 'PENDING',
+
+  ISSUED = 'ISSUED',
 
   IN_PROGRESS = 'IN_PROGRESS',
 
   COMPLETED = 'COMPLETED',
+
+  HOLD = 'HOLD',
 
   CANCELLED = 'CANCELLED',
 }
