@@ -15,6 +15,7 @@ import { Pagination } from '@/components/production/pagination';
 import { QueryError } from '@/components/production/query-error';
 import { getJobCards } from '@/lib/api/production';
 import { QUERY_KEYS } from '@/lib/query-keys';
+import { QUERY_CONFIG } from '@/lib/react-query-config';
 import { JobCard, PaginatedResponse } from '@/types/production';
 import { RefreshCw } from 'lucide-react';
 
@@ -34,8 +35,37 @@ export default function JobCardsPage() {
         limit,
         status: statusFilter || undefined,
       }),
-    refetchInterval: 30000,
+    ...QUERY_CONFIG.tables,
   });
+
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <div className="p-6 space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+              Job Card Management
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              Execute work orders, log machine allocation, record operator activity, and track completed weights.
+            </p>
+          </div>
+          <TableSkeleton />
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
+  if (error) {
+    return (
+      <ProtectedRoute>
+        <QueryError
+          message="Failed to load data."
+          retry={refetch}
+        />
+      </ProtectedRoute>
+    );
+  }
 
   const cardsList = jobCardsData?.data ?? [];
 
@@ -134,14 +164,7 @@ export default function JobCardsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <TableSkeleton />
-            ) : error ? (
-              <QueryError
-                message="Failed to load job cards."
-                retry={refetch}
-              />
-            ) : cardsList.length === 0 ? (
+            {cardsList.length === 0 ? (
               <EmptyState
                 title="No Job Cards Found"
                 description="No job cards match the filtered criteria."

@@ -1,28 +1,48 @@
 'use client';
 import { getProductionEvents } from '@/lib/api/production';
 import { QUERY_KEYS } from '@/lib/query-keys';
+import { QUERY_CONFIG } from '@/lib/react-query-config';
 import { QueryError } from '@/components/production/query-error';
 import { ProductionEvent } from '@/types/production';
+import { TableSkeleton } from '@/components/production/table-skeleton';
 
 import { useQuery } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  RefreshCw, ClipboardPlus, Play, CheckCircle2, Ban, Calendar, Activity, Info
+  ClipboardPlus, Play, CheckCircle2, Ban, Calendar, Activity, Info
 } from 'lucide-react';
 
 export default function EventsPage() {
   const { data: events = [], isLoading, error, refetch } = useQuery<ProductionEvent[]>({
     queryKey: QUERY_KEYS.events,
     queryFn: getProductionEvents,
-    refetchInterval: 30000,
+    ...QUERY_CONFIG.execution,
   });
+
+  if (isLoading) {
+    return (
+      <ProtectedRoute>
+        <div className="p-6 space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+              Operational Event Timeline
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              Complete, tamper-evident audit history of all production plan lifecycles and machine operations.
+            </p>
+          </div>
+          <TableSkeleton />
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   if (error) {
     return (
       <ProtectedRoute>
         <QueryError
-          message="Failed to load events timeline."
+          message="Failed to load data."
           retry={refetch}
         />
       </ProtectedRoute>
@@ -77,11 +97,7 @@ export default function EventsPage() {
 
       <Card className="glass-card border-slate-800 bg-slate-900/40">
         <CardContent className="p-6">
-          {isLoading ? (
-            <div className="py-12 flex justify-center items-center text-slate-400">
-              <RefreshCw className="h-6 w-6 animate-spin mr-2" /> Loading event log...
-            </div>
-          ) : events.length === 0 ? (
+          {events.length === 0 ? (
             <div className="py-12 text-center text-slate-500">
               No MES events have been recorded yet. Create a plan to start auditing.
             </div>

@@ -7,32 +7,34 @@ import { QueryError } from '@/components/production/query-error';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
-  TrendingUp, Clock, ClipboardList, CheckCircle, RefreshCw, AlertCircle, CalendarRange
+  TrendingUp, Clock, ClipboardList, CheckCircle, AlertCircle, CalendarRange
 } from 'lucide-react';
 import { getProductionSummary, getDelayedPlans, getTodayPlans } from '@/lib/api/production';
 import { ProductionPlan, ProductionSummary } from '@/types/production';
 import { QUERY_KEYS } from '@/lib/query-keys';
+import { QUERY_CONFIG } from '@/lib/react-query-config';
+import { TableSkeleton } from '@/components/production/table-skeleton';
 
 export default function DashboardPage() {
   // Fetch summary
   const { data: summary, isLoading: summaryLoading, error: summaryError, refetch: refetchSummary } = useQuery<ProductionSummary>({
     queryKey: [...QUERY_KEYS.dashboard, 'summary'],
     queryFn: getProductionSummary,
-    refetchInterval: 30000,
+    ...QUERY_CONFIG.dashboard,
   });
 
   // Fetch delayed plans
   const { data: delayedPlans = [], isLoading: delayedLoading, error: delayedError, refetch: refetchDelayed } = useQuery<ProductionPlan[]>({
     queryKey: [...QUERY_KEYS.dashboard, 'delayed'],
     queryFn: getDelayedPlans,
-    refetchInterval: 30000,
+    ...QUERY_CONFIG.dashboard,
   });
 
   // Fetch today's plans
   const { data: todayPlans = [], isLoading: todayLoading, error: todayError, refetch: refetchToday } = useQuery<ProductionPlan[]>({
     queryKey: [...QUERY_KEYS.dashboard, 'today'],
     queryFn: getTodayPlans,
-    refetchInterval: 30000,
+    ...QUERY_CONFIG.dashboard,
   });
 
   const refetchAll = () => {
@@ -42,12 +44,21 @@ export default function DashboardPage() {
   };
 
   const hasError = summaryError || delayedError || todayError;
+  const isLoading = summaryLoading || delayedLoading || todayLoading;
 
-  if (summaryLoading || delayedLoading || todayLoading) {
+  if (isLoading) {
     return (
       <ProtectedRoute>
-        <div className="p-6 min-h-[50vh] flex items-center justify-center text-slate-400">
-          <RefreshCw className="h-6 w-6 animate-spin mr-2" /> Loading MES metrics...
+        <div className="p-6 space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
+              MES Dashboard & KPI Metrics
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              Real-time tracking of manufacturing efficiency, delay incidents, and active work orders.
+            </p>
+          </div>
+          <TableSkeleton />
         </div>
       </ProtectedRoute>
     );
@@ -57,7 +68,7 @@ export default function DashboardPage() {
     return (
       <ProtectedRoute>
         <QueryError
-          message="Failed to load dashboard."
+          message="Failed to load data."
           retry={refetchAll}
         />
       </ProtectedRoute>

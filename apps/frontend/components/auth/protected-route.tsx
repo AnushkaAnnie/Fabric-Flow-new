@@ -11,23 +11,24 @@ export function ProtectedRoute({
   children,
 }: Props) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(true);
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
 
     if (!token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setChecking(false);
       router.replace('/login');
       return;
     }
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAuthorized(true);
-    setLoading(false);
+    setChecking(false);
   }, [router]);
 
-  if (loading) {
+  if (checking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#080c14]">
         <div className="text-slate-500 animate-pulse text-sm font-medium">

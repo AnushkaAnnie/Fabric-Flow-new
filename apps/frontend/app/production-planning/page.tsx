@@ -30,6 +30,7 @@ import { Pagination } from '@/components/production/pagination';
 import { QueryError } from '@/components/production/query-error';
 import { getProductionPlans } from '@/lib/api/production';
 import { QUERY_KEYS } from '@/lib/query-keys';
+import { QUERY_CONFIG } from '@/lib/react-query-config';
 import { ProductionPlan, PaginatedResponse } from '@/types/production';
 import {
   createProductionPlanSchema,
@@ -83,8 +84,9 @@ export default function ProductionPlanningPage() {
         status: statusFilter || undefined,
         stage: stageFilter || undefined,
       }),
-    refetchInterval: 30000,
+    ...QUERY_CONFIG.tables,
   });
+
 
   // Fetch knitting lots for dropdown
   const { data: knittingLots = [] } = useQuery<KnittingLot[]>({
@@ -264,6 +266,35 @@ export default function ProductionPlanningPage() {
     },
   ];
 
+  if (plansLoading) {
+    return (
+      <ProtectedRoute>
+        <div className="p-6 space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+              Production Planning
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              Create plans, track stage-wise weight completion, and dispatch Job Cards to machines.
+            </p>
+          </div>
+          <TableSkeleton />
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
+  if (error) {
+    return (
+      <ProtectedRoute>
+        <QueryError
+          message="Failed to load data."
+          retry={refetch}
+        />
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <div className="p-6 space-y-8">
@@ -343,14 +374,7 @@ export default function ProductionPlanningPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {plansLoading ? (
-              <TableSkeleton />
-            ) : error ? (
-              <QueryError
-                message="Failed to load production plans."
-                retry={refetch}
-              />
-            ) : plansList.length === 0 ? (
+            {plansList.length === 0 ? (
               <EmptyState
                 title="No Plans Found"
                 description="No production plans match the filter criteria."

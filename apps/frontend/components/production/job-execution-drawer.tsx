@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { completeJobCard, startJobCard } from '@/lib/api/production';
+import { completeJobCard, startJobCard, getJobCards } from '@/lib/api/production';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -16,6 +16,7 @@ import { StatusBadge } from './status-badge';
 import { Play, CheckCircle } from 'lucide-react';
 import { JobCard } from '@/types/production';
 import { QUERY_KEYS } from '@/lib/query-keys';
+import { QUERY_CONFIG } from '@/lib/react-query-config';
 
 interface JobExecutionDrawerProps {
   open: boolean;
@@ -31,26 +32,34 @@ export function JobExecutionDrawer({
   const queryClient = useQueryClient();
   const [completedWeight, setCompletedWeight] = useState('');
 
-  // Sync state when drawer opens or job changes
+  // Fetch the latest job cards list to ensure drawer state is in sync with background polls
+  const { data: jobCardsData } = useQuery({
+    queryKey: QUERY_KEYS.jobCards,
+    queryFn: () => getJobCards({ limit: 100 }),
+    enabled: open && !!job,
+    ...QUERY_CONFIG.execution,
+  });
+
+  const jobs = jobCardsData?.data;
+  const latestJob = jobs?.find((j) => j.id === job?.id) ?? job;
+
+  // Sync state when drawer opens or latestJob changes
   useEffect(() => {
-    if (job) {
-      const timer = setTimeout(() => {
-        setCompletedWeight(String(job.targetWeight));
-      }, 0);
-      return () => clearTimeout(timer);
+    if (latestJob) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCompletedWeight(String(latestJob.targetWeight));
     }
-  }, [job]);
+  }, [latestJob]);
 
   const startMutation = useMutation({
     mutationFn: () => {
-      if (!job) throw new Error('No job selected');
-      return startJobCard(job.id);
+      if (!latestJob) throw new Error('No job selected');
+      return startJobCard(latestJob.id);
     },
     onSuccess: () => {
       toast.success('Job started');
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.jobCards });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.plans });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events });
     },
@@ -61,23 +70,23 @@ export function JobExecutionDrawer({
 
   const completeMutation = useMutation({
     mutationFn: (weight: number) => {
-      if (!job) throw new Error('No job selected');
-      return completeJobCard(job.id, weight);
+      if (!latestJob) throw new Error('No job selected');
+      return completeJobCard(latestJob.id, weight);
     },
     onSuccess: () => {
       toast.success('Job completed');
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.jobCards });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.plans });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.plans });
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'Failed to complete job card');
     },
   });
 
-  if (!job) {
+  if (!latestJob) {
     return null;
   }
 
@@ -87,8 +96,8 @@ export function JobExecutionDrawer({
       toast.error('Please enter a valid weight');
       return;
     }
-    if (weight > job.targetWeight) {
-      toast.error(`Completed weight cannot exceed target weight of ${job.targetWeight} kg`);
+    if (weight > latestJob.targetWeight) {
+      toast.error(`Completed weight cannot exceed target weight of ${latestJob.targetWeight} kg`);
       return;
     }
     completeMutation.mutate(weight);
@@ -115,27 +124,27 @@ export function JobExecutionDrawer({
           <div className="grid grid-cols-2 gap-4 bg-slate-900/40 p-4 rounded-xl border border-slate-800/60">
             <div>
               <p className="text-slate-500 text-xs uppercase tracking-wider font-semibold">Job Card</p>
-              <p className="font-mono text-sm font-semibold text-indigo-300 mt-1">{job.jobCardNo}</p>
+              <p className="font-mono text-sm font-semibold text-indigo-300 mt-1">{latestJob.jobCardNo}</p>
             </div>
             <div>
               <p className="text-slate-500 text-xs uppercase tracking-wider font-semibold">Status</p>
               <div className="mt-1">
-                <StatusBadge status={job.status} />
+                <StatusBadge status={latestJob.status} />
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            {job.productionPlan && (
+            {latestJob.productionPlan && (
               <>
                 <div>
                   <p className="text-slate-400 text-sm">Plan Ref</p>
-                  <p className="font-medium text-slate-200">#{job.productionPlan.planNo}</p>
+                  <p className="font-medium text-slate-200">#{latestJob.productionPlan.planNo}</p>
                 </div>
                 <div>
                   <p className="text-slate-400 text-sm">Lot & Stage</p>
                   <p className="font-medium text-slate-200">
-                    {job.productionPlan.lotNo} ({job.productionPlan.stage})
+                    {latestJob.productionPlan.lotNo} ({latestJob.productionPlan.stage})
                   </p>
                 </div>
               </>
@@ -143,30 +152,30 @@ export function JobExecutionDrawer({
 
             <div>
               <p className="text-slate-400 text-sm font-medium">Allocated Machine</p>
-              <p className="font-medium text-slate-200">{job.machineNo || 'Unassigned'}</p>
+              <p className="font-medium text-slate-200">{latestJob.machineNo || 'Unassigned'}</p>
             </div>
 
             <div>
               <p className="text-slate-400 text-sm font-medium">Assigned Operator</p>
-              <p className="font-medium text-slate-200">{job.operatorName || 'Unassigned'}</p>
+              <p className="font-medium text-slate-200">{latestJob.operatorName || 'Unassigned'}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-slate-400 text-sm font-medium">Shift</p>
-                <p className="font-medium text-slate-200">{job.shift || 'N/A'}</p>
+                <p className="font-medium text-slate-200">{latestJob.shift || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-slate-400 text-sm font-medium">Target Weight</p>
-                <p className="font-medium text-slate-200">{job.targetWeight} kg</p>
+                <p className="font-medium text-slate-200">{latestJob.targetWeight} kg</p>
               </div>
             </div>
 
-            {job.remarks && (
+            {latestJob.remarks && (
               <div>
                 <p className="text-slate-400 text-sm font-medium">Remarks / Instructions</p>
                 <p className="text-slate-300 text-sm bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/40 mt-1 whitespace-pre-wrap">
-                  {job.remarks}
+                  {latestJob.remarks}
                 </p>
               </div>
             )}
@@ -175,7 +184,7 @@ export function JobExecutionDrawer({
           {/* Action Area */}
           <div className="border-t border-slate-850 pt-6">
             <div className="flex flex-col gap-4">
-              {job.status === 'ISSUED' && (
+              {latestJob.status === 'ISSUED' && (
                 <Button
                   disabled={isProcessing}
                   onClick={() => startMutation.mutate()}
@@ -186,7 +195,7 @@ export function JobExecutionDrawer({
                 </Button>
               )}
 
-              {job.status === 'IN_PROGRESS' && (
+              {latestJob.status === 'IN_PROGRESS' && (
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm text-slate-400 mb-1.5 font-medium">
@@ -215,13 +224,13 @@ export function JobExecutionDrawer({
                 </div>
               )}
 
-              {job.status === 'COMPLETED' && (
+              {latestJob.status === 'COMPLETED' && (
                 <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 text-center text-xs text-emerald-400 font-semibold">
-                  This job has been completed. Completed Weight: {job.completedWeight} kg.
+                  This job has been completed. Completed Weight: {latestJob.completedWeight} kg.
                 </div>
               )}
 
-              {job.status === 'CANCELLED' && (
+              {latestJob.status === 'CANCELLED' && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3.5 text-center text-xs text-red-400 font-semibold">
                   This job card was cancelled.
                 </div>
