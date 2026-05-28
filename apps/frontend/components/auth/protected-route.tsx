@@ -22,12 +22,9 @@ export function ProtectedRoute({
       return;
     }
 
-    const timer = setTimeout(() => {
-      setAuthorized(true);
-      setLoading(false);
-    }, 0);
-
-    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAuthorized(true);
+    setLoading(false);
   }, [router]);
 
   if (loading) {

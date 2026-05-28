@@ -56,12 +56,10 @@ export default function DashboardPage() {
   if (hasError) {
     return (
       <ProtectedRoute>
-        <div className="p-6 min-h-[50vh] flex items-center justify-center">
-          <QueryError
-            message="Failed to load MES metrics or dashboard schedules."
-            retry={refetchAll}
-          />
-        </div>
+        <QueryError
+          message="Failed to load dashboard."
+          retry={refetchAll}
+        />
       </ProtectedRoute>
     );
   }

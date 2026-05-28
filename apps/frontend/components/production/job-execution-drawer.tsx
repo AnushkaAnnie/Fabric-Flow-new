@@ -175,7 +175,7 @@ export function JobExecutionDrawer({
           {/* Action Area */}
           <div className="border-t border-slate-850 pt-6">
             <div className="flex flex-col gap-4">
-              {job.status !== 'COMPLETED' && job.status !== 'IN_PROGRESS' && (
+              {job.status === 'ISSUED' && (
                 <Button
                   disabled={isProcessing}
                   onClick={() => startMutation.mutate()}
@@ -186,24 +186,22 @@ export function JobExecutionDrawer({
                 </Button>
               )}
 
-              {job.status !== 'COMPLETED' && (
+              {job.status === 'IN_PROGRESS' && (
                 <div className="space-y-4">
-                  {job.status === 'IN_PROGRESS' && (
-                    <div>
-                      <label className="block text-sm text-slate-400 mb-1.5 font-medium">
-                        Actual Completed Weight (kg) *
-                      </label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        required
-                        value={completedWeight}
-                        disabled={isProcessing}
-                        onChange={(e) => setCompletedWeight(e.target.value)}
-                        className="border-slate-700 bg-slate-900 text-slate-200 focus-visible:ring-emerald-500"
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1.5 font-medium">
+                      Actual Completed Weight (kg) *
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={completedWeight}
+                      disabled={isProcessing}
+                      onChange={(e) => setCompletedWeight(e.target.value)}
+                      className="border-slate-700 bg-slate-900 text-slate-200 focus-visible:ring-emerald-500"
+                    />
+                  </div>
 
                   <Button
                     variant="secondary"

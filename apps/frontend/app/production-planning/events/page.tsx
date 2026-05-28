@@ -18,6 +18,17 @@ export default function EventsPage() {
     refetchInterval: 30000,
   });
 
+  if (error) {
+    return (
+      <ProtectedRoute>
+        <QueryError
+          message="Failed to load events timeline."
+          retry={refetch}
+        />
+      </ProtectedRoute>
+    );
+  }
+
   const getEventIcon = (type: string) => {
     switch (type) {
       case 'PLAN_CREATED':
@@ -70,11 +81,6 @@ export default function EventsPage() {
             <div className="py-12 flex justify-center items-center text-slate-400">
               <RefreshCw className="h-6 w-6 animate-spin mr-2" /> Loading event log...
             </div>
-          ) : error ? (
-            <QueryError
-              message="Failed to load operational event timeline."
-              retry={refetch}
-            />
           ) : events.length === 0 ? (
             <div className="py-12 text-center text-slate-500">
               No MES events have been recorded yet. Create a plan to start auditing.
