@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import { StatusBadge } from '@/components/production/status-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
@@ -182,13 +183,7 @@ export default function DashboardPage() {
                         </TableCell>
                         <TableCell className="text-slate-300 text-xs">{plan.plannedWeight} kg</TableCell>
                         <TableCell>
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                            plan.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                            plan.status === 'IN_PROGRESS' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                            'bg-slate-500/10 text-slate-400 border border-slate-500/20'
-                          }`}>
-                            {plan.status}
-                          </span>
+                          <StatusBadge status={plan.status} />
                         </TableCell>
                       </TableRow>
                     ))}
