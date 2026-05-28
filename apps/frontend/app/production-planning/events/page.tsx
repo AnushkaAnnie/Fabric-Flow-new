@@ -1,26 +1,20 @@
 'use client';
+import { getProductionEvents } from '@/lib/api/production';
+import { QUERY_KEYS } from '@/lib/query-keys';
+import { QueryError } from '@/components/production/query-error';
+import { ProductionEvent } from '@/types/production';
+
 import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/api';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   RefreshCw, ClipboardPlus, Play, CheckCircle2, Ban, Calendar, Activity, Info
 } from 'lucide-react';
 
-interface ProductionEvent {
-  id: number;
-  productionPlanId?: number;
-  jobCardId?: number;
-  eventType: string;
-  message: string;
-  metadata?: Record<string, unknown>;
-  createdAt: string;
-}
-
 export default function EventsPage() {
-  const { data: events = [], isLoading } = useQuery<ProductionEvent[]>({
-    queryKey: ['production-events'],
-    queryFn: async () => (await api.get('/production-planning/events')).data,
+  const { data: events = [], isLoading, error, refetch } = useQuery<ProductionEvent[]>({
+    queryKey: QUERY_KEYS.events,
+    queryFn: getProductionEvents,
     refetchInterval: 30000,
   });
 
@@ -76,6 +70,11 @@ export default function EventsPage() {
             <div className="py-12 flex justify-center items-center text-slate-400">
               <RefreshCw className="h-6 w-6 animate-spin mr-2" /> Loading event log...
             </div>
+          ) : error ? (
+            <QueryError
+              message="Failed to load operational event timeline."
+              retry={refetch}
+            />
           ) : events.length === 0 ? (
             <div className="py-12 text-center text-slate-500">
               No MES events have been recorded yet. Create a plan to start auditing.

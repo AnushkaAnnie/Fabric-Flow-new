@@ -32,11 +32,19 @@ export interface JobCard {
   };
 }
 
+export type ProductionEventType =
+  | 'PLAN_CREATED'
+  | 'PLAN_UPDATED'
+  | 'JOB_CARD_CREATED'
+  | 'JOB_STARTED'
+  | 'JOB_COMPLETED'
+  | 'PLAN_CANCELLED';
+
 export interface ProductionEvent {
   id: number;
   productionPlanId?: number;
   jobCardId?: number;
-  eventType: string;
+  eventType: ProductionEventType;
   message: string;
   metadata?: Record<string, unknown>;
   createdAt: string;

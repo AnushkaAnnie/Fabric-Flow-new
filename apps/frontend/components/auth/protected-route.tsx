@@ -11,6 +11,7 @@ export function ProtectedRoute({
   children,
 }: Props) {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
@@ -23,10 +24,21 @@ export function ProtectedRoute({
 
     const timer = setTimeout(() => {
       setAuthorized(true);
+      setLoading(false);
     }, 0);
 
     return () => clearTimeout(timer);
   }, [router]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#080c14]">
+        <div className="text-slate-500 animate-pulse text-sm font-medium">
+          Checking authentication...
+        </div>
+      </div>
+    );
+  }
 
   if (!authorized) {
     return null;

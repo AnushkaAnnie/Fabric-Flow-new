@@ -12,7 +12,9 @@ import { JobExecutionDrawer } from '@/components/production/job-execution-drawer
 import { EmptyState } from '@/components/production/empty-state';
 import { TableSkeleton } from '@/components/production/table-skeleton';
 import { Pagination } from '@/components/production/pagination';
+import { QueryError } from '@/components/production/query-error';
 import { getJobCards } from '@/lib/api/production';
+import { QUERY_KEYS } from '@/lib/query-keys';
 import { JobCard, PaginatedResponse } from '@/types/production';
 import { RefreshCw } from 'lucide-react';
 
@@ -24,8 +26,8 @@ export default function JobCardsPage() {
   const limit = 10;
 
   // Fetch job cards via centralized API layer
-  const { data: jobCardsData, isLoading: loading } = useQuery<PaginatedResponse<JobCard>>({
-    queryKey: ['job-cards', statusFilter, page],
+  const { data: jobCardsData, isLoading: loading, error, refetch } = useQuery<PaginatedResponse<JobCard>>({
+    queryKey: [...QUERY_KEYS.jobCards, statusFilter, page],
     queryFn: () =>
       getJobCards({
         page,
@@ -134,6 +136,11 @@ export default function JobCardsPage() {
           <CardContent>
             {loading ? (
               <TableSkeleton />
+            ) : error ? (
+              <QueryError
+                message="Failed to load job cards."
+                retry={refetch}
+              />
             ) : cardsList.length === 0 ? (
               <EmptyState
                 title="No Job Cards Found"

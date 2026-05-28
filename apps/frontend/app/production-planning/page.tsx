@@ -29,6 +29,7 @@ import { TableSkeleton } from '@/components/production/table-skeleton';
 import { Pagination } from '@/components/production/pagination';
 import { QueryError } from '@/components/production/query-error';
 import { getProductionPlans } from '@/lib/api/production';
+import { QUERY_KEYS } from '@/lib/query-keys';
 import { ProductionPlan, PaginatedResponse } from '@/types/production';
 import {
   createProductionPlanSchema,
@@ -74,7 +75,7 @@ export default function ProductionPlanningPage() {
 
   // Fetch plans via centralized query layer
   const { data: plansData, isLoading: plansLoading, error, refetch } = useQuery<PaginatedResponse<ProductionPlan>>({
-    queryKey: ['plans', statusFilter, stageFilter, page],
+    queryKey: [...QUERY_KEYS.plans, statusFilter, stageFilter, page],
     queryFn: () =>
       getProductionPlans({
         page,

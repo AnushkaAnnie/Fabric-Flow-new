@@ -15,6 +15,7 @@ import {
 import { StatusBadge } from './status-badge';
 import { Play, CheckCircle } from 'lucide-react';
 import { JobCard } from '@/types/production';
+import { QUERY_KEYS } from '@/lib/query-keys';
 
 interface JobExecutionDrawerProps {
   open: boolean;
@@ -46,16 +47,12 @@ export function JobExecutionDrawer({
       return startJobCard(job.id);
     },
     onSuccess: () => {
-      toast.success('Job execution started');
-      queryClient.invalidateQueries({ queryKey: ['job-cards'] });
-      queryClient.invalidateQueries({ queryKey: ['plans'] });
-      queryClient.invalidateQueries({ queryKey: ['production-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['production-delayed'] });
-      queryClient.invalidateQueries({ queryKey: ['production-today'] });
-      queryClient.invalidateQueries({ queryKey: ['production-events'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success('Job started');
       onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.jobCards });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.plans });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events });
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'Failed to start job card');
@@ -68,16 +65,12 @@ export function JobExecutionDrawer({
       return completeJobCard(job.id, weight);
     },
     onSuccess: () => {
-      toast.success('Job completed successfully');
-      queryClient.invalidateQueries({ queryKey: ['job-cards'] });
-      queryClient.invalidateQueries({ queryKey: ['plans'] });
-      queryClient.invalidateQueries({ queryKey: ['production-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['production-delayed'] });
-      queryClient.invalidateQueries({ queryKey: ['production-today'] });
-      queryClient.invalidateQueries({ queryKey: ['production-events'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success('Job completed');
       onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.jobCards });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.plans });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events });
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'Failed to complete job card');
@@ -104,10 +97,7 @@ export function JobExecutionDrawer({
   const isProcessing = startMutation.isPending || completeMutation.isPending;
 
   return (
-    <Sheet
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-[500px] overflow-y-auto bg-slate-950 border-slate-800 text-slate-100">
         {isProcessing && (
           <div className="mb-4 rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-300">
@@ -183,60 +173,62 @@ export function JobExecutionDrawer({
           </div>
 
           {/* Action Area */}
-          <div className="border-t border-slate-850 pt-6 space-y-4">
-            {job.status === 'ISSUED' && (
-              <Button
-                onClick={() => startMutation.mutate()}
-                disabled={isProcessing}
-                className="w-full bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-500/10"
-              >
-                <Play className="mr-2 h-4 w-4" />
-                {startMutation.isPending ? 'Starting...' : 'Start Job Work'}
-              </Button>
-            )}
-
-            {job.status === 'IN_PROGRESS' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1.5 font-medium">
-                    Actual Completed Weight (kg) *
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={completedWeight}
-                    disabled={isProcessing}
-                    onChange={(e) => setCompletedWeight(e.target.value)}
-                    className="border-slate-700 bg-slate-900 text-slate-200 focus-visible:ring-emerald-500"
-                  />
-                  <p className="text-[10px] text-slate-500 mt-1">
-                    Completed weight must not exceed the target weight of {job.targetWeight} kg.
-                  </p>
-                </div>
-
+          <div className="border-t border-slate-850 pt-6">
+            <div className="flex flex-col gap-4">
+              {job.status !== 'COMPLETED' && job.status !== 'IN_PROGRESS' && (
                 <Button
-                  onClick={handleCompleteClick}
                   disabled={isProcessing}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/10"
+                  onClick={() => startMutation.mutate()}
+                  className="w-full bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-500/10"
                 >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  {completeMutation.isPending ? 'Completing...' : 'Complete Job Work'}
+                  <Play className="mr-2 h-4 w-4" />
+                  {startMutation.isPending ? 'Starting...' : 'Start'}
                 </Button>
-              </div>
-            )}
+              )}
 
-            {job.status === 'COMPLETED' && (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 text-center text-xs text-emerald-400 font-semibold">
-                This job has been completed. Completed Weight: {job.completedWeight} kg.
-              </div>
-            )}
+              {job.status !== 'COMPLETED' && (
+                <div className="space-y-4">
+                  {job.status === 'IN_PROGRESS' && (
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-1.5 font-medium">
+                        Actual Completed Weight (kg) *
+                      </label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        required
+                        value={completedWeight}
+                        disabled={isProcessing}
+                        onChange={(e) => setCompletedWeight(e.target.value)}
+                        className="border-slate-700 bg-slate-900 text-slate-200 focus-visible:ring-emerald-500"
+                      />
+                    </div>
+                  )}
 
-            {job.status === 'CANCELLED' && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3.5 text-center text-xs text-red-400 font-semibold">
-                This job card was cancelled.
-              </div>
-            )}
+                  <Button
+                    variant="secondary"
+                    disabled={isProcessing}
+                    onClick={handleCompleteClick}
+                    className="w-full bg-emerald-650 hover:bg-emerald-600 shadow-lg text-slate-100"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Complete
+                  </Button>
+                </div>
+              )}
+
+              {job.status === 'COMPLETED' && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 text-center text-xs text-emerald-400 font-semibold">
+                  This job has been completed. Completed Weight: {job.completedWeight} kg.
+                </div>
+              )}
+
+              {job.status === 'CANCELLED' && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3.5 text-center text-xs text-red-400 font-semibold">
+                  This job card was cancelled.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </SheetContent>
