@@ -1,19 +1,24 @@
 export const QUERY_CONFIG = {
   dashboard: {
-    refetchInterval: 15000,
     staleTime: 10000,
+    gcTime: 300000,
+    refetchInterval: 15000,
     retry: 2,
+    refetchOnWindowFocus: false,
   },
 
   execution: {
-    refetchInterval: 10000,
     staleTime: 5000,
+    gcTime: 300000,
+    refetchInterval: 10000,
     retry: 2,
+    refetchOnWindowFocus: false,
   },
 
   tables: {
-    refetchInterval: false as const,
     staleTime: 30000,
+    gcTime: 300000,
     retry: 1,
+    refetchOnWindowFocus: false,
   },
 };

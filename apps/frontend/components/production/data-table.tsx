@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-
+import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import {
   Table,
   TableBody,
@@ -43,10 +37,7 @@ export function DataTable<TData>({
                 <TableHead key={header.id} className="text-slate-400">
                   {header.isPlaceholder
                     ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                    : flexRender(header.column.columnDef.header, header.getContext())}
                 </TableHead>
               ))}
             </TableRow>
@@ -59,10 +50,7 @@ export function DataTable<TData>({
               <TableRow key={row.id} className="border-slate-800/60 hover:bg-slate-800/30">
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id} className="text-slate-300 font-medium">
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
               </TableRow>

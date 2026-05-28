@@ -1,41 +1,24 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { StatusBadge } from '@/components/production/status-badge';
-import { QueryError } from '@/components/production/query-error';
+import { QueryStateWrapper } from '@/components/production/query-state-wrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   TrendingUp, Clock, ClipboardList, CheckCircle, AlertCircle, CalendarRange
 } from 'lucide-react';
-import { getProductionSummary, getDelayedPlans, getTodayPlans } from '@/lib/api/production';
-import { ProductionPlan, ProductionSummary } from '@/types/production';
-import { QUERY_KEYS } from '@/lib/query-keys';
-import { QUERY_CONFIG } from '@/lib/react-query-config';
-import { TableSkeleton } from '@/components/production/table-skeleton';
+import { useDashboardSummary } from '@/hooks/use-dashboard-summary';
+import { useTodayPlans } from '@/hooks/use-today-plans';
+import { useDelayedPlans } from '@/hooks/use-delayed-plans';
 
 export default function DashboardPage() {
-  // Fetch summary
-  const { data: summary, isLoading: summaryLoading, error: summaryError, refetch: refetchSummary } = useQuery<ProductionSummary>({
-    queryKey: [...QUERY_KEYS.dashboard, 'summary'],
-    queryFn: getProductionSummary,
-    ...QUERY_CONFIG.dashboard,
-  });
+  const { data: summary, isLoading: summaryLoading, error: summaryError, refetch: refetchSummary } = useDashboardSummary();
+  const { data: delayedPlans = [], isLoading: delayedLoading, error: delayedError, refetch: refetchDelayed } = useDelayedPlans();
+  const { data: todayPlans = [], isLoading: todayLoading, error: todayError, refetch: refetchToday } = useTodayPlans();
 
-  // Fetch delayed plans
-  const { data: delayedPlans = [], isLoading: delayedLoading, error: delayedError, refetch: refetchDelayed } = useQuery<ProductionPlan[]>({
-    queryKey: [...QUERY_KEYS.dashboard, 'delayed'],
-    queryFn: getDelayedPlans,
-    ...QUERY_CONFIG.dashboard,
-  });
-
-  // Fetch today's plans
-  const { data: todayPlans = [], isLoading: todayLoading, error: todayError, refetch: refetchToday } = useQuery<ProductionPlan[]>({
-    queryKey: [...QUERY_KEYS.dashboard, 'today'],
-    queryFn: getTodayPlans,
-    ...QUERY_CONFIG.dashboard,
-  });
+  const isLoading = summaryLoading || delayedLoading || todayLoading;
+  const hasError = summaryError || delayedError || todayError;
 
   const refetchAll = () => {
     refetchSummary();
@@ -43,40 +26,9 @@ export default function DashboardPage() {
     refetchToday();
   };
 
-  const hasError = summaryError || delayedError || todayError;
-  const isLoading = summaryLoading || delayedLoading || todayLoading;
-
-  if (isLoading) {
-    return (
-      <ProtectedRoute>
-        <div className="p-6 space-y-8">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
-              MES Dashboard & KPI Metrics
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">
-              Real-time tracking of manufacturing efficiency, delay incidents, and active work orders.
-            </p>
-          </div>
-          <TableSkeleton />
-        </div>
-      </ProtectedRoute>
-    );
-  }
-
-  if (hasError) {
-    return (
-      <ProtectedRoute>
-        <QueryError
-          message="Failed to load data."
-          retry={refetchAll}
-        />
-      </ProtectedRoute>
-    );
-  }
-
   return (
     <ProtectedRoute>
+      <QueryStateWrapper isLoading={isLoading} error={hasError} retry={refetchAll}>
       <div className="p-6 space-y-8">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
@@ -251,6 +203,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      </QueryStateWrapper>
     </ProtectedRoute>
   );
 }

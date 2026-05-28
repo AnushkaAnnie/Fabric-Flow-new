@@ -1,53 +1,15 @@
 'use client';
-import { getProductionEvents } from '@/lib/api/production';
-import { QUERY_KEYS } from '@/lib/query-keys';
-import { QUERY_CONFIG } from '@/lib/react-query-config';
-import { QueryError } from '@/components/production/query-error';
-import { ProductionEvent } from '@/types/production';
-import { TableSkeleton } from '@/components/production/table-skeleton';
 
-import { useQuery } from '@tanstack/react-query';
+import { QueryStateWrapper } from '@/components/production/query-state-wrapper';
+import { useProductionEvents } from '@/hooks/use-production-events';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  ClipboardPlus, Play, CheckCircle2, Ban, Calendar, Activity, Info
+  ClipboardPlus, Play, CheckCircle2, Ban, Calendar, Activity, Info,
 } from 'lucide-react';
 
 export default function EventsPage() {
-  const { data: events = [], isLoading, error, refetch } = useQuery<ProductionEvent[]>({
-    queryKey: QUERY_KEYS.events,
-    queryFn: getProductionEvents,
-    ...QUERY_CONFIG.execution,
-  });
-
-  if (isLoading) {
-    return (
-      <ProtectedRoute>
-        <div className="p-6 space-y-8">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
-              Operational Event Timeline
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">
-              Complete, tamper-evident audit history of all production plan lifecycles and machine operations.
-            </p>
-          </div>
-          <TableSkeleton />
-        </div>
-      </ProtectedRoute>
-    );
-  }
-
-  if (error) {
-    return (
-      <ProtectedRoute>
-        <QueryError
-          message="Failed to load data."
-          retry={refetch}
-        />
-      </ProtectedRoute>
-    );
-  }
+  const { data: events = [], isLoading, error, refetch } = useProductionEvents();
 
   const getEventIcon = (type: string) => {
     switch (type) {
@@ -85,79 +47,83 @@ export default function EventsPage() {
 
   return (
     <ProtectedRoute>
-    <div className="p-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
-          Operational Event Timeline
-        </h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Complete, tamper-evident audit history of all production plan lifecycles and machine operations.
-        </p>
-      </div>
+      <QueryStateWrapper isLoading={isLoading} error={error} retry={refetch}>
+        <div className="p-6 space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+              Operational Event Timeline
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              Complete, tamper-evident audit history of all production plan lifecycles and machine operations.
+            </p>
+          </div>
 
-      <Card className="glass-card border-slate-800 bg-slate-900/40">
-        <CardContent className="p-6">
-          {events.length === 0 ? (
-            <div className="py-12 text-center text-slate-500">
-              No MES events have been recorded yet. Create a plan to start auditing.
-            </div>
-          ) : (
-            <div className="relative pl-6 border-l border-slate-800 space-y-6">
-              {events.map((event) => (
-                <div key={event.id} className="relative group">
-                  {/* Icon Node */}
-                  <div className={`absolute -left-10 top-0.5 p-2 rounded-xl border flex items-center justify-center ${getEventColor(event.eventType)} shadow-lg`}>
-                    {getEventIcon(event.eventType)}
-                  </div>
-
-                  {/* Log Content Card */}
-                  <div className="border border-slate-800/60 bg-slate-900/30 rounded-xl p-4 transition-all duration-300 hover:border-slate-700/50 hover:bg-slate-800/10">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                        {event.eventType.replace(/_/g, ' ')}
-                      </span>
-                      <span className="text-[10px] text-slate-500">
-                        {new Date(event.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-slate-200 mt-2 font-medium">
-                      {event.message}
-                    </p>
-
-                    {/* Meta labels */}
-                    <div className="flex gap-4 mt-3">
-                      {event.productionPlanId && (
-                        <div className="text-[10px] text-slate-500">
-                          Plan ID: <strong className="text-slate-400">#{event.productionPlanId}</strong>
-                        </div>
-                      )}
-                      {event.jobCardId && (
-                        <div className="text-[10px] text-slate-500">
-                          Job Card ID: <strong className="text-slate-400">#{event.jobCardId}</strong>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Metadata details if exists */}
-                    {event.metadata && Object.keys(event.metadata).length > 0 && (
-                      <div className="mt-3 bg-slate-950/80 border border-slate-800/50 rounded-lg p-2.5">
-                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1 mb-1">
-                          <Info className="h-3 w-3" /> Event Metadata
-                        </span>
-                        <pre className="text-[10px] text-slate-400 font-mono overflow-x-auto max-w-full">
-                          {JSON.stringify(event.metadata, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
+          <Card className="glass-card border-slate-800 bg-slate-900/40">
+            <CardContent className="p-6">
+              {events.length === 0 ? (
+                <div className="py-12 text-center text-slate-500">
+                  No MES events have been recorded yet. Create a plan to start auditing.
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+              ) : (
+                <div className="relative pl-6 border-l border-slate-800 space-y-6">
+                  {events.map((event) => (
+                    <div key={event.id} className="relative group">
+                      {/* Icon Node */}
+                      <div
+                        className={`absolute -left-10 top-0.5 p-2 rounded-xl border flex items-center justify-center ${getEventColor(event.eventType)} shadow-lg`}
+                      >
+                        {getEventIcon(event.eventType)}
+                      </div>
+
+                      {/* Log Content Card */}
+                      <div className="border border-slate-800/60 bg-slate-900/30 rounded-xl p-4 transition-all duration-300 hover:border-slate-700/50 hover:bg-slate-800/10">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                            {event.eventType.replace(/_/g, ' ')}
+                          </span>
+                          <span className="text-[10px] text-slate-500">
+                            {new Date(event.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+
+                        <p className="text-sm text-slate-200 mt-2 font-medium">
+                          {event.message}
+                        </p>
+
+                        {/* Meta labels */}
+                        <div className="flex gap-4 mt-3">
+                          {event.productionPlanId && (
+                            <div className="text-[10px] text-slate-500">
+                              Plan ID: <strong className="text-slate-400">#{event.productionPlanId}</strong>
+                            </div>
+                          )}
+                          {event.jobCardId && (
+                            <div className="text-[10px] text-slate-500">
+                              Job Card ID: <strong className="text-slate-400">#{event.jobCardId}</strong>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Metadata details if exists */}
+                        {event.metadata && Object.keys(event.metadata).length > 0 && (
+                          <div className="mt-3 bg-slate-950/80 border border-slate-800/50 rounded-lg p-2.5">
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1 mb-1">
+                              <Info className="h-3 w-3" /> Event Metadata
+                            </span>
+                            <pre className="text-[10px] text-slate-400 font-mono overflow-x-auto max-w-full">
+                              {JSON.stringify(event.metadata, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </QueryStateWrapper>
     </ProtectedRoute>
   );
 }
