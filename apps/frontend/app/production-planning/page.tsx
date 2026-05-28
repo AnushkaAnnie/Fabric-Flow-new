@@ -27,6 +27,7 @@ import { Row } from '@tanstack/react-table';
 import { EmptyState } from '@/components/production/empty-state';
 import { TableSkeleton } from '@/components/production/table-skeleton';
 import { Pagination } from '@/components/production/pagination';
+import { QueryError } from '@/components/production/query-error';
 import { getProductionPlans } from '@/lib/api/production';
 import { ProductionPlan, PaginatedResponse } from '@/types/production';
 import {
@@ -58,7 +59,7 @@ export default function ProductionPlanningPage() {
       lotNo: '',
       stage: '',
       plannedWeight: 0,
-      priority: 'MEDIUM',
+      priority: 'NORMAL',
     },
   });
 
@@ -72,7 +73,7 @@ export default function ProductionPlanningPage() {
   });
 
   // Fetch plans via centralized query layer
-  const { data: plansData, isLoading: plansLoading } = useQuery<PaginatedResponse<ProductionPlan>>({
+  const { data: plansData, isLoading: plansLoading, error, refetch } = useQuery<PaginatedResponse<ProductionPlan>>({
     queryKey: ['plans', statusFilter, stageFilter, page],
     queryFn: () =>
       getProductionPlans({
@@ -112,7 +113,7 @@ export default function ProductionPlanningPage() {
         lotNo: '',
         stage: '',
         plannedWeight: 0,
-        priority: 'MEDIUM',
+        priority: 'NORMAL',
       });
     },
     onError: (error: unknown) => {
@@ -343,6 +344,11 @@ export default function ProductionPlanningPage() {
           <CardContent>
             {plansLoading ? (
               <TableSkeleton />
+            ) : error ? (
+              <QueryError
+                message="Failed to load production plans."
+                retry={refetch}
+              />
             ) : plansList.length === 0 ? (
               <EmptyState
                 title="No Plans Found"
@@ -435,7 +441,7 @@ export default function ProductionPlanningPage() {
                           className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                           <option value="LOW">Low</option>
-                          <option value="MEDIUM">Medium</option>
+                          <option value="NORMAL">Normal</option>
                           <option value="HIGH">High</option>
                           <option value="URGENT">Urgent</option>
                         </select>

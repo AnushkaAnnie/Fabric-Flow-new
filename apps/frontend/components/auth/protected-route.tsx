@@ -3,11 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+interface Props {
+  children: React.ReactNode;
+}
+
 export function ProtectedRoute({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+}: Props) {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
 

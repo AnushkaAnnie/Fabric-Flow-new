@@ -7,7 +7,7 @@ export const createProductionPlanSchema = z.object({
 
   plannedWeight: z.coerce.number().positive(),
 
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+  priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']),
 });
 
 export type CreateProductionPlanInput = z.infer<

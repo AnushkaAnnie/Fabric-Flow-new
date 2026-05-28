@@ -4,6 +4,7 @@ import {
   PaginatedResponse,
   ProductionEvent,
   ProductionPlan,
+  ProductionSummary,
 } from '@/types/production';
 
 export async function getProductionPlans(
@@ -34,8 +35,8 @@ export async function getProductionEvents(): Promise<ProductionEvent[]> {
   );
 }
 
-export async function getProductionSummary(): Promise<unknown> {
-  return apiClient(
+export async function getProductionSummary(): Promise<ProductionSummary> {
+  return apiClient<ProductionSummary>(
     '/production-planning/summary',
   );
 }

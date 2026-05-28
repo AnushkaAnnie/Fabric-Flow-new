@@ -49,7 +49,12 @@ export function JobExecutionDrawer({
       toast.success('Job execution started');
       queryClient.invalidateQueries({ queryKey: ['job-cards'] });
       queryClient.invalidateQueries({ queryKey: ['plans'] });
+      queryClient.invalidateQueries({ queryKey: ['production-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['production-delayed'] });
+      queryClient.invalidateQueries({ queryKey: ['production-today'] });
       queryClient.invalidateQueries({ queryKey: ['production-events'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
       onOpenChange(false);
     },
     onError: (error) => {
@@ -67,7 +72,11 @@ export function JobExecutionDrawer({
       queryClient.invalidateQueries({ queryKey: ['job-cards'] });
       queryClient.invalidateQueries({ queryKey: ['plans'] });
       queryClient.invalidateQueries({ queryKey: ['production-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['production-delayed'] });
+      queryClient.invalidateQueries({ queryKey: ['production-today'] });
       queryClient.invalidateQueries({ queryKey: ['production-events'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
       onOpenChange(false);
     },
     onError: (error) => {
@@ -92,12 +101,20 @@ export function JobExecutionDrawer({
     completeMutation.mutate(weight);
   };
 
+  const isProcessing = startMutation.isPending || completeMutation.isPending;
+
   return (
     <Sheet
       open={open}
       onOpenChange={onOpenChange}
     >
       <SheetContent className="w-[500px] overflow-y-auto bg-slate-950 border-slate-800 text-slate-100">
+        {isProcessing && (
+          <div className="mb-4 rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-300">
+            Processing job execution...
+          </div>
+        )}
+
         <SheetHeader className="border-b border-slate-850 pb-4">
           <SheetTitle className="text-xl font-bold text-slate-100">
             Job Execution
@@ -170,7 +187,7 @@ export function JobExecutionDrawer({
             {job.status === 'ISSUED' && (
               <Button
                 onClick={() => startMutation.mutate()}
-                disabled={startMutation.isPending}
+                disabled={isProcessing}
                 className="w-full bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-500/10"
               >
                 <Play className="mr-2 h-4 w-4" />
@@ -189,6 +206,7 @@ export function JobExecutionDrawer({
                     step="0.01"
                     required
                     value={completedWeight}
+                    disabled={isProcessing}
                     onChange={(e) => setCompletedWeight(e.target.value)}
                     className="border-slate-700 bg-slate-900 text-slate-200 focus-visible:ring-emerald-500"
                   />
@@ -199,7 +217,7 @@ export function JobExecutionDrawer({
 
                 <Button
                   onClick={handleCompleteClick}
-                  disabled={completeMutation.isPending}
+                  disabled={isProcessing}
                   className="w-full bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/10"
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />

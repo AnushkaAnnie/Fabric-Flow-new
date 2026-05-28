@@ -49,3 +49,13 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+export interface ProductionSummary {
+  totalPlans: number;
+  completedPlans: number;
+  delayedPlans: number;
+  inProgressPlans: number;
+  plannedWeight: number;
+  completedWeight: number;
+  efficiency: number;
+}
+
