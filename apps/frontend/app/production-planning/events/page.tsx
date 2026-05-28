@@ -7,11 +7,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   ClipboardPlus, Play, CheckCircle2, Ban, Calendar, Activity, Info,
 } from 'lucide-react';
+import { ProductionEventType } from '@/types/production';
+
+function isMetadataRecord(metadata: unknown): metadata is Record<string, unknown> {
+  return typeof metadata === 'object' && metadata !== null && !Array.isArray(metadata);
+}
 
 export default function EventsPage() {
   const { data: events = [], isLoading, error, refetch } = useProductionEvents();
 
-  const getEventIcon = (type: string) => {
+  const getEventIcon = (type: ProductionEventType) => {
     switch (type) {
       case 'PLAN_CREATED':
         return <ClipboardPlus className="h-4 w-4 text-blue-400" />;
@@ -28,7 +33,7 @@ export default function EventsPage() {
     }
   };
 
-  const getEventColor = (type: string) => {
+  const getEventColor = (type: ProductionEventType) => {
     switch (type) {
       case 'PLAN_CREATED':
         return 'bg-blue-500/10 border-blue-500/30';
@@ -47,7 +52,14 @@ export default function EventsPage() {
 
   return (
     <ProtectedRoute>
-      <QueryStateWrapper isLoading={isLoading} error={error} retry={refetch}>
+      <QueryStateWrapper
+        isLoading={isLoading}
+        error={error}
+        retry={refetch}
+        isEmpty={events.length === 0}
+        emptyTitle="No MES Events"
+        emptyDescription="No production events have been recorded yet."
+      >
         <div className="p-6 space-y-8">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
@@ -60,12 +72,7 @@ export default function EventsPage() {
 
           <Card className="glass-card border-slate-800 bg-slate-900/40">
             <CardContent className="p-6">
-              {events.length === 0 ? (
-                <div className="py-12 text-center text-slate-500">
-                  No MES events have been recorded yet. Create a plan to start auditing.
-                </div>
-              ) : (
-                <div className="relative pl-6 border-l border-slate-800 space-y-6">
+              <div className="relative pl-6 border-l border-slate-800 space-y-6">
                   {events.map((event) => (
                     <div key={event.id} className="relative group">
                       {/* Icon Node */}
@@ -92,12 +99,12 @@ export default function EventsPage() {
 
                         {/* Meta labels */}
                         <div className="flex gap-4 mt-3">
-                          {event.productionPlanId && (
+                          {event.productionPlanId !== null && (
                             <div className="text-[10px] text-slate-500">
                               Plan ID: <strong className="text-slate-400">#{event.productionPlanId}</strong>
                             </div>
                           )}
-                          {event.jobCardId && (
+                          {event.jobCardId !== null && (
                             <div className="text-[10px] text-slate-500">
                               Job Card ID: <strong className="text-slate-400">#{event.jobCardId}</strong>
                             </div>
@@ -105,7 +112,7 @@ export default function EventsPage() {
                         </div>
 
                         {/* Metadata details if exists */}
-                        {event.metadata && Object.keys(event.metadata).length > 0 && (
+                        {isMetadataRecord(event.metadata) && Object.keys(event.metadata).length > 0 && (
                           <div className="mt-3 bg-slate-950/80 border border-slate-800/50 rounded-lg p-2.5">
                             <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1 mb-1">
                               <Info className="h-3 w-3" /> Event Metadata
@@ -119,7 +126,6 @@ export default function EventsPage() {
                     </div>
                   ))}
                 </div>
-              )}
             </CardContent>
           </Card>
         </div>

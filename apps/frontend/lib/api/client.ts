@@ -1,28 +1,21 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+type Primitive = string | number | boolean | null | undefined;
 
 interface RequestOptions extends RequestInit {
-  params?: Record<string, unknown>;
+  params?: Record<string, Primitive>;
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 export async function apiClient<T>(
   endpoint: string,
-  options?: RequestOptions,
+  options: RequestOptions = {},
 ): Promise<T> {
-  let url: URL;
-  const baseUrl = API_URL;
+  const url = new URL(endpoint, API_URL || window.location.origin);
 
-  if (baseUrl.startsWith('http://') || baseUrl.startsWith('https://')) {
-    url = new URL(`${baseUrl}${endpoint}`);
-  } else {
-    // Relative URL (like /api/backend) needs window.location.origin for construction
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-    url = new URL(`${baseUrl}${endpoint}`, origin);
-  }
-
-  if (options?.params) {
+  if (options.params) {
     Object.entries(options.params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
-        url.searchParams.append(key, String(value));
+        url.searchParams.set(key, String(value));
       }
     });
   }
@@ -31,14 +24,31 @@ export async function apiClient<T>(
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(options?.headers ?? {}),
+      ...(options.headers ?? {}),
     },
+    body:
+      options.body && typeof options.body !== 'string'
+        ? JSON.stringify(options.body)
+        : options.body,
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.message ?? `Request failed with status ${response.status}`);
+    let message = 'Request failed';
+
+    try {
+      const payload = (await response.json()) as { message?: string };
+      message = payload.message ?? message;
+    } catch {
+      const text = await response.text().catch(() => '');
+      if (text) message = text;
+    }
+
+    throw new Error(message);
   }
 
-  return response.json();
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json() as Promise<T>;
 }

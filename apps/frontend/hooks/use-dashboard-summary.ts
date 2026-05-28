@@ -5,7 +5,7 @@ import { QUERY_CONFIG } from '@/lib/react-query-config';
 
 export function useDashboardSummary() {
   return useQuery({
-    queryKey: [...QUERY_KEYS.dashboard, 'summary'],
+    queryKey: QUERY_KEYS.dashboard,
     queryFn: getProductionSummary,
     ...QUERY_CONFIG.dashboard,
   });

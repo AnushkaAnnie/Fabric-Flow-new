@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import {
   Table,
@@ -16,7 +17,7 @@ interface Props<TData> {
   emptyMessage?: string;
 }
 
-export function DataTable<TData>({
+function DataTableInner<TData>({
   columns,
   data,
   emptyMessage = 'No results found.',
@@ -28,7 +29,7 @@ export function DataTable<TData>({
   });
 
   return (
-    <div className="overflow-x-auto rounded-md border border-slate-800">
+    <div className="overflow-x-auto rounded-md border border-slate-800 bg-slate-950/20">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -70,3 +71,5 @@ export function DataTable<TData>({
     </div>
   );
 }
+
+export const DataTable = memo(DataTableInner) as typeof DataTableInner;

@@ -1,20 +1,20 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { completeJobCard } from '@/lib/api/production';
+import { createProductionPlan } from '@/lib/api/production';
 import { QUERY_KEYS } from '@/lib/query-keys';
-import { CompleteJobPayload } from '@/types/production';
+import { CreateProductionPlanPayload } from '@/types/production';
 
-export function useCompleteJob(onSuccess?: () => void) {
+export function useCreateProductionPlan(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CompleteJobPayload) => completeJobCard(payload),
+    mutationFn: (payload: CreateProductionPlanPayload) =>
+      createProductionPlan(payload),
 
     onSuccess: () => {
-      toast.success('Job completed');
+      toast.success('Production plan created');
 
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.jobCards });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.plans });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events });
@@ -26,7 +26,7 @@ export function useCompleteJob(onSuccess?: () => void) {
       toast.error(
         error instanceof Error
           ? error.message
-          : 'Failed to complete job',
+          : 'Failed to create production plan',
       );
     },
   });

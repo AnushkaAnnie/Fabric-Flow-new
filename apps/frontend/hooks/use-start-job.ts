@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
 import { startJobCard } from '@/lib/api/production';
 import { QUERY_KEYS } from '@/lib/query-keys';
-import { toast } from 'sonner';
 
 export function useStartJob(onSuccess?: () => void) {
   const queryClient = useQueryClient();
@@ -11,14 +12,21 @@ export function useStartJob(onSuccess?: () => void) {
 
     onSuccess: () => {
       toast.success('Job started');
-      onSuccess?.();
+
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.jobCards });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.plans });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events });
+
+      onSuccess?.();
     },
 
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to start job');
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to start job',
+      );
     },
   });
 }
