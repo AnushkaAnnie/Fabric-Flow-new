@@ -32,6 +32,7 @@ import { KnittingModule } from './knitting/knitting.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { LotTrackerModule } from './lot-tracker/lot-tracker.module';
 import { ProductionPlanningModule } from './production-planning/production-planning.module';
+import { GreyFabricInwardModule } from './grey-fabric-inward/grey-fabric-inward.module';
 
 import { AuthModule } from './auth/auth.module';
 import { DevAuthGuard } from './common/guards/dev-auth.guard';
@@ -71,6 +72,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     InventoryModule,
     LotTrackerModule,
     ProductionPlanningModule,
+    GreyFabricInwardModule,
   ],
 
   controllers: [AppController],
