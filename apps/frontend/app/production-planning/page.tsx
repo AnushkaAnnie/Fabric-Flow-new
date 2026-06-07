@@ -7,7 +7,7 @@ import { AlertCircle, Calendar, ClipboardList, PlusCircle, RefreshCw, Trash2 } f
 import { useForm } from 'react-hook-form';
 
 import { ProtectedRoute } from '@/components/auth/protected-route';
-import { CreateJobCardDialog } from '@/components/production/create-job-card-dialog';
+
 import { DataTable } from '@/components/production/data-table';
 import { PaginationControls } from '@/components/production/pagination-controls';
 import { planColumns } from '@/components/production/columns/plans-columns';
@@ -41,8 +41,6 @@ import {
 
 export default function ProductionPlanningPage() {
   const [createOpen, setCreateOpen] = useState(false);
-  const [jobCardOpen, setJobCardOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<ProductionPlan | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [stageFilter, setStageFilter] = useState('');
   const [page, setPage] = useState(1);
@@ -113,31 +111,19 @@ export default function ProductionPlanningPage() {
           return (
             <div className="text-right space-x-2">
               {!isClosed && (
-                <>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setSelectedPlan(plan);
-                      setJobCardOpen(true);
-                    }}
-                    className="bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 text-xs"
-                  >
-                    Issue Job Card
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={cancelPlanMutation.isPending}
-                    onClick={() => {
-                      if (confirm('Are you sure you want to cancel this plan?')) {
-                        cancelPlanMutation.mutate({ id: plan.id });
-                      }
-                    }}
-                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={cancelPlanMutation.isPending}
+                  onClick={() => {
+                    if (confirm('Are you sure you want to cancel this plan?')) {
+                      cancelPlanMutation.mutate({ id: plan.id });
+                    }
+                  }}
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               )}
             </div>
           );
@@ -163,7 +149,7 @@ export default function ProductionPlanningPage() {
               Production Planning
             </h1>
             <p className="text-slate-400 text-sm mt-1">
-              Create plans, track stage-wise weight completion, and dispatch Job Cards to machines.
+              Create plans and track stage-wise weight completion.
             </p>
           </div>
           <Button
@@ -381,12 +367,6 @@ export default function ProductionPlanningPage() {
             </Form>
           </DialogContent>
         </Dialog>
-
-        <CreateJobCardDialog
-          open={jobCardOpen}
-          onOpenChange={setJobCardOpen}
-          plan={selectedPlan}
-        />
       </div>
     </ProtectedRoute>
   );

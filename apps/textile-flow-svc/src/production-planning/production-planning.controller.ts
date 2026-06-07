@@ -15,8 +15,6 @@ import { CreateProductionPlanDto } from './dto/create-production-plan.dto';
 
 import { UpdateProductionPlanDto } from './dto/update-production-plan.dto';
 
-import { CreateJobCardDto } from './dto/create-job-card.dto';
-
 @Controller('production-planning')
 export class ProductionPlanningController {
   constructor(
@@ -40,36 +38,6 @@ export class ProductionPlanningController {
     dto: UpdateProductionPlanDto,
   ) {
     return this.productionPlanningService.updatePlan(Number(id), dto);
-  }
-
-  @Post('job-card')
-  async createJobCard(
-    @Body()
-    dto: CreateJobCardDto,
-  ) {
-    return this.productionPlanningService.createJobCard(dto);
-  }
-
-  @Patch('job-card/:id/start')
-  async startJobCard(
-    @Param('id')
-    id: string,
-  ) {
-    return this.productionPlanningService.startJobCard(Number(id));
-  }
-
-  @Patch('job-card/:id/complete')
-  async completeJobCard(
-    @Param('id')
-    id: string,
-
-    @Body('completedWeight')
-    completedWeight: number,
-  ) {
-    return this.productionPlanningService.completeJobCard(
-      Number(id),
-      completedWeight,
-    );
   }
 
   @Get('today')
@@ -114,26 +82,6 @@ export class ProductionPlanningController {
       status,
 
       stage,
-    });
-  }
-
-  @Get('job-cards')
-  async jobCards(
-    @Query('page')
-    page?: string,
-
-    @Query('limit')
-    limit?: string,
-
-    @Query('status')
-    status?: string,
-  ) {
-    return this.productionPlanningService.getJobCards({
-      page: Number(page ?? 1),
-
-      limit: Number(limit ?? 20),
-
-      status,
     });
   }
 

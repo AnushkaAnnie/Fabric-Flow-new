@@ -15,7 +15,6 @@ export function useCancelPlan(onSuccess?: () => void) {
       toast.success('Production plan cancelled');
 
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.plans });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.jobCards });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events });
 

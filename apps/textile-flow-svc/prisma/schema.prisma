@@ -685,14 +685,6 @@ enum ProductionPlanStatus {
   CANCELLED
 }
 
-enum JobCardStatus {
-  PENDING
-  ISSUED
-  IN_PROGRESS
-  COMPLETED
-  HOLD
-  CANCELLED
-}
 
 enum ProductionPriority {
   LOW
@@ -718,7 +710,6 @@ model ProductionPlan {
   createdBy         String?
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
-  jobCards          JobCard[]
 
   @@unique([lotNo, stage, plannedDate])
   @@index([lotNo])
@@ -729,41 +720,16 @@ model ProductionPlan {
   @@index([delayed])
 }
 
-model JobCard {
-  id                 Int            @id @default(autoincrement())
-  jobCardNo          String         @unique
-  productionPlanId   Int
-  machineNo          String?
-  operatorName       String?
-  shift              String?
-  targetWeight       Float
-  completedWeight    Float          @default(0)
-  issuedAt           DateTime?
-  startedAt          DateTime?
-  completedAt        DateTime?
-  status             JobCardStatus
-  remarks            String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  productionPlan     ProductionPlan @relation(fields: [productionPlanId], references: [id], onDelete: Cascade)
-
-  @@index([jobCardNo])
-  @@index([machineNo])
-  @@index([status])
-  @@index([machineNo, status])
-}
 
 model ProductionEvent {
   id               Int       @id @default(autoincrement())
   productionPlanId Int?
-  jobCardId        Int?
   eventType        String
   message          String
   metadata         Json?
   createdAt        DateTime  @default(now())
 
   @@index([productionPlanId])
-  @@index([jobCardId])
   @@index([eventType])
   @@index([createdAt])
 }

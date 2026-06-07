@@ -5,7 +5,7 @@ import { useProductionEvents } from '@/hooks/use-production-events';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  ClipboardPlus, Play, CheckCircle2, Ban, Calendar, Activity, Info,
+  ClipboardPlus, Ban, Activity,
 } from 'lucide-react';
 import { ProductionEventType } from '@/types/production';
 
@@ -20,12 +20,6 @@ export default function EventsPage() {
     switch (type) {
       case 'PLAN_CREATED':
         return <ClipboardPlus className="h-4 w-4 text-blue-400" />;
-      case 'JOB_CARD_CREATED':
-        return <Calendar className="h-4 w-4 text-indigo-400" />;
-      case 'JOB_CARD_STARTED':
-        return <Play className="h-4 w-4 text-amber-400" />;
-      case 'JOB_CARD_COMPLETED':
-        return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
       case 'PLAN_CANCELLED':
         return <Ban className="h-4 w-4 text-rose-400" />;
       default:
@@ -37,12 +31,6 @@ export default function EventsPage() {
     switch (type) {
       case 'PLAN_CREATED':
         return 'bg-blue-500/10 border-blue-500/30';
-      case 'JOB_CARD_CREATED':
-        return 'bg-indigo-500/10 border-indigo-500/30';
-      case 'JOB_CARD_STARTED':
-        return 'bg-amber-500/10 border-amber-500/30';
-      case 'JOB_CARD_COMPLETED':
-        return 'bg-emerald-500/10 border-emerald-500/30';
       case 'PLAN_CANCELLED':
         return 'bg-rose-500/10 border-rose-500/30';
       default:
@@ -104,18 +92,13 @@ export default function EventsPage() {
                               Plan ID: <strong className="text-slate-400">#{event.productionPlanId}</strong>
                             </div>
                           )}
-                          {event.jobCardId !== null && (
-                            <div className="text-[10px] text-slate-500">
-                              Job Card ID: <strong className="text-slate-400">#{event.jobCardId}</strong>
-                            </div>
-                          )}
                         </div>
 
                         {/* Metadata details if exists */}
                         {isMetadataRecord(event.metadata) && Object.keys(event.metadata).length > 0 && (
                           <div className="mt-3 bg-slate-950/80 border border-slate-800/50 rounded-lg p-2.5">
                             <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1 mb-1">
-                              <Info className="h-3 w-3" /> Event Metadata
+                              Event Metadata
                             </span>
                             <pre className="text-[10px] text-slate-400 font-mono overflow-x-auto max-w-full">
                               {JSON.stringify(event.metadata, null, 2)}

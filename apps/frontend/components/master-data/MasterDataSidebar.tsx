@@ -106,14 +106,6 @@ export default function MasterDataSidebar() {
           Production Plans
         </Link>
         <Link
-          href="/production-planning/job-cards"
-          className={`block rounded px-3 py-2 text-sm ${
-            pathname === "/production-planning/job-cards" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"
-          }`}
-        >
-          Job Cards
-        </Link>
-        <Link
           href="/production-planning/dashboard"
           className={`block rounded px-3 py-2 text-sm ${
             pathname === "/production-planning/dashboard" ? "bg-blue-600/20 text-blue-300" : "text-slate-300 hover:bg-slate-800"

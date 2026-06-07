@@ -10,33 +10,14 @@ export interface ProductionPlan {
   plannedDate: string;
 }
 
-export interface JobCard {
-  id: number;
-  jobCardNo: string;
-  machineNo: string | null;
-  operatorName: string | null;
-  shift: string | null;
-  status: string;
-  targetWeight: number;
-  completedWeight: number;
-  issuedAt: string | null;
-  startedAt: string | null;
-  completedAt: string | null;
-  remarks: string | null;
-}
-
 export type ProductionEventType =
   | 'PLAN_CREATED'
   | 'PLAN_UPDATED'
-  | 'PLAN_CANCELLED'
-  | 'JOB_CARD_CREATED'
-  | 'JOB_CARD_STARTED'
-  | 'JOB_CARD_COMPLETED';
+  | 'PLAN_CANCELLED';
 
 export interface ProductionEvent {
   id: number;
   productionPlanId: number | null;
-  jobCardId: number | null;
   eventType: ProductionEventType;
   message: string;
   metadata: unknown | null;
@@ -60,15 +41,6 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-export interface CreateJobCardPayload {
-  productionPlanId: number;
-  machineNo?: string;
-  operatorName?: string;
-  shift?: string;
-  targetWeight: number;
-  remarks?: string;
-}
-
 export interface CancelPlanPayload {
   id: number;
 }
@@ -80,9 +52,4 @@ export interface CreateProductionPlanPayload {
   plannedDate: string;
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   remarks?: string;
-}
-
-export interface CompleteJobPayload {
-  id: number;
-  completedWeight: number;
 }
