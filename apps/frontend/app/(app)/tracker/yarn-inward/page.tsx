@@ -10,18 +10,18 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Pencil, Trash2, FileText } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, FileText, Package } from 'lucide-react';
 import type { YarnInward, YarnInwardFormData, Knitter } from '@/types/entities';
 import type { Mill } from '@/types/yarn';
 import YarnPOPreviewModal from '@/components/po/YarnPOPreviewModal';
 import type { YarnPOData } from '@/components/po/YarnPOPrint';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
-// ── Constants ────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 const SELECT_CLASS =
-  'mt-1 w-full rounded border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-ring';
+  'w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 transition-all';
 
 const EMPTY_FORM: YarnInwardFormData = {
   receiptDate: new Date().toISOString().split('T')[0],
@@ -53,8 +53,8 @@ export default function YarnInwardPage() {
   const [poPreviewOpen, setPoPreviewOpen] = useState(false);
   const [formData, setFormData] = useState<YarnInwardFormData>(EMPTY_FORM);
 
-  // ── Queries ────────────────────────────────────────────────────────────────
-  const { data: records = [] } = useQuery<YarnInward[]>({
+  // ── Queries ───────────────────────────────────────────────────────────────
+  const { data: records = [], isLoading } = useQuery<YarnInward[]>({
     queryKey: ['yarn-inward'],
     queryFn: async () => (await api.get<YarnInward[]>('/yarn-inward')).data,
   });
@@ -69,12 +69,12 @@ export default function YarnInwardPage() {
     queryFn: async () => (await api.get<Knitter[]>('/knitters')).data,
   });
 
-  // ── Mutations ──────────────────────────────────────────────────────────────
+  // ── Mutations ─────────────────────────────────────────────────────────────
   const createMutation = useMutation<YarnInward, Error, Record<string, unknown>>({
     mutationFn: (body) => api.post<YarnInward>('/yarn-inward', body).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['yarn-inward'] });
-      toast.success('Yarn inward created');
+      toast.success('Yarn inward record created');
       closeDialogs();
     },
     onError: () => toast.error('Failed to create yarn inward'),
@@ -85,7 +85,7 @@ export default function YarnInwardPage() {
       api.patch<YarnInward>(`/yarn-inward/${id}`, body).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['yarn-inward'] });
-      toast.success('Yarn inward updated');
+      toast.success('Yarn inward record updated');
       closeDialogs();
     },
     onError: () => toast.error('Failed to update yarn inward'),
@@ -95,12 +95,12 @@ export default function YarnInwardPage() {
     mutationFn: (id) => api.delete(`/yarn-inward/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['yarn-inward'] });
-      toast.success('Yarn inward deleted');
+      toast.success('Record deleted');
     },
-    onError: () => toast.error('Failed to delete yarn inward'),
+    onError: () => toast.error('Failed to delete'),
   });
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────
   const closeDialogs = () => {
     setCreateOpen(false);
     setEditRecord(null);
@@ -129,9 +129,7 @@ export default function YarnInwardPage() {
   };
 
   const confirmDelete = (id: number) => {
-    if (window.confirm('Delete this yarn inward record?')) {
-      deleteMutation.mutate(id);
-    }
+    if (window.confirm('Delete this yarn inward record?')) deleteMutation.mutate(id);
   };
 
   const handleGeneratePO = async (id: number) => {
@@ -144,7 +142,7 @@ export default function YarnInwardPage() {
     }
   };
 
-  // ── Live calculation ───────────────────────────────────────────────────────
+  // ── Live calculation ──────────────────────────────────────────────────────
   const numBagsVal = parseInt(formData.numBags) || 0;
   const bagWeightVal = parseFloat(formData.bagWeight) || 0;
   const ratePerKgVal = parseFloat(formData.ratePerKg) || 0;
@@ -156,7 +154,7 @@ export default function YarnInwardPage() {
   const sgstAmountCalc = taxableCostCalc * (sgstRateVal / 100);
   const totalCostCalc = taxableCostCalc + cgstAmountCalc + sgstAmountCalc;
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
+  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload: Record<string, unknown> = {
@@ -176,297 +174,268 @@ export default function YarnInwardPage() {
       purchaseAccount: formData.purchaseAccount || undefined,
       remarks: formData.remarks || undefined,
     };
-
-    if (editRecord) {
-      updateMutation.mutate({ id: editRecord.id, ...payload });
-    } else {
-      createMutation.mutate(payload);
-    }
+    if (editRecord) updateMutation.mutate({ id: editRecord.id, ...payload });
+    else createMutation.mutate(payload);
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Yarn Inward</h1>
-        <Button onClick={() => { setEditRecord(null); setCreateOpen(true); }}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Inward Record
-        </Button>
-      </div>
+    <ProtectedRoute>
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
+              Yarn Inward
+            </h1>
+            <p className="text-slate-500 text-sm mt-0.5">
+              {isLoading ? 'Loading…' : `${records.length} inward record${records.length !== 1 ? 's' : ''}`}
+            </p>
+          </div>
+          <button
+            onClick={() => { setEditRecord(null); setFormData(EMPTY_FORM); setCreateOpen(true); }}
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200"
+          >
+            <PlusCircle className="h-4 w-4" /> Add Inward Record
+          </button>
+        </div>
 
-      {/* ── Table ── */}
-      <Card>
-        <CardHeader><CardTitle>Inward Records</CardTitle></CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>PO No.</TableHead>
-                <TableHead>Mill</TableHead>
-                <TableHead>Delivered To</TableHead>
-                <TableHead>HF Batch</TableHead>
-                <TableHead>Count</TableHead>
-                <TableHead>Quality</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Bags</TableHead>
-                <TableHead>Bag Wt</TableHead>
-                <TableHead>Total Wt</TableHead>
-                <TableHead>Rate</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {records.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell>{new Date(r.receiptDate).toLocaleDateString()}</TableCell>
-                    <TableCell className="font-mono text-xs font-semibold text-blue-400">
-                      PO-{String(r.id).padStart(4, '0')}
+        {/* Table */}
+        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-slate-800 bg-slate-900/80 hover:bg-slate-900/80">
+                  {['Date','PO No.','Mill','Delivered To','HF Batch','Count','Quality','Bags','Bag Wt','Total Wt','Rate/kg','Actions'].map((h) => (
+                    <TableHead key={h} className="text-xs font-semibold uppercase tracking-widest text-slate-400">{h}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i} className="border-slate-800">
+                      {Array.from({ length: 12 }).map((__, j) => (
+                        <TableCell key={j}><div className="h-4 rounded bg-slate-800 animate-pulse" /></TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : records.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={12} className="py-12 text-center text-sm text-slate-500">
+                      No inward records yet. Click "Add Inward Record" to create one.
                     </TableCell>
-                    <TableCell>{r.mill?.name ?? '–'}</TableCell>
-                    <TableCell>{r.deliveryKnitter?.name ?? '–'}</TableCell>
-                    <TableCell>{r.hfBatch ?? '–'}</TableCell>
-                    <TableCell>{r.yarnCount ?? '–'}</TableCell>
-                    <TableCell>{r.rlVl ?? '–'}</TableCell>
-                    <TableCell>{r.description ?? '–'}</TableCell>
-                    <TableCell>{r.numBags ?? '–'}</TableCell>
-                    <TableCell>{fmt(r.bagWeight)} kg</TableCell>
-                    <TableCell>{fmt(r.totalWeight)} kg</TableCell>
-                    <TableCell>₹{fmt(r.ratePerKg)}</TableCell>
+                  </TableRow>
+                ) : records.map((r) => (
+                  <TableRow key={r.id} className="border-slate-800/60 hover:bg-slate-800/20 transition-colors">
+                    <TableCell className="text-slate-300 text-sm">{new Date(r.receiptDate).toLocaleDateString('en-IN')}</TableCell>
+                    <TableCell className="font-mono text-xs font-semibold text-blue-400">PO-{String(r.id).padStart(4, '0')}</TableCell>
+                    <TableCell className="text-slate-200">{r.mill?.name ?? '–'}</TableCell>
+                    <TableCell className="text-slate-200">{r.deliveryKnitter?.name ?? '–'}</TableCell>
+                    <TableCell className="text-slate-300">{r.hfBatch ?? '–'}</TableCell>
+                    <TableCell className="text-slate-300">{r.yarnCount ?? '–'}</TableCell>
+                    <TableCell className="text-slate-300">{r.rlVl ?? '–'}</TableCell>
+                    <TableCell className="text-slate-300">{r.numBags ?? '–'}</TableCell>
+                    <TableCell className="text-slate-300">{fmt(r.bagWeight)} kg</TableCell>
+                    <TableCell className="font-semibold text-slate-200">{fmt(r.totalWeight)} kg</TableCell>
+                    <TableCell className="text-slate-300">₹{fmt(r.ratePerKg)}</TableCell>
                     <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="outline" size="sm"
-                          title="Edit"
-                          onClick={() => openEditDialog(r)}
-                        >
+                      <div className="flex gap-1.5">
+                        <button title="Edit" onClick={() => openEditDialog(r)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-xs text-blue-300 hover:bg-blue-500/20 transition-all">
                           <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="outline" size="sm"
-                          title="Delete"
-                          onClick={() => confirmDelete(r.id)}
-                          disabled={deleteMutation.isPending}
-                        >
+                        </button>
+                        <button title="Delete" onClick={() => confirmDelete(r.id)} disabled={deleteMutation.isPending}
+                          className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-xs text-rose-300 hover:bg-rose-500/20 transition-all disabled:opacity-50">
                           <Trash2 className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="outline" size="sm"
-                          title="Generate PO"
-                          onClick={() => handleGeneratePO(r.id)}
-                        >
+                        </button>
+                        <button title="Generate PO" onClick={() => handleGeneratePO(r.id)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-300 hover:bg-emerald-500/20 transition-all">
                           <FileText className="h-3 w-3" />
-                        </Button>
+                        </button>
                       </div>
                     </TableCell>
                   </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* ── Create / Edit Dialog ── */}
-      <Dialog
-        open={createOpen || editRecord !== null}
-        onOpenChange={(open) => { if (!open) closeDialogs(); }}
-      >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editRecord ? 'Edit Yarn Inward' : 'Add Yarn Inward'}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* Row 1 – Date + Mill */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="receiptDate">Receipt Date *</Label>
-                <Input id="receiptDate" type="date" required
-                  value={formData.receiptDate}
-                  onChange={(e) => setFormData({ ...formData, receiptDate: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="mill">Mill *</Label>
-                <select id="mill" required className={SELECT_CLASS}
-                  value={formData.millId}
-                  onChange={(e) => setFormData({ ...formData, millId: e.target.value })}
-                >
-                  <option value="">Select Mill…</option>
-                  {mills.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
-              </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          {records.length > 0 && !isLoading && (
+            <div className="border-t border-slate-800/60 px-4 py-2.5 text-right">
+              <span className="text-xs text-slate-500">{records.length} record{records.length !== 1 ? 's' : ''}</span>
             </div>
+          )}
+        </div>
 
-            {/* Row 2 – Knitter + HF Batch */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="knitter">Delivery Knitter *</Label>
-                <select id="knitter" required className={SELECT_CLASS}
-                  value={formData.deliveryKnitterId}
-                  onChange={(e) => setFormData({ ...formData, deliveryKnitterId: e.target.value })}
-                >
-                  <option value="">Select Knitter…</option>
-                  {knitters.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
-                </select>
+        {/* Create / Edit Dialog */}
+        <Dialog open={createOpen || editRecord !== null} onOpenChange={(open) => { if (!open) closeDialogs(); }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700">
+            <DialogHeader>
+              <DialogTitle className="text-slate-100 flex items-center gap-2">
+                <Package className="h-5 w-5 text-blue-400" />
+                {editRecord ? 'Edit Yarn Inward' : 'Add Yarn Inward'}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+              {/* Row 1 – Date + Mill */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Receipt Date <span className="text-rose-400">*</span></Label>
+                  <Input type="date" required value={formData.receiptDate}
+                    className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                    onChange={(e) => setFormData({ ...formData, receiptDate: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Mill <span className="text-rose-400">*</span></Label>
+                  <select required className={SELECT_CLASS} value={formData.millId}
+                    onChange={(e) => setFormData({ ...formData, millId: e.target.value })}>
+                    <option value="">Select Mill…</option>
+                    {mills.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="hfBatch">HF Batch</Label>
-                <Input id="hfBatch" placeholder="e.g. HF-24"
-                  value={formData.hfBatch}
-                  onChange={(e) => setFormData({ ...formData, hfBatch: e.target.value })}
-                />
-              </div>
-            </div>
 
-            {/* Row 3 – Yarn Count + Quality */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="yarnCount">Yarn Count</Label>
-                <Input id="yarnCount" placeholder="e.g. 30/1"
-                  value={formData.yarnCount}
-                  onChange={(e) => setFormData({ ...formData, yarnCount: e.target.value })}
-                />
+              {/* Row 2 – Knitter + HF Batch */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Delivery Knitter <span className="text-rose-400">*</span></Label>
+                  <select required className={SELECT_CLASS} value={formData.deliveryKnitterId}
+                    onChange={(e) => setFormData({ ...formData, deliveryKnitterId: e.target.value })}>
+                    <option value="">Select Knitter…</option>
+                    {knitters.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">HF Batch</Label>
+                  <Input placeholder="e.g. HF-24" className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                    value={formData.hfBatch} onChange={(e) => setFormData({ ...formData, hfBatch: e.target.value })} />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="yarnQuality">Yarn Quality</Label>
-                <Input id="yarnQuality" placeholder="e.g. Super Carded"
-                  value={formData.yarnQuality}
-                  onChange={(e) => setFormData({ ...formData, yarnQuality: e.target.value })}
-                />
-              </div>
-            </div>
 
-            {/* Row 4 – Quality & Description */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="rlVl">Quality</Label>
-                <select id="rlVl" className={SELECT_CLASS}
-                  value={formData.rlVl}
-                  onChange={(e) => setFormData({ ...formData, rlVl: e.target.value })}
-                >
-                  <option value="">Select…</option>
-                  <option value="RL">RL</option>
-                  <option value="VL">VL</option>
-                </select>
+              {/* Row 3 – Yarn Count + Quality */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Yarn Count</Label>
+                  <Input placeholder="e.g. 30/1" className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                    value={formData.yarnCount} onChange={(e) => setFormData({ ...formData, yarnCount: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Yarn Quality</Label>
+                  <Input placeholder="e.g. Super Carded" className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                    value={formData.yarnQuality} onChange={(e) => setFormData({ ...formData, yarnQuality: e.target.value })} />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Input id="description" placeholder="Optional description..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-            </div>
 
-            {/* Row 5 – Bags + Bag Weight */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="numBags">Number of Bags</Label>
-                <Input id="numBags" type="number" min="0" placeholder="0"
-                  value={formData.numBags}
-                  onChange={(e) => setFormData({ ...formData, numBags: e.target.value })}
-                />
+              {/* Row 4 – RL/VL + Description */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Quality (RL/VL)</Label>
+                  <select className={SELECT_CLASS} value={formData.rlVl}
+                    onChange={(e) => setFormData({ ...formData, rlVl: e.target.value })}>
+                    <option value="">Select…</option>
+                    <option value="RL">RL</option>
+                    <option value="VL">VL</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Description</Label>
+                  <Input placeholder="Optional description" className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                    value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="bagWeight">Bag Weight (kg)</Label>
-                <Input id="bagWeight" type="number" step="0.01" min="0"
-                  value={formData.bagWeight}
-                  onChange={(e) => setFormData({ ...formData, bagWeight: e.target.value })}
-                />
-              </div>
-            </div>
 
-            {/* Row 6 – Rate per Kg */}
-            <div>
-              <Label htmlFor="ratePerKg">Rate per Kg (₹) *</Label>
-              <Input id="ratePerKg" type="number" step="0.01" min="0" required placeholder="0.00"
-                value={formData.ratePerKg}
-                onChange={(e) => setFormData({ ...formData, ratePerKg: e.target.value })}
-              />
-            </div>
+              {/* Row 5 – Bags + Bag Weight */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Number of Bags</Label>
+                  <Input type="number" min="0" placeholder="0" className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                    value={formData.numBags} onChange={(e) => setFormData({ ...formData, numBags: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Bag Weight (kg)</Label>
+                  <Input type="number" step="0.01" min="0" className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                    value={formData.bagWeight} onChange={(e) => setFormData({ ...formData, bagWeight: e.target.value })} />
+                </div>
+              </div>
 
-            {/* Row 7 – CGST + SGST */}
-            <div className="grid grid-cols-2 gap-4">
+              {/* Row 6 – Rate */}
               <div>
-                <Label htmlFor="cgstRate">CGST (%)</Label>
-                <Input id="cgstRate" type="number" step="0.1" min="0"
-                  value={formData.cgstRate}
-                  onChange={(e) => setFormData({ ...formData, cgstRate: e.target.value })}
-                />
+                <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Rate per Kg (₹) <span className="text-rose-400">*</span></Label>
+                <Input type="number" step="0.01" min="0" required placeholder="0.00"
+                  className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                  value={formData.ratePerKg} onChange={(e) => setFormData({ ...formData, ratePerKg: e.target.value })} />
               </div>
-              <div>
-                <Label htmlFor="sgstRate">SGST (%)</Label>
-                <Input id="sgstRate" type="number" step="0.1" min="0"
-                  value={formData.sgstRate}
-                  onChange={(e) => setFormData({ ...formData, sgstRate: e.target.value })}
-                />
-              </div>
-            </div>
 
-            {/* Row 8 – Account + Remarks */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="purchaseAccount">Purchase Account</Label>
-                <Input id="purchaseAccount" placeholder="e.g. C.N.T.LLP"
-                  value={formData.purchaseAccount}
-                  onChange={(e) => setFormData({ ...formData, purchaseAccount: e.target.value })}
-                />
+              {/* Row 7 – CGST + SGST */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">CGST (%)</Label>
+                  <Input type="number" step="0.1" min="0" className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                    value={formData.cgstRate} onChange={(e) => setFormData({ ...formData, cgstRate: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">SGST (%)</Label>
+                  <Input type="number" step="0.1" min="0" className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                    value={formData.sgstRate} onChange={(e) => setFormData({ ...formData, sgstRate: e.target.value })} />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="remarks">Remarks</Label>
-                <Input id="remarks" placeholder="Any additional notes…"
-                  value={formData.remarks}
-                  onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                />
-              </div>
-            </div>
 
-            {/* Live Calculation Summary */}
-            <div className="bg-slate-800 border border-slate-700 p-4 rounded-lg space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Total Weight</span>
-                <strong>{totalWeightCalc.toFixed(2)} kg</strong>
+              {/* Row 8 – Account + Remarks */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Purchase Account</Label>
+                  <Input placeholder="e.g. C.N.T.LLP" className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                    value={formData.purchaseAccount} onChange={(e) => setFormData({ ...formData, purchaseAccount: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Remarks</Label>
+                  <Input placeholder="Any additional notes…" className="bg-slate-800/80 border-slate-700/60 text-slate-200"
+                    value={formData.remarks} onChange={(e) => setFormData({ ...formData, remarks: e.target.value })} />
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Taxable Amount</span>
-                <strong>₹{taxableCostCalc.toFixed(2)}</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">CGST ({cgstRateVal}%)</span>
-                <strong>₹{cgstAmountCalc.toFixed(2)}</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">SGST ({sgstRateVal}%)</span>
-                <strong>₹{sgstAmountCalc.toFixed(2)}</strong>
-              </div>
-              <div className="flex justify-between border-t border-slate-600 pt-2 mt-1">
-                <span className="font-semibold text-white">Total Cost</span>
-                <strong className="text-lg text-white">₹{totalCostCalc.toFixed(2)}</strong>
-              </div>
-            </div>
 
-            {/* Actions */}
-            <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={closeDialogs}>
-                Cancel
-              </Button>
-              <Button type="submit" className="flex-1" disabled={isPending}>
-                {isPending ? 'Saving…' : editRecord ? 'Update Record' : 'Create Record'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+              {/* Live Calculation Summary */}
+              <div className="rounded-xl border border-slate-700/50 bg-slate-800/50 p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">Live Calculation</p>
+                {[
+                  { label: 'Total Weight', value: `${totalWeightCalc.toFixed(2)} kg` },
+                  { label: 'Taxable Amount', value: `₹${taxableCostCalc.toFixed(2)}` },
+                  { label: `CGST (${cgstRateVal}%)`, value: `₹${cgstAmountCalc.toFixed(2)}` },
+                  { label: `SGST (${sgstRateVal}%)`, value: `₹${sgstAmountCalc.toFixed(2)}` },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex justify-between text-sm">
+                    <span className="text-slate-400">{label}</span>
+                    <span className="text-slate-200 font-medium">{value}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between text-sm border-t border-slate-700/60 pt-2 mt-1">
+                  <span className="font-semibold text-slate-200">Total Cost</span>
+                  <span className="text-lg font-bold text-emerald-400">₹{totalCostCalc.toFixed(2)}</span>
+                </div>
+              </div>
 
-      {/* ── PO Preview Modal ── */}
-      <YarnPOPreviewModal
-        data={poPreviewOpen ? poData : null}
-        onClose={() => { setPoPreviewOpen(false); setPoData(null); }}
-      />
-    </div>
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={closeDialogs}
+                  className="border-slate-700 hover:bg-slate-800 text-slate-300">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isPending}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold disabled:opacity-60">
+                  {isPending ? 'Saving…' : editRecord ? 'Update Record' : 'Create Record'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* PO Preview Modal */}
+        <YarnPOPreviewModal
+          data={poPreviewOpen ? poData : null}
+          onClose={() => { setPoPreviewOpen(false); setPoData(null); }}
+        />
+      </div>
+    </ProtectedRoute>
   );
 }

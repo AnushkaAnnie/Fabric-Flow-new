@@ -5,41 +5,33 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package2, Search } from 'lucide-react';
+import { Package2, Search, Pencil, Trash2, ChevronDown } from 'lucide-react';
 import { YarnLotForm } from '@/components/yarn/YarnLotForm';
 import type { YarnLot, YarnLotFormData, Mill, Knitter } from '@/types/yarn';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+
+const SELECT_CLASS =
+  'rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all';
 
 export default function YarnPage() {
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [editLot, setEditLot] = useState<YarnLot | null>(null);
-
-  // Search / filter state
   const [searchHF, setSearchHF] = useState('');
   const [selectedKnitterId, setSelectedKnitterId] = useState<string>('');
   const [viewMode, setViewMode] = useState<'all' | 'knitter'>('all');
 
-  const { data: lots = [] } = useQuery<YarnLot[]>({
+  const { data: lots = [], isLoading } = useQuery<YarnLot[]>({
     queryKey: ['yarn-lots', searchHF, selectedKnitterId, viewMode],
     queryFn: async () => {
       const params: Record<string, string> = {};
       if (viewMode === 'all' && searchHF) params['hfCode'] = searchHF;
-      if (viewMode === 'knitter' && selectedKnitterId)
-        params['knitterId'] = selectedKnitterId;
+      if (viewMode === 'knitter' && selectedKnitterId) params['knitterId'] = selectedKnitterId;
       const { data } = await api.get<YarnLot[]>('/yarn-lots', { params });
       return data;
     },
@@ -66,10 +58,7 @@ export default function YarnPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({
-      id,
-      ...body
-    }: { id: number } & Partial<YarnLotFormData>) =>
+    mutationFn: ({ id, ...body }: { id: number } & Partial<YarnLotFormData>) =>
       api.patch(`/yarn-lots/${id}`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['yarn-lots'] });
@@ -89,175 +78,186 @@ export default function YarnPage() {
     onError: () => toast.error('Delete failed'),
   });
 
+  const openEdit = (lot: YarnLot) => { setEditLot(lot); setCreateOpen(true); };
+  const confirmDelete = (id: number) => {
+    if (window.confirm('Delete this yarn lot?')) deleteMutation.mutate(id);
+  };
+
   return (
-    <div className="p-6 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Yarn Inventory</h1>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Package2 className="mr-2 h-4 w-4" /> Add Yarn Lot
-        </Button>
-      </div>
-
-      {/* Search & Filter Controls */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search HF code..."
-            value={searchHF}
-            onChange={(e) => setSearchHF(e.target.value)}
-            className="pl-8 rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
-          />
-        </div>
-        <select
-          value={viewMode}
-          onChange={(e) => setViewMode(e.target.value as 'all' | 'knitter')}
-          className="rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
-        >
-          <option value="all">All Inventory</option>
-          <option value="knitter">By Knitter</option>
-        </select>
-        {viewMode === 'knitter' && (
-          <select
-            value={selectedKnitterId}
-            onChange={(e) => setSelectedKnitterId(e.target.value)}
-            className="rounded border border-slate-600 bg-slate-700 px-3 py-2 text-white"
+    <ProtectedRoute>
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
+              Yarn Inventory
+            </h1>
+            <p className="text-slate-500 text-sm mt-0.5">
+              {isLoading ? 'Loading…' : `${lots.length} lot${lots.length !== 1 ? 's' : ''}`}
+            </p>
+          </div>
+          <button
+            onClick={() => { setEditLot(null); setCreateOpen(true); }}
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all duration-200"
           >
-            <option value="">Select knitter...</option>
-            {knitters.map((k) => (
-              <option key={k.id} value={k.id}>
-                {k.name}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
+            <Package2 className="h-4 w-4" /> Add Yarn Lot
+          </button>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {viewMode === 'knitter' ? 'Knitter Stock' : 'All Yarn Lots'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>HF Code</TableHead>
-                <TableHead>Mill</TableHead>
-                {viewMode === 'knitter' ? (
-                  <>
-                    <TableHead>Knitter</TableHead>
-                    <TableHead>Received Weight</TableHead>
-                    <TableHead>Used Weight</TableHead>
-                    <TableHead>Available Weight</TableHead>
-                  </>
-                ) : (
-                  <>
-                    <TableHead>Total (kg)</TableHead>
-                    <TableHead>Available (kg)</TableHead>
-                    <TableHead>Rate/kg</TableHead>
-                    <TableHead>Total Cost</TableHead>
-                  </>
-                )}
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lots.map((lot) => {
-                if (viewMode === 'knitter') {
-                  return lot.knitterStocks?.map((stock) => {
-                    const used = stock.receivedWeight - stock.remainingWeight;
-                    return (
-                      <TableRow key={`${lot.id}-${stock.knitterId}`}>
-                        <TableCell className="font-medium">{lot.hfCode}</TableCell>
-                        <TableCell>{lot.mill?.name}</TableCell>
-                        <TableCell>{stock.knitter?.name}</TableCell>
-                        <TableCell>{stock.receivedWeight.toFixed(2)} kg</TableCell>
-                        <TableCell>{used.toFixed(2)} kg</TableCell>
-                        <TableCell>{stock.remainingWeight.toFixed(2)} kg</TableCell>
-                        <TableCell className="text-right space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditLot(lot);
-                              setCreateOpen(true);
-                            }}
-                          >
-                            Edit
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  });
-                }
+        {/* Search & Filter Bar */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search HF code…"
+              value={searchHF}
+              onChange={(e) => setSearchHF(e.target.value)}
+              className="pl-9 pr-3 py-2 rounded-lg border border-slate-700/60 bg-slate-800/80 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all w-48"
+            />
+          </div>
+          <div className="relative">
+            <select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value as 'all' | 'knitter')}
+              className={SELECT_CLASS + ' pr-8 appearance-none'}
+            >
+              <option value="all">All Inventory</option>
+              <option value="knitter">By Knitter</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+          </div>
+          {viewMode === 'knitter' && (
+            <div className="relative">
+              <select
+                value={selectedKnitterId}
+                onChange={(e) => setSelectedKnitterId(e.target.value)}
+                className={SELECT_CLASS + ' pr-8 appearance-none'}
+              >
+                <option value="">All knitters…</option>
+                {knitters.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+            </div>
+          )}
+        </div>
 
-                return (
-                  <TableRow key={lot.id}>
-                    <TableCell className="font-medium">{lot.hfCode}</TableCell>
-                    <TableCell>{lot.mill?.name}</TableCell>
-                    <TableCell>{lot.totalWeight} kg</TableCell>
-                    <TableCell>{lot.availableWeight} kg</TableCell>
-                    <TableCell>₹{lot.ratePerKg}</TableCell>
-                    <TableCell>₹{lot.totalCost}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditLot(lot);
-                          setCreateOpen(true);
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteMutation.mutate(lot.id)}
-                      >
-                        Delete
-                      </Button>
+        {/* Table */}
+        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-slate-800 bg-slate-900/80 hover:bg-slate-900/80">
+                  {viewMode === 'knitter' ? (
+                    <>
+                      {['HF Code','Mill','Knitter','Received (kg)','Used (kg)','Available (kg)','Actions'].map(h => (
+                        <TableHead key={h} className="text-xs font-semibold uppercase tracking-widest text-slate-400">{h}</TableHead>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      {['HF Code','Mill','Count','Total (kg)','Available (kg)','Rate/kg','Total Cost','Actions'].map(h => (
+                        <TableHead key={h} className="text-xs font-semibold uppercase tracking-widest text-slate-400">{h}</TableHead>
+                      ))}
+                    </>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i} className="border-slate-800">
+                      {Array.from({ length: 8 }).map((__, j) => (
+                        <TableCell key={j}><div className="h-4 rounded bg-slate-800 animate-pulse" /></TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : lots.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-12 text-center text-sm text-slate-500">
+                      No yarn lots found. Add one to get started.
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                ) : lots.map((lot) => {
+                  if (viewMode === 'knitter') {
+                    return lot.knitterStocks?.map((stock) => {
+                      const used = stock.receivedWeight - stock.remainingWeight;
+                      return (
+                        <TableRow key={`${lot.id}-${stock.knitterId}`} className="border-slate-800/60 hover:bg-slate-800/20 transition-colors">
+                          <TableCell className="font-mono text-sm font-semibold text-blue-300">{lot.hfCode}</TableCell>
+                          <TableCell className="text-slate-200">{lot.mill?.name}</TableCell>
+                          <TableCell className="text-slate-200">{stock.knitter?.name}</TableCell>
+                          <TableCell className="text-slate-300">{stock.receivedWeight.toFixed(2)} kg</TableCell>
+                          <TableCell className="text-slate-300">{used.toFixed(2)} kg</TableCell>
+                          <TableCell className="font-semibold text-emerald-400">{stock.remainingWeight.toFixed(2)} kg</TableCell>
+                          <TableCell>
+                            <button onClick={() => openEdit(lot)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-xs text-blue-300 hover:bg-blue-500/20 transition-all">
+                              <Pencil className="h-3 w-3" /> Edit
+                            </button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    });
+                  }
+                  return (
+                    <TableRow key={lot.id} className="border-slate-800/60 hover:bg-slate-800/20 transition-colors">
+                      <TableCell className="font-mono text-sm font-semibold text-blue-300">{lot.hfCode}</TableCell>
+                      <TableCell className="text-slate-200">{lot.mill?.name}</TableCell>
+                      <TableCell className="text-slate-300">{lot.count ?? '—'}</TableCell>
+                      <TableCell className="text-slate-300">{Number(lot.totalWeight).toFixed(2)} kg</TableCell>
+                      <TableCell className="font-semibold text-emerald-400">{Number(lot.availableWeight).toFixed(2)} kg</TableCell>
+                      <TableCell className="text-slate-300">₹{Number(lot.ratePerKg).toFixed(2)}</TableCell>
+                      <TableCell className="font-semibold text-slate-200">₹{Number(lot.totalCost).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1.5">
+                          <button onClick={() => openEdit(lot)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-xs text-blue-300 hover:bg-blue-500/20 transition-all">
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                          <button onClick={() => confirmDelete(lot.id)} disabled={deleteMutation.isPending}
+                            className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-xs text-rose-300 hover:bg-rose-500/20 transition-all disabled:opacity-50">
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          {lots.length > 0 && !isLoading && (
+            <div className="border-t border-slate-800/60 px-4 py-2.5 text-right">
+              <span className="text-xs text-slate-500">{lots.length} lot{lots.length !== 1 ? 's' : ''}</span>
+            </div>
+          )}
+        </div>
 
-      {/* Create / Edit Dialog */}
-      <Dialog
-        open={createOpen}
-        onOpenChange={(open) => {
-          setCreateOpen(open);
-          if (!open) setEditLot(null);
-        }}
-      >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {editLot ? 'Edit Yarn Lot' : 'Add New Yarn Lot'}
-            </DialogTitle>
-          </DialogHeader>
-          <YarnLotForm
-            key={editLot?.id || 'new'}
-            initial={editLot}
-            mills={mills}
-            onSubmit={(data: YarnLotFormData) => {
-              if (editLot) {
-                updateMutation.mutate({ id: editLot.id, ...data });
-              } else {
-                createMutation.mutate(data);
-              }
-            }}
-            isSubmitting={createMutation.isPending || updateMutation.isPending}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
+        {/* Create / Edit Dialog */}
+        <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) setEditLot(null); }}>
+          <DialogContent className="max-w-lg bg-slate-900 border-slate-700">
+            <DialogHeader>
+              <DialogTitle className="text-slate-100 flex items-center gap-2">
+                <Package2 className="h-5 w-5 text-emerald-400" />
+                {editLot ? 'Edit Yarn Lot' : 'Add New Yarn Lot'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="mt-2">
+              <YarnLotForm
+                key={editLot?.id || 'new'}
+                initial={editLot}
+                mills={mills}
+                onSubmit={(data: YarnLotFormData) => {
+                  if (editLot) updateMutation.mutate({ id: editLot.id, ...data });
+                  else createMutation.mutate(data);
+                }}
+                isSubmitting={createMutation.isPending || updateMutation.isPending}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </ProtectedRoute>
   );
 }

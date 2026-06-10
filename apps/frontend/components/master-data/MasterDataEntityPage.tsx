@@ -35,8 +35,8 @@ export default function MasterDataEntityPage({
   // Client-side search across all string columns
   const filteredData = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return data as Record<string, unknown>[];
-    return (data as Record<string, unknown>[]).filter((row) =>
+    if (!q) return data as Array<{ id: string | number; [key: string]: unknown }>;
+    return (data as Array<{ id: string | number; [key: string]: unknown }>).filter((row) =>
       Object.values(row).some(
         (val) => val && String(val).toLowerCase().includes(q)
       )
