@@ -1,5 +1,6 @@
 'use client';
 
+import { getSupabaseSession, subscribeToAuthChanges } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -13,29 +14,57 @@ export function ProtectedRoute({ children }: Props) {
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    try {
-      const token = localStorage.getItem('token');
+    let mounted = true;
 
-      if (!token) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setChecking(false);
+    async function checkSession() {
+      try {
+        const session = await getSupabaseSession();
+        if (!mounted) return;
+
+        if (!session) {
+          setAuthorized(false);
+          router.replace('/login');
+          return;
+        }
+
+        setAuthorized(true);
+      } catch {
+        if (!mounted) return;
+        setAuthorized(false);
+        router.replace('/login');
+      } finally {
+        if (mounted) {
+          setChecking(false);
+        }
+      }
+    }
+
+    void checkSession();
+
+    const {
+      data: { subscription },
+    } = subscribeToAuthChanges((_event, session) => {
+      if (!mounted) return;
+
+      if (!session) {
+        setAuthorized(false);
         router.replace('/login');
         return;
       }
 
       setAuthorized(true);
-    } catch {
-      localStorage.removeItem('token');
-      router.replace('/login');
-    } finally {
-      setChecking(false);
-    }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [router]);
 
   if (checking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#080c14]">
-        <div className="animate-pulse text-sm text-slate-500 font-medium">
+        <div className="animate-pulse text-sm font-medium text-slate-500">
           Checking authentication...
         </div>
       </div>

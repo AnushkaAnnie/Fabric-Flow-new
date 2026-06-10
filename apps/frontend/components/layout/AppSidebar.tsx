@@ -1,5 +1,6 @@
 'use client';
 
+import { signOutFromSupabase } from '@/lib/auth';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -17,9 +18,7 @@ import {
 const nav = [
   {
     section: 'Overview',
-    items: [
-      { label: 'Dashboard', href: '/', icon: LayoutDashboard },
-    ],
+    items: [{ label: 'Dashboard', href: '/', icon: LayoutDashboard }],
   },
   {
     section: 'Master Data',
@@ -64,8 +63,8 @@ export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  function logout() {
-    try { localStorage.removeItem('token'); } catch { /* noop */ }
+  async function logout() {
+    await signOutFromSupabase().catch(() => undefined);
     router.replace('/login');
   }
 
@@ -75,20 +74,18 @@ export function AppSidebar() {
   }
 
   return (
-    <aside className="w-60 shrink-0 border-r border-slate-800 bg-slate-950/80 flex flex-col sticky top-0 h-screen overflow-y-auto">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-slate-800">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-base shadow-lg shadow-blue-500/25">
-          🪡
+    <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col overflow-y-auto border-r border-slate-800 bg-slate-950/80">
+      <div className="flex items-center gap-3 border-b border-slate-800 px-4 py-5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 text-base shadow-lg shadow-blue-500/25">
+          FF
         </div>
         <div>
-          <p className="text-sm font-bold text-slate-100 leading-tight">Fabric Flow</p>
+          <p className="text-sm font-bold leading-tight text-slate-100">Fabric Flow</p>
           <p className="text-[10px] text-slate-500">Textile MES</p>
         </div>
       </div>
 
-      {/* Nav sections */}
-      <nav className="flex-1 px-3 py-4 space-y-6">
+      <nav className="flex-1 space-y-6 px-3 py-4">
         {nav.map((group) => (
           <div key={group.section}>
             <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
@@ -104,11 +101,13 @@ export function AppSidebar() {
                       href={item.href}
                       className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-150 ${
                         active
-                          ? 'bg-blue-600/15 text-blue-300 border border-blue-500/25 font-medium'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                          ? 'border border-blue-500/25 bg-blue-600/15 font-medium text-blue-300'
+                          : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                       }`}
                     >
-                      <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-blue-400' : 'text-slate-500'}`} />
+                      <Icon
+                        className={`h-4 w-4 shrink-0 ${active ? 'text-blue-400' : 'text-slate-500'}`}
+                      />
                       {item.label}
                     </Link>
                   </li>
@@ -119,11 +118,10 @@ export function AppSidebar() {
         ))}
       </nav>
 
-      {/* Logout */}
-      <div className="px-3 pb-4 border-t border-slate-800 pt-3">
+      <div className="border-t border-slate-800 px-3 pb-4 pt-3">
         <button
-          onClick={logout}
-          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all duration-150"
+          onClick={() => void logout()}
+          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-slate-400 transition-all duration-150 hover:bg-rose-500/10 hover:text-rose-400"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Sign Out

@@ -1,12 +1,20 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { Controller, Get, Req } from '@nestjs/common';
+import { Request } from 'express';
+
+type AuthenticatedRequest = Request & {
+  user?: {
+    id: string;
+    email?: string;
+    role: string;
+  };
+};
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
-
-  @Post('login')
-  login(@Body() body: { username?: string; password?: string }) {
-    return this.authService.login(body.username, body.password);
+  @Get('me')
+  me(@Req() request: AuthenticatedRequest) {
+    return {
+      user: request.user ?? null,
+    };
   }
 }

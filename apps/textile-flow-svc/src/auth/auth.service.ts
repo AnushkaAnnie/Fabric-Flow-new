@@ -1,87 +1,114 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { createHmac, timingSafeEqual } from 'crypto';
+import {
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import {
+  createRemoteJWKSet,
+  decodeProtectedHeader,
+  jwtVerify,
+  type JWTPayload,
+  type JWTVerifyResult,
+} from 'jose';
 
 type AuthUser = {
   id: string;
-  username: string;
+  email?: string;
   role: string;
 };
 
 @Injectable()
 export class AuthService {
-  private readonly jwtSecret =
-    process.env.JWT_SECRET ?? 'fabric-flow-dev-secret';
+  private readonly supabaseUrl =
+    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  private readonly issuer = this.supabaseUrl
+    ? `${this.supabaseUrl.replace(/\/+$/, '')}/auth/v1`
+    : undefined;
+  private readonly jwtSecret = process.env.SUPABASE_JWT_SECRET;
+  private readonly jwks = this.issuer
+    ? createRemoteJWKSet(new URL(`${this.issuer}/.well-known/jwks.json`))
+    : null;
 
-  login(username?: string, password?: string) {
-    const configuredUser = process.env.AUTH_USERNAME ?? 'admin';
-    const configuredPassword = process.env.AUTH_PASSWORD ?? 'admin';
+  async verify(token: string): Promise<AuthUser> {
+    const payload = await this.verifyToken(token);
 
-    if (username !== configuredUser || password !== configuredPassword) {
-      throw new UnauthorizedException('Invalid username or password');
+    const subject = payload.sub;
+    if (!subject) {
+      throw new UnauthorizedException('Token subject is missing');
     }
 
-    const user: AuthUser = {
-      id: 'admin',
-      username: configuredUser,
-      role: 'admin',
-    };
-    const accessToken = this.sign(user);
+    const email =
+      typeof payload.email === 'string' ? payload.email : undefined;
+    const appMetadataRole =
+      this.isObject(payload.app_metadata) &&
+      typeof payload.app_metadata.role === 'string'
+        ? payload.app_metadata.role
+        : undefined;
+    const claimRole =
+      typeof payload.role === 'string' ? payload.role : undefined;
 
     return {
-      access_token: accessToken,
-      accessToken,
-      token: accessToken,
-      user,
+      id: subject,
+      email,
+      role: appMetadataRole ?? claimRole ?? 'authenticated',
     };
   }
 
-  verify(token: string): AuthUser {
-    const [header, payload, signature] = token.split('.');
-    if (!header || !payload || !signature) {
-      throw new UnauthorizedException('Invalid token');
+  private async verifyToken(token: string): Promise<JWTPayload> {
+    if (!this.issuer) {
+      throw new InternalServerErrorException(
+        'SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL must be configured',
+      );
     }
 
-    const expected = this.signPart(`${header}.${payload}`);
-    const actual = Buffer.from(signature);
-    const expectedBuffer = Buffer.from(expected);
-    if (
-      actual.length !== expectedBuffer.length ||
-      !timingSafeEqual(actual, expectedBuffer)
-    ) {
-      throw new UnauthorizedException('Invalid token');
+    const header = decodeProtectedHeader(token);
+    const algorithm = header.alg;
+
+    let verified: JWTVerifyResult<JWTPayload>;
+
+    try {
+      if (algorithm?.startsWith('HS')) {
+        if (!this.jwtSecret) {
+          throw new InternalServerErrorException(
+            'SUPABASE_JWT_SECRET must be configured for HS256 token verification',
+          );
+        }
+
+        verified = await jwtVerify(
+          token,
+          new TextEncoder().encode(this.jwtSecret),
+          {
+            issuer: this.issuer,
+            audience: 'authenticated',
+          },
+        );
+      } else {
+        if (!this.jwks) {
+          throw new InternalServerErrorException(
+            'Supabase JWKS URL could not be initialized',
+          );
+        }
+
+        verified = await jwtVerify(token, this.jwks, {
+          issuer: this.issuer,
+          audience: 'authenticated',
+        });
+      }
+    } catch (error) {
+      if (
+        error instanceof InternalServerErrorException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
+
+      throw new UnauthorizedException('Invalid or expired Supabase token');
     }
 
-    const decoded = JSON.parse(
-      Buffer.from(payload, 'base64url').toString('utf8'),
-    ) as AuthUser & { exp: number };
-    if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
-      throw new UnauthorizedException('Token expired');
-    }
-
-    return {
-      id: decoded.id,
-      username: decoded.username,
-      role: decoded.role,
-    };
+    return verified.payload;
   }
 
-  private sign(user: AuthUser) {
-    const header = Buffer.from(
-      JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
-    ).toString('base64url');
-    const payload = Buffer.from(
-      JSON.stringify({
-        ...user,
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,
-      }),
-    ).toString('base64url');
-
-    return `${header}.${payload}.${this.signPart(`${header}.${payload}`)}`;
-  }
-
-  private signPart(value: string) {
-    return createHmac('sha256', this.jwtSecret)
-      .update(value)
-      .digest('base64url');
+  private isObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
   }
 }

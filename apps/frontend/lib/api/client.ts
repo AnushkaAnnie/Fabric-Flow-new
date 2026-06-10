@@ -1,3 +1,5 @@
+import { getSupabaseAccessToken, signOutFromSupabase } from '@/lib/auth';
+
 type Primitive = string | number | boolean | null | undefined;
 
 interface RequestOptions extends RequestInit {
@@ -20,15 +22,14 @@ export async function apiClient<T>(
     });
   }
 
-  // Attach JWT if present
-  let authHeader: Record<string, string> = {};
+  const authHeader: Record<string, string> = {};
   try {
-    const token = localStorage.getItem('token');
+    const token = await getSupabaseAccessToken();
     if (token) {
-      authHeader = { Authorization: `Bearer ${token}` };
+      authHeader.Authorization = `Bearer ${token}`;
     }
   } catch {
-    // localStorage unavailable (SSR / private mode) — proceed without auth header
+    // Session unavailable. Continue without auth header.
   }
 
   const response = await fetch(url.toString(), {
@@ -44,13 +45,12 @@ export async function apiClient<T>(
         : options.body,
   });
 
-  // 401 → clear token and bounce to login
   if (response.status === 401) {
-    try { localStorage.removeItem('token'); } catch { /* noop */ }
+    await signOutFromSupabase().catch(() => undefined);
     if (typeof window !== 'undefined') {
       window.location.replace('/login');
     }
-    throw new Error('Session expired — please sign in again');
+    throw new Error('Session expired. Please sign in again.');
   }
 
   if (!response.ok) {

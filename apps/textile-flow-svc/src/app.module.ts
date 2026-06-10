@@ -35,7 +35,7 @@ import { ProductionPlanningModule } from './production-planning/production-plann
 import { GreyFabricInwardModule } from './grey-fabric-inward/grey-fabric-inward.module';
 
 import { AuthModule } from './auth/auth.module';
-import { DevAuthGuard } from './common/guards/dev-auth.guard';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
@@ -80,7 +80,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     AppService,
     {
       provide: APP_GUARD,
-      useClass: DevAuthGuard,
+      useClass: JwtAuthGuard,
     },
     {
       provide: APP_FILTER,
