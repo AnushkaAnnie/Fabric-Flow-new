@@ -37,8 +37,7 @@ export class AuthService {
       throw new UnauthorizedException('Token subject is missing');
     }
 
-    const email =
-      typeof payload.email === 'string' ? payload.email : undefined;
+    const email = typeof payload.email === 'string' ? payload.email : undefined;
     const appMetadataRole =
       this.isObject(payload.app_metadata) &&
       typeof payload.app_metadata.role === 'string'

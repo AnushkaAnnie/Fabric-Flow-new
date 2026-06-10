@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Search, RefreshCw } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import MasterDataFormDialog, { type FormField } from "./MasterDataFormDialog";
 import MasterDataTable from "./MasterDataTable";
 import { useMasterData } from "@/hooks/useMasterData";

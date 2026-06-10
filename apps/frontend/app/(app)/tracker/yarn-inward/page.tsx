@@ -224,7 +224,7 @@ export default function YarnInwardPage() {
                 ) : records.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={12} className="py-12 text-center text-sm text-slate-500">
-                      No inward records yet. Click "Add Inward Record" to create one.
+                      No inward records yet. Click &quot;Add Inward Record&quot; to create one.
                     </TableCell>
                   </TableRow>
                 ) : records.map((r) => (

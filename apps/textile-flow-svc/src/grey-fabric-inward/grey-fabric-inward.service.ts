@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import {
-  CreateGreyFabricInwardDto,
-} from '@textile-flow/shared';
+import { CreateGreyFabricInwardDto } from '@textile-flow/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -42,7 +40,8 @@ export class GreyFabricInwardService {
       where: { id },
       include: { greyFabricLots: true },
     });
-    if (!record) throw new NotFoundException('Grey fabric inward record not found');
+    if (!record)
+      throw new NotFoundException('Grey fabric inward record not found');
     return record;
   }
 

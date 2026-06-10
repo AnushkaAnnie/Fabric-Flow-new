@@ -43,7 +43,7 @@ export function ProtectedRoute({ children }: Props) {
 
     const {
       data: { subscription },
-    } = subscribeToAuthChanges((_event, session) => {
+    } = subscribeToAuthChanges(async (_event, session) => {
       if (!mounted) return;
 
       if (!session) {
