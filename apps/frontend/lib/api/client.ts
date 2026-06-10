@@ -20,10 +20,22 @@ export async function apiClient<T>(
     });
   }
 
+  // Attach JWT if present
+  let authHeader: Record<string, string> = {};
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      authHeader = { Authorization: `Bearer ${token}` };
+    }
+  } catch {
+    // localStorage unavailable (SSR / private mode) — proceed without auth header
+  }
+
   const response = await fetch(url.toString(), {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...authHeader,
       ...(options.headers ?? {}),
     },
     body:
@@ -31,6 +43,15 @@ export async function apiClient<T>(
         ? JSON.stringify(options.body)
         : options.body,
   });
+
+  // 401 → clear token and bounce to login
+  if (response.status === 401) {
+    try { localStorage.removeItem('token'); } catch { /* noop */ }
+    if (typeof window !== 'undefined') {
+      window.location.replace('/login');
+    }
+    throw new Error('Session expired — please sign in again');
+  }
 
   if (!response.ok) {
     let message = 'Request failed';
