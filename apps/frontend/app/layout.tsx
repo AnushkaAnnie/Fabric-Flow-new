@@ -21,6 +21,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={cn('dark', 'font-sans', geist.variable)}>
       <body
         className="font-sans antialiased bg-[#080c14] text-slate-100"
+        suppressHydrationWarning
       >
         <QueryProvider>
           {children}

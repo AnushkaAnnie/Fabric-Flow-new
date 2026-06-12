@@ -32,6 +32,28 @@ export default function LoginPage() {
     }
   }
 
+  async function handleQuickSignUp() {
+    setError('');
+    setLoading(true);
+    try {
+      const { createClient } = await import('@/utils/supabase/client');
+      const client = createClient();
+      const { error: signUpError } = await client.auth.signUp({
+        email: 'testadmin@fabricflow.app',
+        password: 'Password123!',
+      });
+      if (signUpError) {
+        setError(signUpError.message);
+      } else {
+        setError('✅ Registration successful! Log in with: testadmin@fabricflow.app / Password123!');
+      }
+    } catch {
+      setError('Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#080c14] p-4">
       <div className="pointer-events-none fixed inset-0">
@@ -73,6 +95,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 placeholder="name@company.com"
                 className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 transition-all focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                suppressHydrationWarning
               />
             </div>
 
@@ -88,12 +111,14 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 placeholder="Password"
                 className="w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 transition-all focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                suppressHydrationWarning
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
+              suppressHydrationWarning
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:from-blue-500 hover:to-violet-500 disabled:opacity-60"
             >
               {loading ? (
@@ -106,6 +131,18 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          <div className="mt-4 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleQuickSignUp}
+              disabled={loading}
+              suppressHydrationWarning
+              className="w-full rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm font-medium text-blue-400 transition-all hover:bg-blue-500/20 disabled:opacity-60"
+            >
+              Quick Register (testadmin@fabricflow.app)
+            </button>
+          </div>
 
           <p className="mt-4 text-center text-xs text-slate-600">
             Sign in with your Supabase account credentials.
