@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -10,23 +10,31 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  private readonly logger = new Logger(PrismaService.name);
+
   constructor() {
-    console.log('Connecting to database with URL:', process.env.DATABASE_URL);
+    const connectionString = process.env.DATABASE_URL;
+
+    if (!connectionString) {
+      throw new Error(
+        'DATABASE_URL is not set. ' +
+          'Copy apps/textile-flow-svc/.env.example to .env and fill in your Supabase credentials.',
+      );
+    }
+
     const pool = new Pool({
-      connectionString:
-        'postgresql://postgres.nvtyytyykdjhgtinhftd:Anushka1326@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres?pgbouncer=true',
-      ssl: { rejectUnauthorized: false }, // ensure ssl is required for supabase
+      connectionString,
+      ssl: { rejectUnauthorized: false }, // required for Supabase
     });
 
-    // The adapter translates Prisma's internal queries to use the pool
     const adapter = new PrismaPg(pool);
-
-    // Pass the adapter to the PrismaClient constructor
     super({ adapter });
   }
 
   async onModuleInit() {
+    this.logger.log('Connecting to Supabase PostgreSQL…');
     await this.$connect();
+    this.logger.log('Database connection established.');
   }
 
   async onModuleDestroy() {
