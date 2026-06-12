@@ -48,6 +48,12 @@ interface POFormData {
   deliveryAddress: string;
   deliveryGST: string;
   items: POItem[];
+  // Grey Fabric PO fields
+  fabricType: string;
+  fabricColour: string;
+  fabricDia: string;
+  fabricGsm: string;
+  totalFabricWeight: string;
 }
 
 const EMPTY_FORM: POFormData = {
@@ -75,11 +81,18 @@ const EMPTY_FORM: POFormData = {
       sgst: 9,
     },
   ],
+  fabricType: '',
+  fabricColour: '',
+  fabricDia: '',
+  fabricGsm: '',
+  totalFabricWeight: '',
 };
 
 export default function PurchaseOrderForm() {
   const queryClient = useQueryClient();
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [poType, setPoType] = useState<'YARN' | 'GREY_FABRIC'>('YARN');
+  const [manualSupplier, setManualSupplier] = useState(false);
 
   const form = useForm<POFormData>({
     defaultValues: EMPTY_FORM,
@@ -95,6 +108,50 @@ export default function PurchaseOrderForm() {
   // Watch items to dynamically calculate totals and weights
   // eslint-disable-next-line react-hooks/incompatible-library
   const watchedItems = watch('items');
+
+  // Fetch mills for supplier dropdown
+  interface SupplierEntity { id: number; name: string; addressLine1?: string; addressLine2?: string; city?: string; state?: string; pincode?: string; gstin?: string; }
+  const { data: mills = [] } = useQuery<SupplierEntity[]>({
+    queryKey: ['mills'],
+    queryFn: async () => (await api.get('/mills')).data,
+  });
+
+  // Fetch knitters for supplier dropdown
+  const { data: knitters = [] } = useQuery<SupplierEntity[]>({
+    queryKey: ['knitters'],
+    queryFn: async () => (await api.get('/knitters')).data,
+  });
+
+  // Build full address from entity address fields
+  const buildAddress = (entity: SupplierEntity) => {
+    return [entity.addressLine1, entity.addressLine2, entity.city, entity.state, entity.pincode]
+      .filter(Boolean).join(', ');
+  };
+
+  // Combined supplier list: mills + knitters
+  const supplierOptions = [
+    ...mills.map(m => ({ ...m, type: 'Mill' as const })),
+    ...knitters.map(k => ({ ...k, type: 'Knitter' as const })),
+  ];
+
+  const handleSupplierSelect = (val: string) => {
+    if (val === '__manual__') {
+      setManualSupplier(true);
+      setValue('supplierName', '');
+      return;
+    }
+    // val format: "type:id"
+    const [type, idStr] = val.split(':');
+    const id = parseInt(idStr);
+    const entity = type === 'Mill'
+      ? mills.find(m => m.id === id)
+      : knitters.find(k => k.id === id);
+    if (!entity) return;
+    setValue('supplierName', entity.name);
+    const address = buildAddress(entity);
+    if (address) setValue('supplierAddress', address);
+    if (entity.gstin) setValue('supplierGST', entity.gstin);
+  };
 
   // Query existing POs for review and listing
   const { data: purchaseOrders = [] } = useQuery<PurchaseOrder[]>({
@@ -172,10 +229,28 @@ export default function PurchaseOrderForm() {
       <Card className="bg-slate-900 border-slate-800 text-white shadow-xl">
         <CardHeader className="border-b border-slate-800 pb-4">
           <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <FileText className="text-primary w-6 h-6" /> Create Yarn Purchase Order
+            <FileText className="text-primary w-6 h-6" />
+            {poType === 'YARN' ? 'Yarn Purchase Order' : 'Fabric Purchase Order'}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
+          {/* PO Type Toggle */}
+          <div className="flex gap-2 mb-6">
+            {(['YARN', 'GREY_FABRIC'] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setPoType(type)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  poType === type
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20'
+                    : 'bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+                }`}
+              >
+                {type === 'YARN' ? '🧵 Yarn PO' : '🧶 Fabric PO'}
+              </button>
+            ))}
+          </div>
           <form onSubmit={handleSubmit(() => setPreviewOpen(true))} className="space-y-6">
             
             {/* HEADER GRID */}
@@ -236,12 +311,54 @@ export default function PurchaseOrderForm() {
                 <CardContent className="pt-4 space-y-4">
                   <div>
                     <Label className="text-slate-300 font-semibold text-xs uppercase">Supplier Name *</Label>
-                    <Input
-                      className="bg-slate-900 border-slate-700 mt-1 text-white focus:ring-primary"
-                      placeholder="e.g. ABC Spinning Mills"
-                      required
-                      {...register('supplierName')}
-                    />
+                    {!manualSupplier ? (
+                      <>
+                        <select
+                          className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 mt-1 text-white text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                          required
+                          value=""
+                          onChange={(e) => handleSupplierSelect(e.target.value)}
+                        >
+                          <option value="">
+                            {watch('supplierName') ? `✓ ${watch('supplierName')}` : 'Select Supplier…'}
+                          </option>
+                          {mills.length > 0 && (
+                            <optgroup label="🏭 Mills">
+                              {mills.map(m => (
+                                <option key={`mill-${m.id}`} value={`Mill:${m.id}`}>{m.name}</option>
+                              ))}
+                            </optgroup>
+                          )}
+                          {knitters.length > 0 && (
+                            <optgroup label="🧶 Knitters">
+                              {knitters.map(k => (
+                                <option key={`knitter-${k.id}`} value={`Knitter:${k.id}`}>{k.name}</option>
+                              ))}
+                            </optgroup>
+                          )}
+                          <option value="__manual__">✏️ Enter manually…</option>
+                        </select>
+                        {watch('supplierName') && (
+                          <p className="text-xs text-emerald-400 mt-1">✓ Selected: {watch('supplierName')}</p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          className="bg-slate-900 border-slate-700 text-white focus:ring-primary flex-1"
+                          placeholder="e.g. ABC Spinning Mills"
+                          required
+                          {...register('supplierName')}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setManualSupplier(false)}
+                          className="text-xs text-blue-400 hover:text-blue-300 whitespace-nowrap"
+                        >
+                          ← Back to list
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Label className="text-slate-300 font-semibold text-xs uppercase">Supplier Address *</Label>
@@ -300,10 +417,69 @@ export default function PurchaseOrderForm() {
               </Card>
             </div>
 
+            {/* GREY FABRIC SPECIFIC FIELDS */}
+            {poType === 'GREY_FABRIC' && (
+              <Card className="bg-slate-800 border-slate-700 text-white shadow-md">
+                <CardHeader className="border-b border-slate-700 py-3 bg-slate-900/50">
+                  <CardTitle className="text-sm font-semibold uppercase tracking-wider text-primary">Fabric Specifications</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-slate-300 font-semibold text-xs uppercase">Fabric Type *</Label>
+                      <Input
+                        className="bg-slate-900 border-slate-700 mt-1 text-white focus:ring-primary"
+                        placeholder="e.g. INTERLOCK, SINGLE JERSEY"
+                        {...register('fabricType')}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-slate-300 font-semibold text-xs uppercase">Fabric Colour</Label>
+                      <Input
+                        className="bg-slate-900 border-slate-700 mt-1 text-white focus:ring-primary"
+                        placeholder="e.g. Grey, RFD"
+                        {...register('fabricColour')}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-slate-300 font-semibold text-xs uppercase">Dia</Label>
+                      <Input
+                        className="bg-slate-900 border-slate-700 mt-1 text-white focus:ring-primary"
+                        placeholder='e.g. 72"'
+                        {...register('fabricDia')}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-slate-300 font-semibold text-xs uppercase">GSM</Label>
+                      <Input
+                        className="bg-slate-900 border-slate-700 mt-1 text-white focus:ring-primary"
+                        placeholder="e.g. 180"
+                        {...register('fabricGsm')}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-slate-300 font-semibold text-xs uppercase">Total Fabric Weight (kg)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        className="bg-slate-900 border-slate-700 mt-1 text-white focus:ring-primary"
+                        placeholder="0.00"
+                        {...register('totalFabricWeight')}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* DYNAMIC ITEMS SECTION */}
             <div className="space-y-3">
               <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                <h3 className="text-base font-semibold uppercase tracking-wider text-slate-200">Particulars / Items</h3>
+                <h3 className="text-base font-semibold uppercase tracking-wider text-slate-200">
+                  {poType === 'YARN' ? 'Yarn Particulars' : 'Fabric Particulars'}
+                </h3>
                 <Button type="button" size="sm" className="bg-primary hover:bg-primary/90 text-white flex items-center gap-1 font-semibold" onClick={addRow}>
                   <Plus className="w-4 h-4" /> Add Row
                 </Button>
@@ -314,10 +490,21 @@ export default function PurchaseOrderForm() {
                   <TableHeader className="bg-slate-800/80 border-b border-slate-750">
                     <TableRow className="hover:bg-slate-800/80 border-slate-750">
                       <TableHead className="text-slate-300 font-semibold w-[22%]">Description</TableHead>
-                      <TableHead className="text-slate-300 font-semibold w-[10%]">Count</TableHead>
-                      <TableHead className="text-slate-300 font-semibold w-[10%]">Quality</TableHead>
-                      <TableHead className="text-slate-300 font-semibold w-[8%] text-center">Bags</TableHead>
-                      <TableHead className="text-slate-300 font-semibold w-[8%] text-center">Bag Wt (kg)</TableHead>
+                      {poType === 'YARN' ? (
+                        <>
+                          <TableHead className="text-slate-300 font-semibold w-[10%]">Count</TableHead>
+                          <TableHead className="text-slate-300 font-semibold w-[10%]">Quality</TableHead>
+                          <TableHead className="text-slate-300 font-semibold w-[8%] text-center">Bags</TableHead>
+                          <TableHead className="text-slate-300 font-semibold w-[8%] text-center">Bag Wt (kg)</TableHead>
+                        </>
+                      ) : (
+                        <>
+                          <TableHead className="text-slate-300 font-semibold w-[10%]">Fabric Type</TableHead>
+                          <TableHead className="text-slate-300 font-semibold w-[10%]">Colour</TableHead>
+                          <TableHead className="text-slate-300 font-semibold w-[8%] text-center">Rolls</TableHead>
+                          <TableHead className="text-slate-300 font-semibold w-[8%] text-center">Wt/Roll (kg)</TableHead>
+                        </>
+                      )}
                       <TableHead className="text-slate-300 font-semibold w-[10%] text-center">Total Wt (kg)</TableHead>
                       <TableHead className="text-slate-300 font-semibold w-[10%] text-center">Rate / kg</TableHead>
                       <TableHead className="text-slate-300 font-semibold w-[6%] text-center">CGST (%)</TableHead>
@@ -342,58 +529,108 @@ export default function PurchaseOrderForm() {
 
                       return (
                         <TableRow key={field.id} className="hover:bg-slate-800/40 border-slate-800 text-white font-medium">
-                          {/* Description */}
+                          {/* Description — same for both */}
                           <TableCell className="p-2">
                             <Input
                               className="bg-slate-900 border-slate-700 text-white text-xs"
-                              placeholder="e.g. 30s Combed Cotton"
+                              placeholder={poType === 'YARN' ? 'e.g. 30s Combed Cotton' : 'e.g. Single Jersey Grey'}
                               required
                               {...register(`items.${index}.description` as const)}
                             />
                           </TableCell>
-                          {/* Count */}
-                          <TableCell className="p-2">
-                            <Input
-                              className="bg-slate-900 border-slate-700 text-white text-xs"
-                              placeholder="e.g. 30s"
-                              required
-                              {...register(`items.${index}.count` as const)}
-                            />
-                          </TableCell>
-                          {/* Quality */}
-                          <TableCell className="p-2">
-                            <Input
-                              className="bg-slate-900 border-slate-700 text-white text-xs"
-                              placeholder="e.g. Combed"
-                              required
-                              {...register(`items.${index}.quality` as const)}
-                            />
-                          </TableCell>
-                          {/* Bags */}
-                          <TableCell className="p-2 text-center">
-                            <Input
-                              type="number"
-                              className="bg-slate-900 border-slate-700 text-white text-xs text-center"
-                              required
-                              {...register(`items.${index}.bags` as const, {
-                                valueAsNumber: true,
-                                onChange: () => handleBagsOrWeightChange(index),
-                              })}
-                            />
-                          </TableCell>
-                          {/* Bag Weight */}
-                          <TableCell className="p-2 text-center">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              className="bg-slate-900 border-slate-700 text-white text-xs text-center"
-                              required
-                              {...register(`items.${index}.bagWeight` as const, {
-                                valueAsNumber: true,
-                                onChange: () => handleBagsOrWeightChange(index),
-                              })}
-                            />
-                          </TableCell>
+
+                          {poType === 'YARN' ? (
+                            <>
+                              {/* Count */}
+                              <TableCell className="p-2">
+                                <Input
+                                  className="bg-slate-900 border-slate-700 text-white text-xs"
+                                  placeholder="e.g. 30s"
+                                  required
+                                  {...register(`items.${index}.count` as const)}
+                                />
+                              </TableCell>
+                              {/* Quality */}
+                              <TableCell className="p-2">
+                                <Input
+                                  className="bg-slate-900 border-slate-700 text-white text-xs"
+                                  placeholder="e.g. Combed"
+                                  required
+                                  {...register(`items.${index}.quality` as const)}
+                                />
+                              </TableCell>
+                              {/* Bags */}
+                              <TableCell className="p-2 text-center">
+                                <Input
+                                  type="number"
+                                  className="bg-slate-900 border-slate-700 text-white text-xs text-center"
+                                  required
+                                  {...register(`items.${index}.bags` as const, {
+                                    valueAsNumber: true,
+                                    onChange: () => handleBagsOrWeightChange(index),
+                                  })}
+                                />
+                              </TableCell>
+                              {/* Bag Weight */}
+                              <TableCell className="p-2 text-center">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  className="bg-slate-900 border-slate-700 text-white text-xs text-center"
+                                  required
+                                  {...register(`items.${index}.bagWeight` as const, {
+                                    valueAsNumber: true,
+                                    onChange: () => handleBagsOrWeightChange(index),
+                                  })}
+                                />
+                              </TableCell>
+                            </>
+                          ) : (
+                            <>
+                              {/* Fabric Type — reuses count field */}
+                              <TableCell className="p-2">
+                                <Input
+                                  className="bg-slate-900 border-slate-700 text-white text-xs"
+                                  placeholder="e.g. Interlock"
+                                  {...register(`items.${index}.count` as const)}
+                                />
+                              </TableCell>
+                              {/* Colour — reuses quality field */}
+                              <TableCell className="p-2">
+                                <Input
+                                  className="bg-slate-900 border-slate-700 text-white text-xs"
+                                  placeholder="e.g. Grey"
+                                  {...register(`items.${index}.quality` as const)}
+                                />
+                              </TableCell>
+                              {/* Rolls — reuses bags field */}
+                              <TableCell className="p-2 text-center">
+                                <Input
+                                  type="number"
+                                  className="bg-slate-900 border-slate-700 text-white text-xs text-center"
+                                  placeholder="Rolls"
+                                  {...register(`items.${index}.bags` as const, {
+                                    valueAsNumber: true,
+                                    onChange: () => handleBagsOrWeightChange(index),
+                                  })}
+                                />
+                              </TableCell>
+                              {/* Weight per Roll — reuses bagWeight field */}
+                              <TableCell className="p-2 text-center">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  className="bg-slate-900 border-slate-700 text-white text-xs text-center"
+                                  placeholder="kg/roll"
+                                  {...register(`items.${index}.bagWeight` as const, {
+                                    valueAsNumber: true,
+                                    onChange: () => handleBagsOrWeightChange(index),
+                                  })}
+                                />
+                              </TableCell>
+                            </>
+                          )}
+
                           {/* Total Weight */}
                           <TableCell className="p-2 text-center">
                             <Input
@@ -575,7 +812,7 @@ export default function PurchaseOrderForm() {
       <PurchaseOrderPreview
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
-        data={watchedItems ? { ...form.getValues(), items: watchedItems } : form.getValues()}
+        data={watchedItems ? { ...form.getValues(), items: watchedItems, poType } : { ...form.getValues(), poType }}
         onConfirm={handleConfirm}
       />
     </div>

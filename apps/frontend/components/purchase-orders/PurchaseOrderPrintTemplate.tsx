@@ -25,10 +25,17 @@ interface POData {
   deliveryAddress?: string;
   deliveryGST?: string;
   items?: POItem[];
+  poType?: 'YARN' | 'GREY_FABRIC';
+  fabricType?: string;
+  fabricColour?: string;
+  fabricDia?: string;
+  fabricGsm?: string;
+  totalFabricWeight?: string;
 }
 
 export default function PurchaseOrderPrintTemplate({ data }: { data: POData }) {
   const items = data.items || [];
+  const isFabric = data.poType === 'GREY_FABRIC';
 
   const totalBags = items.reduce((acc, item) => acc + (Number(item.bags) || 0), 0);
   const totalWeight = items.reduce((acc, item) => acc + (Number(item.totalWeight) || 0), 0);
@@ -67,7 +74,7 @@ export default function PurchaseOrderPrintTemplate({ data }: { data: POData }) {
 
       {/* DOCUMENT TITLE */}
       <div className="text-center border-x-2 border-b-2 border-black p-2 bg-slate-100 font-bold text-xs uppercase tracking-wider">
-        YARN PURCHASE ORDER
+        {isFabric ? 'FABRIC PURCHASE ORDER' : 'YARN PURCHASE ORDER'}
       </div>
 
       {/* METADATA TABLE */}
@@ -108,16 +115,29 @@ export default function PurchaseOrderPrintTemplate({ data }: { data: POData }) {
         </div>
       </div>
 
+      {/* FABRIC SPECIFICATIONS (only for Grey Fabric PO) */}
+      {isFabric && (data.fabricType || data.fabricDia || data.fabricGsm) && (
+        <div className="border-x-2 border-b-2 border-black p-3">
+          <p className="font-bold underline uppercase tracking-wider mb-1 text-[10px]">Fabric Specifications:</p>
+          <div className="grid grid-cols-4 gap-4 text-[10px]">
+            {data.fabricType && <p><span className="font-bold">Type:</span> {data.fabricType}</p>}
+            {data.fabricColour && <p><span className="font-bold">Colour:</span> {data.fabricColour}</p>}
+            {data.fabricDia && <p><span className="font-bold">Dia:</span> {data.fabricDia}</p>}
+            {data.fabricGsm && <p><span className="font-bold">GSM:</span> {data.fabricGsm}</p>}
+          </div>
+        </div>
+      )}
+
       {/* ITEMS TABLE */}
       <table className="w-full border-collapse border-x-2 border-b-2 border-black text-[10px] mt-4">
         <thead>
           <tr className="bg-slate-100 font-bold uppercase text-center border-b-2 border-black">
             <th className="border-r border-black p-2 w-[4%]">S.No</th>
             <th className="border-r border-black p-2 text-left w-[24%]">Description / Particulars</th>
-            <th className="border-r border-black p-2 w-[8%]">Count</th>
-            <th className="border-r border-black p-2 w-[10%]">Quality</th>
-            <th className="border-r border-black p-2 w-[7%]">Bags</th>
-            <th className="border-r border-black p-2 w-[8%]">Bag Wt</th>
+            <th className="border-r border-black p-2 w-[8%]">{isFabric ? 'Fabric Type' : 'Count'}</th>
+            <th className="border-r border-black p-2 w-[10%]">{isFabric ? 'Colour' : 'Quality'}</th>
+            <th className="border-r border-black p-2 w-[7%]">{isFabric ? 'Rolls' : 'Bags'}</th>
+            <th className="border-r border-black p-2 w-[8%]">{isFabric ? 'Wt/Roll' : 'Bag Wt'}</th>
             <th className="border-r border-black p-2 w-[9%]">Total Wt</th>
             <th className="border-r border-black p-2 w-[7%]">Rate</th>
             <th className="border-r border-black p-2 w-[9%]">Taxable</th>
@@ -183,7 +203,7 @@ export default function PurchaseOrderPrintTemplate({ data }: { data: POData }) {
       {/* SUMMARY PANEL */}
       <div className="flex border-x-2 border-b-2 border-black justify-between bg-slate-50 font-bold p-3 text-[11px]">
         <div>
-          Total Bags: <span className="underline">{totalBags}</span>
+          {isFabric ? 'Total Rolls' : 'Total Bags'}: <span className="underline">{totalBags}</span>
         </div>
         <div>
           Total Weight: <span className="underline">{totalWeight.toFixed(2)} kg</span>

@@ -34,6 +34,12 @@ interface POData {
   deliveryAddress?: string;
   deliveryGST?: string;
   items?: POItem[];
+  poType?: 'YARN' | 'GREY_FABRIC';
+  fabricType?: string;
+  fabricColour?: string;
+  fabricDia?: string;
+  fabricGsm?: string;
+  totalFabricWeight?: string;
 }
 
 interface PurchaseOrderPreviewProps {

@@ -14,7 +14,7 @@ export interface DeliveryNote {
   createdAt: string;
   sourceKnitter?: { id: number; name: string } | null;
   destinationKnitter?: { id: number; name: string } | null;
-  yarnLot?: { id: number; hfCode: string } | null;
+  yarnLot?: { id: number; hfCode: string; availableWeight?: number } | null;
 }
 
 export interface DeliveryNoteFormData {

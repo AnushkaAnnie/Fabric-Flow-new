@@ -368,6 +368,12 @@ model MemoLine {
   knittingLotId    Int?          @map("knitting_lot_id")
   knittingLot      KnittingLot?  @relation(fields: [knittingLotId], references: [id])
   sentWeight       Float         @map("sent_weight")
+  yarnCount        String?       @map("yarn_count")
+  dia              String?
+  gg               String?
+  loopLength       String?       @map("loop_length")
+  fabricName       String?       @map("fabric_name")
+  fabricColour     String?       @map("fabric_colour")
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
   dyeing           Dyeing?

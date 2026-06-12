@@ -36,7 +36,7 @@ const nav = [
     items: [
       { label: 'Yarn Inward', href: '/tracker/yarn-inward', icon: Package },
       { label: 'Yarn Inventory', href: '/tracker/yarn', icon: Package },
-      { label: 'Grey Fabric Inward', href: '/tracker/grey-fabric-inward', icon: Package },
+      { label: 'Fabric Inventory', href: '/tracker/grey-fabric-inward', icon: Package },
       { label: 'Purchase Orders', href: '/tracker/purchase-orders', icon: ClipboardList },
     ],
   },
@@ -47,6 +47,7 @@ const nav = [
       { label: 'Dyeing Dispatch', href: '/tracker/dyeing', icon: Scissors },
       { label: 'Memos', href: '/tracker/memos', icon: ClipboardList },
       { label: 'Delivery Notes', href: '/tracker/delivery-notes', icon: Truck },
+      { label: 'Compactor', href: '/tracker/compactor', icon: Scissors },
     ],
   },
   {

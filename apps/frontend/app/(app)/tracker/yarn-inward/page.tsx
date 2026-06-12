@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { PlusCircle, Pencil, Trash2, FileText, Package } from 'lucide-react';
 import type { YarnInward, YarnInwardFormData, Knitter } from '@/types/entities';
 import type { Mill } from '@/types/yarn';
+import type { PurchaseOrder } from '@/types/purchase-order';
 import YarnPOPreviewModal from '@/components/po/YarnPOPreviewModal';
 import type { YarnPOData } from '@/components/po/YarnPOPrint';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -67,6 +68,11 @@ export default function YarnInwardPage() {
   const { data: knitters = [] } = useQuery<Knitter[]>({
     queryKey: ['knitters'],
     queryFn: async () => (await api.get<Knitter[]>('/knitters')).data,
+  });
+
+  const { data: purchaseOrders = [] } = useQuery<PurchaseOrder[]>({
+    queryKey: ['purchase-orders'],
+    queryFn: async () => (await api.get<PurchaseOrder[]>('/purchase-orders')).data,
   });
 
   // ── Mutations ─────────────────────────────────────────────────────────────
@@ -207,7 +213,7 @@ export default function YarnInwardPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-800 bg-slate-900/80 hover:bg-slate-900/80">
-                  {['Date','PO No.','Mill','Delivered To','HF Batch','Count','Quality','Bags','Bag Wt','Total Wt','Rate/kg','Actions'].map((h) => (
+                  {['Date','PO No.','Mill','Delivered To','HF Batch','Count','RL/VL','Bags','Bag Wt','Total Wt','Rate/kg','Invoice #','Actions'].map((h) => (
                     <TableHead key={h} className="text-xs font-semibold uppercase tracking-widest text-slate-400">{h}</TableHead>
                   ))}
                 </TableRow>
@@ -230,7 +236,9 @@ export default function YarnInwardPage() {
                 ) : records.map((r) => (
                   <TableRow key={r.id} className="border-slate-800/60 hover:bg-slate-800/20 transition-colors">
                     <TableCell className="text-slate-300 text-sm">{new Date(r.receiptDate).toLocaleDateString('en-IN')}</TableCell>
-                    <TableCell className="font-mono text-xs font-semibold text-blue-400">PO-{String(r.id).padStart(4, '0')}</TableCell>
+                    <TableCell className="font-mono text-xs font-semibold text-blue-400">
+                      {r.yarnLots?.[0]?.hfCode ?? r.hfBatch ?? `YI-${r.id}`}
+                    </TableCell>
                     <TableCell className="text-slate-200">{r.mill?.name ?? '–'}</TableCell>
                     <TableCell className="text-slate-200">{r.deliveryKnitter?.name ?? '–'}</TableCell>
                     <TableCell className="text-slate-300">{r.hfBatch ?? '–'}</TableCell>
@@ -240,6 +248,7 @@ export default function YarnInwardPage() {
                     <TableCell className="text-slate-300">{fmt(r.bagWeight)} kg</TableCell>
                     <TableCell className="font-semibold text-slate-200">{fmt(r.totalWeight)} kg</TableCell>
                     <TableCell className="text-slate-300">₹{fmt(r.ratePerKg)}</TableCell>
+                    <TableCell className="text-slate-400 text-xs">{r.remarks || '–'}</TableCell>
                     <TableCell>
                       <div className="flex gap-1.5">
                         <button title="Edit" onClick={() => openEditDialog(r)}
@@ -278,6 +287,34 @@ export default function YarnInwardPage() {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+              {/* Row 0 – PO Auto-Fill */}
+              <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+                <Label className="text-xs font-medium text-blue-300 mb-1.5 block">Link to Purchase Order (auto-fills below)</Label>
+                <select className={SELECT_CLASS + ' border-blue-500/30'}
+                  onChange={(e) => {
+                    const po = purchaseOrders.find(p => String(p.id) === e.target.value);
+                    if (po) {
+                      const firstItem = po.items?.[0];
+                      setFormData(prev => ({
+                        ...prev,
+                        hfBatch: po.hfCode ?? prev.hfBatch,
+                        yarnCount: firstItem?.count ?? prev.yarnCount,
+                        yarnQuality: firstItem?.quality ?? prev.yarnQuality,
+                        numBags: firstItem ? String(firstItem.bags) : prev.numBags,
+                        bagWeight: firstItem ? String(firstItem.bagWeight) : prev.bagWeight,
+                        ratePerKg: firstItem ? String(firstItem.rate) : prev.ratePerKg,
+                      }));
+                    }
+                  }}>
+                  <option value="">Select PO to auto-fill…</option>
+                  {purchaseOrders.map(po => (
+                    <option key={po.id} value={po.id}>
+                      {po.poNumber} — {po.supplierName ?? po.supplier ?? 'Unknown'} ({new Date(po.date).toLocaleDateString('en-IN')})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Row 1 – Date + Mill */}
               <div className="grid grid-cols-2 gap-4">
                 <div>

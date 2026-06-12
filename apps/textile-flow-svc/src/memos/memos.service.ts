@@ -53,8 +53,20 @@ export class MemosService {
             knittingLotId: resolved.knittingLotId,
             greyFabricLotId: resolved.greyFabricLotId,
             sentWeight: line.sentWeight ?? resolved.sentWeight,
+            yarnCount: line.yarnCount,
+            dia: line.dia,
+            gg: line.gg,
+            loopLength: line.loopLength,
+            fabricName: line.fabricName,
+            fabricColour: line.fabricColour,
           },
         });
+
+        const finalColourId = await this.resolveColourId(
+          tx,
+          line.fabricColour,
+          resolved.colourId,
+        );
 
         const dyeing = await tx.dyeing.create({
           data: {
@@ -62,7 +74,7 @@ export class MemosService {
             memoLineId: memoLine.id,
             hfCode: resolved.hfCode,
             dyerId: lineDyerId,
-            colourId: resolved.colourId,
+            colourId: finalColourId,
             initialWeight: line.sentWeight ?? resolved.sentWeight,
             sourceType: resolved.sourceType,
             status: initialStatus,
@@ -84,6 +96,19 @@ export class MemosService {
             data: { status: WorkflowStatus.SENT },
           });
         }
+
+        await this.inventoryService.postInventoryMovement(
+          {
+            entityType: 'GreyFabricLot',
+            entityId: resolved.greyFabricLotId ?? 0,
+            itemType: 'GREY',
+            inwardWeight: line.sentWeight ?? resolved.sentWeight,
+            lotNo: resolved.lotNo,
+            stage: 'GREY',
+            remarks: 'Grey fabric lot created',
+          },
+          tx,
+        );
 
         await this.inventoryService.postInventoryMovement(
           {
@@ -253,6 +278,31 @@ export class MemosService {
     if (!colour)
       throw new BadRequestException('At least one colour is required');
     return colour.id;
+  }
+
+  private async resolveColourId(
+    tx: PrismaTransaction,
+    fabricColour?: string,
+    fallbackId?: number,
+  ) {
+    if (!fabricColour) {
+      return fallbackId ?? (await this.firstColourId(tx));
+    }
+    const parsedId = parseInt(fabricColour, 10);
+    if (!isNaN(parsedId)) {
+      const col = await tx.colour.findUnique({ where: { id: parsedId } });
+      if (col) return col.id;
+    }
+    const col = await tx.colour.findFirst({
+      where: {
+        OR: [
+          { name: { equals: fabricColour, mode: 'insensitive' } },
+          { code: { equals: fabricColour, mode: 'insensitive' } },
+        ],
+      },
+    });
+    if (col) return col.id;
+    return fallbackId ?? (await this.firstColourId(tx));
   }
 
   async findAll() {
