@@ -1,4 +1,4 @@
-import { getSupabaseAccessToken, signOutFromSupabase } from '@/lib/auth';
+import { getSupabaseAccessToken } from '@/lib/auth';
 
 type Primitive = string | number | boolean | null | undefined;
 
@@ -45,12 +45,9 @@ export async function apiClient<T>(
         : options.body,
   });
 
+  // 401 redirect disabled (auth temporarily removed).
   if (response.status === 401) {
-    await signOutFromSupabase().catch(() => undefined);
-    if (typeof window !== 'undefined') {
-      window.location.replace('/login');
-    }
-    throw new Error('Session expired. Please sign in again.');
+    throw new Error('Session expired.');
   }
 
   if (!response.ok) {

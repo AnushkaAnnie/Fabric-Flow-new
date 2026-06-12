@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getSupabaseAccessToken, signOutFromSupabase } from '@/lib/auth';
+import { getSupabaseAccessToken } from '@/lib/auth';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
@@ -28,12 +28,7 @@ api.interceptors.response.use(
     const status = error.response?.status || 'NETWORK';
     const data = error.response?.data;
 
-    if (status === 401) {
-      await signOutFromSupabase().catch(() => undefined);
-      if (typeof window !== 'undefined') {
-        window.location.replace('/login');
-      }
-    }
+    // 401 redirect disabled (auth temporarily removed).
 
     if (error.response) {
       console.error(`[API Error] ${method} ${url} -> ${status}`, data);

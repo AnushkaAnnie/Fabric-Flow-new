@@ -66,7 +66,7 @@ export function AppSidebar() {
 
   async function logout() {
     await signOutFromSupabase().catch(() => undefined);
-    router.replace('/login');
+    router.replace('/'); // Login disabled — redirect to home
   }
 
   function isActive(href: string) {
