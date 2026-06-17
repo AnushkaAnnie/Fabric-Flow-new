@@ -113,19 +113,7 @@ model Colour {
   @@map("colours")
 }
 
-model WashType {
-  id            Int             @id @default(autoincrement())
-  name          String
-  code          String          @unique
-  description   String?
-  isActive      Boolean         @default(true) @map("is_active")
-  createdAt     DateTime        @default(now()) @map("created_at")
-  updatedAt     DateTime        @updatedAt @map("updated_at")
-  DyeingProgram DyeingProgram[]
-  dyeings       Dyeing[]
 
-  @@map("wash_types")
-}
 
 model YarnLot {
   id              Int      @id @default(autoincrement())
@@ -397,8 +385,6 @@ model Dyeing {
   dyer              Dyer      @relation(fields: [dyerId], references: [id])
   colourId          Int       @map("colour_id")
   colour            Colour    @relation(fields: [colourId], references: [id])
-  washTypeId        Int?      @map("wash_type_id")
-  washType          WashType? @relation(fields: [washTypeId], references: [id])
   sourceType        String?   @map("source_type")
   /// sent weight from memo line
   initialWeight     Float     @map("initial_weight")
@@ -423,7 +409,6 @@ model DyeingProgram {
   programNo       String        @unique @map("program_no")
   dyerId          Int           @map("dyer_id")
   colourId        Int           @map("colour_id")
-  washTypeId      Int           @map("wash_type_id")
   greyFabricLotId Int           @map("grey_fabric_lot_id")
   startDate       DateTime      @map("start_date")
   status          String        @default("ACTIVE")
@@ -433,7 +418,6 @@ model DyeingProgram {
   colour          Colour        @relation(fields: [colourId], references: [id])
   dyer            Dyer          @relation(fields: [dyerId], references: [id])
   greyFabricLot   GreyFabricLot @relation(fields: [greyFabricLotId], references: [id])
-  washType        WashType      @relation(fields: [washTypeId], references: [id])
 
   @@map("dyeing_programs")
 }
@@ -547,6 +531,7 @@ model YarnInward {
   millInvoiceNo     String?   @map("mill_invoice_no")
   millDcNo          String?   @map("mill_dc_no")
   receivedWeight    Decimal?  @map("received_weight") @db.Decimal(10, 2)
+  status            String    @default("PENDING") @map("status")
 
   @@map("yarn_inwards")
 }

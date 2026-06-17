@@ -20,6 +20,7 @@ export const UpdateYarnInwardSchema = z.object({
   millInvoiceNo:   z.string().optional(),
   millDcNo:        z.string().optional(),
   receivedWeight:  z.number().positive().optional(),
+  status:          z.string().optional(),
 });
 
 export type UpdateYarnInwardDto = z.infer<typeof UpdateYarnInwardSchema>;

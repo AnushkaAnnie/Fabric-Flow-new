@@ -27,7 +27,6 @@ interface Dyeing {
   processLoss?: number | null;
   status?: string | null;
   colour?: { id: number; name: string; code: string } | null;
-  washType?: { id: number; name: string } | null;
   dyer?: { id: number; name: string } | null;
   memoLine?: {
     greyFabricLot?: { knitter?: { id: number; name: string } | null } | null;
@@ -415,7 +414,7 @@ export default function FabricInventoryPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-slate-800 bg-slate-900/80 hover:bg-slate-900/80">
-                    {['Code', 'Lot No.', 'Knitter', 'Colour', 'Wash Type', 'Dyer', 'Final Weight (kg)', 'Process Loss', 'Status'].map(h => (
+                    {['Code', 'Lot No.', 'Knitter', 'Colour', 'Dyer', 'Final Weight (kg)', 'Process Loss', 'Status'].map(h => (
                       <TableHead key={h} className="text-xs font-semibold uppercase tracking-widest text-slate-400">{h}</TableHead>
                     ))}
                   </TableRow>
@@ -445,7 +444,6 @@ export default function FabricInventoryPage() {
                           {d.colour?.name ?? '–'}
                         </span>
                       </TableCell>
-                      <TableCell className="text-slate-300 text-xs">{d.washType?.name ?? '–'}</TableCell>
                       <TableCell className="text-slate-200">{d.dyer?.name ?? '–'}</TableCell>
                       <TableCell className="font-semibold text-emerald-400 whitespace-nowrap">
                         {d.finalWeight != null ? `${Number(d.finalWeight).toFixed(2)} kg` : '–'}

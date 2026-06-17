@@ -25,7 +25,6 @@ interface DyeingRecord {
   memoLineId: number;
   dyerId: number;
   colourId: number;
-  washTypeId?: number;
   initialWeight: number;
   finalWeight?: number;
   processLoss?: number;
@@ -38,7 +37,6 @@ interface DyeingRecord {
   sourceType?: string;
   dyer?: { id: number; name: string };
   colour?: { id: number; name: string };
-  washType?: { id: number; name: string };
   compacter?: { id: number; name: string };
   memoLine?: {
     id: number;
@@ -55,7 +53,6 @@ interface DyeingRecord {
 
 interface Dyer { id: number; name: string; }
 interface Colour { id: number; name: string; code: string; }
-interface WashType { id: number; name: string; code: string; }
 interface Compacter { id: number; name: string; }
 
 interface DyeingFormData {
@@ -63,7 +60,6 @@ interface DyeingFormData {
   companyDcNo: string;
   dyerJobNo: string;
   dyeingDeliveryNo: string;
-  washTypeId: string;
   deliveryDate: string;
   receivedWeight: string;
   finalWeight: string;
@@ -77,7 +73,6 @@ const EMPTY_FORM: DyeingFormData = {
   companyDcNo: '',
   dyerJobNo: '',
   dyeingDeliveryNo: '',
-  washTypeId: '',
   deliveryDate: '',
   receivedWeight: '',
   finalWeight: '',
@@ -111,10 +106,7 @@ export default function DyeingPage() {
     queryFn: async () => (await api.get<Colour[]>('/colours')).data,
   });
 
-  const { data: washTypes = [] } = useQuery<WashType[]>({
-    queryKey: ['wash-types'],
-    queryFn: async () => (await api.get<WashType[]>('/wash-types')).data,
-  });
+
 
   const { data: compacters = [] } = useQuery<Compacter[]>({
     queryKey: ['compacters'],
@@ -144,7 +136,6 @@ export default function DyeingPage() {
       companyDcNo: record.companyDcNo ?? '',
       dyerJobNo: '',
       dyeingDeliveryNo: '',
-      washTypeId: String(record.washTypeId ?? ''),
       deliveryDate: record.dateGiven?.split('T')[0] ?? '',
       receivedWeight: '',
       finalWeight: record.finalWeight != null ? String(record.finalWeight) : '',
@@ -160,7 +151,6 @@ export default function DyeingPage() {
     const payload: Record<string, unknown> = {};
     if (formData.knitterDcNo) payload.knitterDcNo = formData.knitterDcNo;
     if (formData.companyDcNo) payload.companyDcNo = formData.companyDcNo;
-    if (formData.washTypeId) payload.washTypeId = parseInt(formData.washTypeId);
     if (formData.deliveryDate) payload.dateGiven = formData.deliveryDate;
     if (formData.finalWeight) payload.finalWeight = parseFloat(formData.finalWeight);
     if (formData.compacterId) payload.compacterId = parseInt(formData.compacterId);
@@ -217,7 +207,7 @@ export default function DyeingPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-800 bg-slate-900/80 hover:bg-slate-900/80">
-                  {['Lot No', 'HF Code', 'Memo #', 'Knitter', 'Dyer', 'Colour', 'Wash', 'Grey Wt', 'Final Wt', 'Loss %', 'Knitter DC', 'Company DC', 'Status', 'Actions'].map(h => (
+                  {['Lot No', 'HF Code', 'Memo #', 'Knitter', 'Dyer', 'Colour', 'Grey Wt', 'Final Wt', 'Loss %', 'Knitter DC', 'Company DC', 'Status', 'Actions'].map(h => (
                     <TableHead key={h} className="text-xs font-semibold uppercase tracking-widest text-slate-400">{h}</TableHead>
                   ))}
                 </TableRow>
@@ -251,7 +241,6 @@ export default function DyeingPage() {
                       <TableCell className="text-slate-200">{knitterName}</TableCell>
                       <TableCell className="text-slate-200">{r.dyer?.name ?? '–'}</TableCell>
                       <TableCell className="text-slate-300">{r.colour?.name ?? '–'}</TableCell>
-                      <TableCell className="text-slate-300">{r.washType?.name ?? '–'}</TableCell>
                       <TableCell className="text-slate-300">{fmt(r.initialWeight)} kg</TableCell>
                       <TableCell className="font-semibold text-slate-200">{fmt(r.finalWeight)} kg</TableCell>
                       <TableCell>
@@ -355,16 +344,8 @@ export default function DyeingPage() {
                 </div>
               </div>
 
-              {/* Row 3 — Wash Type + Colour */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Wash Type</Label>
-                  <select className={SELECT_CLASS} value={formData.washTypeId}
-                    onChange={(e) => setFormData({ ...formData, washTypeId: e.target.value })}>
-                    <option value="">Select…</option>
-                    {washTypes.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                  </select>
-                </div>
+              {/* Row 3 — Colour */}
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <Label className="text-xs font-medium text-slate-400 mb-1.5 block">Colour</Label>
                   <select className={SELECT_CLASS} value={formData.colourId}
@@ -462,7 +443,7 @@ export default function DyeingPage() {
                       <tr><th>HF Code</th><td>{r.hfCode ?? '–'}</td><th>Memo #</th><td>{r.memoLine?.memo?.memoNo ?? '–'}</td></tr>
                       <tr><th>Knitter</th><td>{knitterName}</td><th>Dyer</th><td>{r.dyer?.name ?? '–'}</td></tr>
                       <tr><th>Knitter DC No</th><td>{r.knitterDcNo ?? '–'}</td><th>Company DC No</th><td>{r.companyDcNo ?? '–'}</td></tr>
-                      <tr><th>Colour</th><td>{r.colour?.name ?? '–'}</td><th>Wash Type</th><td>{r.washType?.name ?? '–'}</td></tr>
+                      <tr><th>Colour</th><td colSpan={3}>{r.colour?.name ?? '–'}</td></tr>
                       <tr><th>Grey Weight (kg)</th><td>{fmt(r.initialWeight)}</td><th>Final Weight (kg)</th><td>{fmt(r.finalWeight)}</td></tr>
                       <tr><th>Process Loss (kg)</th><td>{fmt(r.processLoss)}</td><th>No of Rolls</th><td>{r.noOfRolls ?? '–'}</td></tr>
                       <tr><th>Destination Compacter</th><td colSpan={3}>{r.compacter?.name ?? '–'}</td></tr>

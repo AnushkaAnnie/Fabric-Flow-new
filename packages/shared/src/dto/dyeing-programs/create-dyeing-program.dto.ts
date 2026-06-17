@@ -4,7 +4,6 @@ export const CreateDyeingProgramSchema = z.object({
   programNo: z.string().min(1),
   dyerId: z.number().int().positive(),
   colourId: z.number().int().positive(),
-  washTypeId: z.number().int().positive(),
   greyFabricLotId: z.number().int().positive(),
   startDate: z.string().datetime().optional(),
   remarks: z.string().optional(),

@@ -6,7 +6,6 @@ export const UpdateDyeingSchema = z.object({
   knitterDcNo: z.string().optional(),
   companyDcNo: z.string().optional(),
   dateGiven: z.string().optional(),
-  washTypeId: z.number().int().positive().optional(),
   compacterId: z.number().int().positive().optional(),
   status: z.string().optional(),
 });

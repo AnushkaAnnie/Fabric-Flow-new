@@ -142,10 +142,26 @@ export class YarnInwardService {
       include: {
         mill: true,
         deliveryKnitter: true,
-        yarnLots: { select: { hfCode: true } },
-        purchaseOrder: { select: { poNumber: true, date: true, hfCode: true } },
+        yarnLots: { select: { hfCode: true, id: true } },
+        purchaseOrder: {
+          select: {
+            poNumber: true,
+            date: true,
+            hfCode: true,
+            items: {
+              select: {
+                count: true,
+                quality: true,
+                rate: true,
+                bags: true,
+                bagWeight: true,
+                totalWeight: true,
+              },
+            },
+          },
+        },
       },
-      orderBy: { receiptDate: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -159,40 +175,106 @@ export class YarnInwardService {
   }
 
   async update(id: number, dto: UpdateYarnInwardDto) {
-    await this.findOne(id);
-    return this.prisma.yarnInward.update({
-      where: { id },
-      data: {
-        receiptDate: dto.receiptDate ? new Date(dto.receiptDate) : undefined,
-        millId: dto.millId,
-        deliveryKnitterId: dto.deliveryKnitterId,
-        hfBatch: dto.hfBatch,
-        yarnCount: dto.yarnCount,
-        yarnQuality: dto.yarnQuality,
-        rlVl: dto.rlVl,
-        numBags: dto.numBags,
-        bagWeight: dto.bagWeight,
-        ratePerKg: dto.ratePerKg,
-        cgstRate: dto.cgstRate,
-        sgstRate: dto.sgstRate,
-        purchaseAccount: dto.purchaseAccount,
-        remarks: dto.remarks,
-        purchaseOrderId:
-          dto.purchaseOrderId !== undefined
-            ? (dto.purchaseOrderId ?? null)
-            : undefined,
-        millInvoiceNo:
-          dto.millInvoiceNo !== undefined
-            ? (dto.millInvoiceNo ?? null)
-            : undefined,
-        millDcNo:
-          dto.millDcNo !== undefined ? (dto.millDcNo ?? null) : undefined,
-        receivedWeight:
-          dto.receivedWeight !== undefined
-            ? (dto.receivedWeight ?? null)
-            : undefined,
-      },
-      include: { mill: true, deliveryKnitter: true, yarnLots: true },
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.yarnInward.findUnique({
+        where: { id },
+        include: { yarnLots: true },
+      });
+      if (!existing) throw new NotFoundException('Yarn inward not found');
+
+      // Check if transitioning from PENDING to RECEIVED
+      const wasPending = existing.status === 'PENDING';
+      const isNowReceived = dto.receivedWeight != null;
+
+      const dataToUpdate: any = {
+        receiptDate: dto.receiptDate ? new Date(dto.receiptDate) : existing.receiptDate,
+        millInvoiceNo: dto.millInvoiceNo ?? existing.millInvoiceNo,
+        millDcNo: dto.millDcNo ?? existing.millDcNo,
+      };
+
+      if (isNowReceived && wasPending) {
+        dataToUpdate.status = 'RECEIVED';
+        dataToUpdate.receivedWeight = dto.receivedWeight;
+      } else {
+        // Fallback for regular updates
+        dataToUpdate.millId = dto.millId ?? existing.millId;
+        dataToUpdate.deliveryKnitterId = dto.deliveryKnitterId ?? existing.deliveryKnitterId;
+        dataToUpdate.hfBatch = dto.hfBatch ?? existing.hfBatch;
+        dataToUpdate.yarnCount = dto.yarnCount ?? existing.yarnCount;
+        dataToUpdate.yarnQuality = dto.yarnQuality ?? existing.yarnQuality;
+        dataToUpdate.rlVl = dto.rlVl ?? existing.rlVl;
+        dataToUpdate.numBags = dto.numBags ?? existing.numBags;
+        dataToUpdate.bagWeight = dto.bagWeight ?? existing.bagWeight;
+        dataToUpdate.ratePerKg = dto.ratePerKg ?? existing.ratePerKg;
+        dataToUpdate.cgstRate = dto.cgstRate ?? existing.cgstRate;
+        dataToUpdate.sgstRate = dto.sgstRate ?? existing.sgstRate;
+        dataToUpdate.purchaseAccount = dto.purchaseAccount ?? existing.purchaseAccount;
+        dataToUpdate.remarks = dto.remarks ?? existing.remarks;
+        dataToUpdate.purchaseOrderId = dto.purchaseOrderId !== undefined ? (dto.purchaseOrderId ?? null) : existing.purchaseOrderId;
+        dataToUpdate.receivedWeight = dto.receivedWeight !== undefined ? (dto.receivedWeight ?? null) : existing.receivedWeight;
+      }
+
+      const updatedInward = await tx.yarnInward.update({
+        where: { id },
+        data: dataToUpdate,
+        include: { mill: true, deliveryKnitter: true, yarnLots: true },
+      });
+
+      if (isNowReceived && wasPending) {
+        // Create YarnLot (inventory entry) exactly once
+        const yarnLot = await tx.yarnLot.create({
+          data: {
+            hfCode:          existing.hfBatch ?? `YI-${existing.id}`,
+            yarnInwardId:    existing.id,
+            millId:          existing.millId,
+            count:           existing.yarnCount,
+            quality:         existing.yarnQuality,
+            ratePerKg:       Number(existing.ratePerKg ?? 0),
+            totalWeight:     Number(dto.receivedWeight),
+            totalCost:       Number(existing.totalCost ?? 0),
+            availableWeight: Number(dto.receivedWeight),
+            noOfBags:        existing.numBags,
+            bagWeight:       Number(existing.bagWeight ?? 60),
+            status:          'ACTIVE',
+            deliveryTo:      String(existing.deliveryKnitterId),
+            description:     existing.yarnQuality,
+          },
+        });
+
+        // Post inventory movement for the knitter
+        await this.inventoryService.postInventoryMovement({
+          entityType:   'KNITTER',
+          entityId:     existing.deliveryKnitterId,
+          itemType:     'YARN',
+          inwardWeight: Number(dto.receivedWeight),
+          lotNo:        existing.hfBatch ?? `YI-${existing.id}`,
+          stage:        'YARN_INWARD',
+          referenceNo:  existing.purchaseOrderId ?? String(existing.id),
+          remarks:      'Yarn Received from PO',
+        }, tx);
+        
+        // Also update knitterStock directly
+        await tx.knitterStock.upsert({
+          where: {
+            knitterId_yarnLotId: {
+              knitterId: existing.deliveryKnitterId,
+              yarnLotId: yarnLot.id,
+            },
+          },
+          create: {
+            knitterId: existing.deliveryKnitterId,
+            yarnLotId: yarnLot.id,
+            receivedWeight: Number(dto.receivedWeight),
+            remainingWeight: Number(dto.receivedWeight),
+          },
+          update: {
+            receivedWeight: { increment: Number(dto.receivedWeight) },
+            remainingWeight: { increment: Number(dto.receivedWeight) },
+          },
+        });
+      }
+
+      return updatedInward;
     });
   }
 

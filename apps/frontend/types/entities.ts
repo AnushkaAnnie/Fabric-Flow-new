@@ -135,10 +135,23 @@ export interface YarnInward {
   createdAt: string;
   yarnLots?: { id: number; hfCode: string; totalWeight: number; availableWeight: number }[];
   purchaseOrderId?: string | null;
-  purchaseOrder?: { poNumber: string; date: string; hfCode: string } | null;
+  purchaseOrder?: {
+    poNumber: string;
+    date: string;
+    hfCode: string;
+    items?: {
+      count: string;
+      quality: string;
+      rate: number;
+      bags: number;
+      bagWeight: number;
+      totalWeight: number;
+    }[];
+  } | null;
   millInvoiceNo?: string | null;
   millDcNo?: string | null;
   receivedWeight?: number | null;
+  status: string;
 }
 
 export interface YarnInwardFormData {
@@ -161,6 +174,7 @@ export interface YarnInwardFormData {
   millInvoiceNo: string;
   millDcNo: string;
   receivedWeight: string;
+  status: string;
 }
 
 // Re-export commonly used types from yarn.ts for convenience

@@ -2,6 +2,8 @@
 export interface YarnLot {
   id: number;
   hfCode: string;
+  purchaseOrderNo?: string | null;
+  status?: string | null;
   millId: number;
   mill?: { id: number; name: string } | null;
   description?: string | null;

@@ -28,7 +28,6 @@ const nav = [
       { label: 'Dyers', href: '/tracker/master-data/dyers', icon: Layers },
       { label: 'Compacters', href: '/tracker/master-data/compacters', icon: Layers },
       { label: 'Colours', href: '/tracker/master-data/colours', icon: Layers },
-      { label: 'Wash Types', href: '/tracker/master-data/wash-types', icon: Layers },
     ],
   },
   {

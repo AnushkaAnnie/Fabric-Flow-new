@@ -20,7 +20,6 @@ export class DyeingsService {
       include: {
         dyer: true,
         colour: true,
-        washType: true,
         compacter: true,
         memoLine: {
           include: {
@@ -42,7 +41,7 @@ export class DyeingsService {
   async findOne(id: number) {
     const dyeing = await this.prisma.dyeing.findUnique({
       where: { id },
-      include: { dyer: true, colour: true, washType: true, compacter: true },
+      include: { dyer: true, colour: true, compacter: true },
     });
     if (!dyeing) throw new NotFoundException('Dyeing record not found');
     return dyeing;
@@ -51,7 +50,7 @@ export class DyeingsService {
   async update(id: number, dto: UpdateDyeingDto) {
     const existing = await this.findOne(id);
 
-    // Use UncheckedUpdateInput so we can set scalar FKs (compacterId, washTypeId) directly
+    // Use UncheckedUpdateInput so we can set scalar FKs (compacterId) directly
     const data: Prisma.DyeingUncheckedUpdateInput = {};
 
     if (dto.initialWeight !== undefined) data.initialWeight = dto.initialWeight;
@@ -60,7 +59,7 @@ export class DyeingsService {
     if (dto.companyDcNo !== undefined) data.companyDcNo = dto.companyDcNo;
     if (dto.compacterId !== undefined)
       data.compacterId = Number(dto.compacterId);
-    if (dto.washTypeId !== undefined) data.washTypeId = Number(dto.washTypeId);
+
     if (dto.status !== undefined) data.status = dto.status;
     if (dto.dateGiven !== undefined) data.dateGiven = new Date(dto.dateGiven);
 
@@ -97,7 +96,7 @@ export class DyeingsService {
       const updated = await tx.dyeing.update({
         where: { id },
         data,
-        include: { dyer: true, colour: true, washType: true, compacter: true },
+        include: { dyer: true, colour: true, compacter: true },
       });
 
       // Log explicit status transition

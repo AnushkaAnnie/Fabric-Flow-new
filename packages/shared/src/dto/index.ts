@@ -42,14 +42,7 @@ export type CreateColourDto = z.infer<typeof CreateColourSchema>;
 export const UpdateColourSchema = CreateColourSchema.partial();
 export type UpdateColourDto = z.infer<typeof UpdateColourSchema>;
 
-export const CreateWashTypeSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  code: z.string().min(1, "Code is required").max(20),
-  description: z.string().optional(),
-});
-export type CreateWashTypeDto = z.infer<typeof CreateWashTypeSchema>;
-export const UpdateWashTypeSchema = CreateWashTypeSchema.partial();
-export type UpdateWashTypeDto = z.infer<typeof UpdateWashTypeSchema>;
+
 
 // ──────────────────────────────────────────────
 // Yarn Lots

@@ -155,7 +155,7 @@ export default function YarnPage() {
                     </>
                   ) : (
                     <>
-                      {['HF Code','Mill','Count','Total (kg)','Available (kg)','Rate/kg','Total Cost','Actions'].map(h => (
+                      {['HF Code','PO No','Mill','Count','Status','Total (kg)','Available (kg)','Rate/kg','Total Cost','Actions'].map(h => (
                         <TableHead key={h} className="text-xs font-semibold uppercase tracking-widest text-slate-400">{h}</TableHead>
                       ))}
                     </>
@@ -230,8 +230,16 @@ export default function YarnPage() {
                   return (
                     <TableRow key={lot.id} className="border-slate-800/60 hover:bg-slate-800/20 transition-colors">
                       <TableCell className="font-mono text-sm font-semibold text-blue-300">{lot.hfCode}</TableCell>
+                      <TableCell className="font-mono text-xs text-slate-400">{lot.purchaseOrderNo ?? '—'}</TableCell>
                       <TableCell className="text-slate-200">{lot.mill?.name}</TableCell>
                       <TableCell className="text-slate-300">{lot.count ?? '—'}</TableCell>
+                      <TableCell>
+                        {lot.status === 'PENDING' ? (
+                          <span className="inline-flex items-center rounded-md bg-yellow-500/10 px-2 py-1 text-xs font-medium text-yellow-400 ring-1 ring-inset ring-yellow-500/20">PENDING</span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20">{lot.status || 'ACTIVE'}</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-slate-300">{Number(lot.totalWeight).toFixed(2)} kg</TableCell>
                       <TableCell className="font-semibold text-emerald-400">{Number(lot.availableWeight).toFixed(2)} kg</TableCell>
                       <TableCell className="text-slate-300">₹{Number(lot.ratePerKg).toFixed(2)}</TableCell>

@@ -28,7 +28,6 @@ export class DyeingProgramsService {
           programNo: dto.programNo,
           dyerId: dto.dyerId,
           colourId: dto.colourId,
-          washTypeId: dto.washTypeId,
           greyFabricLotId: dto.greyFabricLotId,
           startDate: dto.startDate ? new Date(dto.startDate) : new Date(),
           remarks: dto.remarks,
@@ -45,7 +44,6 @@ export class DyeingProgramsService {
         include: {
           dyer: true,
           colour: true,
-          washType: true,
           greyFabricLot: true,
         },
       });
@@ -57,7 +55,6 @@ export class DyeingProgramsService {
       include: {
         dyer: true,
         colour: true,
-        washType: true,
         greyFabricLot: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -70,7 +67,6 @@ export class DyeingProgramsService {
       include: {
         dyer: true,
         colour: true,
-        washType: true,
         greyFabricLot: true,
       },
     });

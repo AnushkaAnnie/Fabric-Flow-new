@@ -71,20 +71,4 @@ export const masterDataConfig: MasterDataConfig[] = [
       { name: "description", label: "Description", type: "text", required: false },
     ],
   },
-  {
-    entity: "wash-types",
-    title: "Wash Types",
-    path: "/tracker/master-data/wash-types",
-    columns: [
-      { key: "id", header: "ID" },
-      { key: "name", header: "Name" },
-      { key: "code", header: "Code" },
-      { key: "description", header: "Description" },
-    ],
-    fields: [
-      { name: "name", label: "Name", type: "text", required: true },
-      { name: "code", label: "Code", type: "text", required: true },
-      { name: "description", label: "Description", type: "text", required: false },
-    ],
-  },
 ];
