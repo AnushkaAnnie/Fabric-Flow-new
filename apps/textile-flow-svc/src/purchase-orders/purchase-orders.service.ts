@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreatePurchaseOrderDto } from './dto/create-purchase-order.dto';
+import { CreatePurchaseOrderDto, PurchaseOrderItemDto } from './dto/create-purchase-order.dto';
+import { UpdatePurchaseOrderDto } from './dto/update-purchase-order.dto';
 
 @Injectable()
 export class PurchaseOrdersService {
@@ -20,6 +21,8 @@ export class PurchaseOrdersService {
       fabricDia,
       fabricGsm,
       totalFabricWeight,
+      millId,
+      knitterId,
       ...rest
     } = dto;
 
@@ -57,21 +60,25 @@ export class PurchaseOrdersService {
         },
       });
 
-      // Auto-create YarnInward from PO
-      if (dto.poType === 'YARN' || !dto.poType) {
+      // ── Auto-create YarnInward from PO ───────────────────────────────────
+      let inwardLinkWarning: string | null = null;
+
+      if (!dto.poType || dto.poType === 'YARN') {
         const firstItem = items[0];
 
-        // Resolve millId: find Mill by name matching supplierName
-        const mill = await tx.mill.findFirst({
-          where: { name: { contains: rest.supplierName, mode: 'insensitive' } },
-        });
+        // Resolve Mill: prefer explicit millId, fall back to name matching
+        const mill = dto.millId
+          ? await tx.mill.findUnique({ where: { id: dto.millId } })
+          : await tx.mill.findFirst({
+              where: { name: { contains: rest.supplierName ?? '', mode: 'insensitive' } },
+            });
 
-        // Resolve knitterId: find Knitter by name matching deliveryName
-        const knitter = dto.deliveryName
+        // Resolve Knitter: prefer explicit knitterId, fall back to name matching
+        const knitter = dto.knitterId
+          ? await tx.knitter.findUnique({ where: { id: dto.knitterId } })
+          : dto.deliveryName
           ? await tx.knitter.findFirst({
-              where: {
-                name: { contains: dto.deliveryName, mode: 'insensitive' },
-              },
+              where: { name: { contains: dto.deliveryName, mode: 'insensitive' } },
             })
           : null;
 
@@ -106,16 +113,25 @@ export class PurchaseOrdersService {
               sgstAmount:         sgstAmt,
               totalCost:          taxable + cgstAmt + sgstAmt,
               purchaseAccount:    'C.N.T.LLP',
-              // These stay null until yarn physically arrives:
               receivedWeight:     null,
               millInvoiceNo:      null,
               millDcNo:           null,
             },
           });
+        } else {
+          // Non-fatal: surface a warning so the frontend can show a yellow toast,
+          // but never throw — the PO itself must always be saved.
+          const missingParts: string[] = [];
+          if (!mill) missingParts.push(`mill not found for "${rest.supplierName}" (try passing millId)`);
+          if (!knitter) missingParts.push(`knitter not found for "${dto.deliveryName ?? 'no delivery name'}" (try passing knitterId)`);
+          if (!firstItem) missingParts.push('no items in PO');
+          inwardLinkWarning = `YarnInward auto-link skipped: ${missingParts.join('; ')}`;
+          console.warn('[PurchaseOrdersService] create() —', inwardLinkWarning);
         }
       }
 
-      return po;
+      // Attach warning to the response so the frontend can surface it
+      return { ...po, inwardLinkWarning };
     });
   }
 
@@ -130,10 +146,89 @@ export class PurchaseOrdersService {
     });
   }
 
+  async findOne(id: string) {
+    const po = await this.prisma.purchaseOrder.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+    if (!po) {
+      throw new NotFoundException(`Purchase Order with id "${id}" not found`);
+    }
+    return po;
+  }
+
+  async update(id: string, dto: UpdatePurchaseOrderDto) {
+    // Verify record exists first
+    await this.findOne(id);
+
+    const {
+      items,
+      date,
+      deliveryDate,
+      poType,
+      deliveryName,
+      deliveryAddress,
+      deliveryGST,
+      fabricType,
+      fabricColour,
+      fabricDia,
+      fabricGsm,
+      totalFabricWeight,
+      ...rest
+    } = dto;
+
+    return this.prisma.$transaction(async (tx) => {
+      // Replace items wholesale when provided
+      if (items !== undefined) {
+        await tx.purchaseOrderItem.deleteMany({
+          where: { purchaseOrderId: id },
+        });
+      }
+
+      const po = await tx.purchaseOrder.update({
+        where: { id },
+        data: {
+          ...rest,
+          ...(date !== undefined && { date: new Date(date) }),
+          ...(deliveryDate !== undefined && { deliveryDate: new Date(deliveryDate) }),
+          ...(poType !== undefined && { poType }),
+          ...(deliveryName !== undefined && { deliveryName }),
+          ...(deliveryAddress !== undefined && { deliveryAddress }),
+          ...(deliveryGST !== undefined && { deliveryGST }),
+          ...(fabricType !== undefined && { fabricType }),
+          ...(fabricColour !== undefined && { fabricColour }),
+          ...(fabricDia !== undefined && { fabricDia }),
+          ...(fabricGsm !== undefined && { fabricGsm }),
+          ...(totalFabricWeight !== undefined && { totalFabricWeight }),
+          ...(items !== undefined && {
+            items: {
+              create: items.map((item: PurchaseOrderItemDto) => ({
+                description: item.description,
+                count: item.count,
+                quality: item.quality,
+                bags: item.bags,
+                bagWeight: item.bagWeight,
+                totalWeight: item.totalWeight,
+                rate: item.rate,
+                cgst: item.cgst,
+                sgst: item.sgst,
+              })),
+            },
+          }),
+        },
+        include: {
+          items: true,
+        },
+      });
+
+      return po;
+    });
+  }
+
   async remove(id: string) {
     const po = await this.prisma.purchaseOrder.findUnique({ where: { id } });
     if (!po) {
-      throw new Error('Purchase Order not found');
+      throw new NotFoundException('Purchase Order not found');
     }
     return this.prisma.purchaseOrder.delete({
       where: { id },

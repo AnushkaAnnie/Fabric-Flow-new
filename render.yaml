@@ -23,7 +23,7 @@ services:
     region: singapore
     plan: free
     rootDir: .
-    buildCommand: npm install && npx turbo run build --filter=textile-flow-svc
+    buildCommand: npm install && npx prisma generate --schema=apps/textile-flow-svc/prisma/schema.prisma && npx turbo run build --filter=textile-flow-svc
     startCommand: node apps/textile-flow-svc/dist/main.js
     healthCheckPath: /health
     envVarGroups:

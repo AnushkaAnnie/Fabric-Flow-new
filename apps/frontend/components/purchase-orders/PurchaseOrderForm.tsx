@@ -103,6 +103,9 @@ export default function PurchaseOrderForm() {
   const [manualSupplier, setManualSupplier] = useState(false);
   const [printConfirmPO, setPrintConfirmPO] = useState<PurchaseOrder | null>(null);
   const [printingPDF, setPrintingPDF] = useState(false);
+  // Track exact IDs from dropdown selection for reliable inward auto-linking
+  const [selectedMillId, setSelectedMillId] = useState<number | null>(null);
+  const [selectedKnitterId, setSelectedKnitterId] = useState<number | null>(null);
 
   const form = useForm<POFormData>({
     defaultValues: EMPTY_FORM,
@@ -148,6 +151,7 @@ export default function PurchaseOrderForm() {
     if (val === '__manual__') {
       setManualSupplier(true);
       setValue('supplierName', '');
+      setSelectedMillId(null);
       return;
     }
     // val format: "type:id"
@@ -161,6 +165,9 @@ export default function PurchaseOrderForm() {
     const address = buildAddress(entity);
     setValue('supplierAddress', address || '');
     setValue('supplierGST', entity.gstin || '');
+    // Store the resolved Mill ID for reliable inward linking
+    if (type === 'Mill') setSelectedMillId(id);
+    else setSelectedMillId(null);
   };
 
   // Query existing POs for review and listing
@@ -176,15 +183,24 @@ export default function PurchaseOrderForm() {
   const createMutation = useMutation({
     mutationFn: async (data: CreatePurchaseOrderInput) => {
       const response = await api.post('/purchase-orders', data);
-      return response.data as PurchaseOrder;
+      return response.data as PurchaseOrder & { inwardLinkWarning?: string | null };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success('Purchase Order saved successfully!');
+      // Surface a non-blocking yellow warning if mill/knitter could not be auto-linked
+      if (result?.inwardLinkWarning) {
+        toast.warning(
+          `PO saved — Yarn Inward auto-link pending. ${result.inwardLinkWarning}`,
+          { duration: 8000 }
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       form.reset(EMPTY_FORM);
+      setSelectedMillId(null);
+      setSelectedKnitterId(null);
     },
     onError: (err: unknown) => {
-      console.error(err);
+      console.error('[PO Create Error]', err);
       const axiosErr = err as { response?: { data?: { message?: string | string[] }; status?: number } };
       const msg = axiosErr?.response?.data?.message;
       if (Array.isArray(msg)) {
@@ -223,28 +239,40 @@ export default function PurchaseOrderForm() {
   const handleConfirm = async () => {
     const formData = getValues();
 
-    // Include poType and fabric-specific fields in the payload
+    // Include poType, fabric-specific fields, and resolved IDs in the payload
     const payload: CreatePurchaseOrderInput = {
       ...formData,
       poType,
       totalFabricWeight: formData.totalFabricWeight ? parseFloat(formData.totalFabricWeight) : undefined,
+      // Pass exact IDs when available — eliminates fuzzy string matching on the backend
+      ...(selectedMillId !== null && { millId: selectedMillId }),
+      ...(selectedKnitterId !== null && { knitterId: selectedKnitterId }),
     };
 
-    // Save to the database
-    await createMutation.mutateAsync(payload);
+    // 1. Save to the database — returns the newly created PO with its real `id`
+    const savedPO = await createMutation.mutateAsync(payload);
 
-    // Generate and download the PDF — use requestAnimationFrame to ensure
-    // the print template DOM node has rendered before capturing.
-    requestAnimationFrame(async () => {
-      try {
-        await generatePOPDF(formData.poNumber);
-      } catch (pdfErr) {
-        console.error('PDF generation failed:', pdfErr);
-        toast.error('PO saved, but PDF generation failed. You can download it later from the list below.');
-      } finally {
-        setPreviewOpen(false);
-      }
-    });
+    // 2. Wait for the list to fully refetch so the hidden print template
+    //    for this PO is rendered in the DOM before we try to capture it.
+    await queryClient.refetchQueries({ queryKey: ['purchase-orders'] });
+
+    // 3. Generate PDF — use double requestAnimationFrame to ensure React has
+    //    completed its re-render cycle and painted the hidden template to the DOM
+    //    before html2pdf tries to capture it. Single rAF is not enough because
+    //    React batches updates and may not flush synchronously within one frame.
+    try {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
+      await generatePOPDF(`po-pdf-overlay-${savedPO.id}`, savedPO.poNumber);
+    } catch (pdfErr) {
+      console.error('PDF generation failed:', pdfErr);
+      toast.error('PO saved, but PDF generation failed. You can download it later from the list below.');
+    } finally {
+      setPreviewOpen(false);
+    }
   };
 
   const deleteMutation = useMutation({
@@ -438,13 +466,38 @@ export default function PurchaseOrderForm() {
                   <CardTitle className="text-sm font-semibold uppercase tracking-wider text-primary">Delivery Address</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-4">
-                  <div>
-                    <Label className="text-slate-300 font-semibold text-xs uppercase">Delivery Name *</Label>
-                    <Input
-                      className="bg-slate-900 border-slate-700 mt-1 text-white focus:ring-primary"
-                      required
-                      {...register('deliveryName')}
-                    />
+                  {/* Knitter selector for delivery — drives auto-inward linking */}
+                  <div className="space-y-1">
+                    <Label className="text-slate-300 font-semibold text-xs uppercase">Delivery To (Knitter)</Label>
+                    <select
+                      className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 mt-1 text-white text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (!val) { 
+                          setSelectedKnitterId(null); 
+                          setValue('deliveryName', '');
+                          setValue('deliveryAddress', '');
+                          setValue('deliveryGST', '');
+                          return; 
+                        }
+                        const id = parseInt(val);
+                        const k = knitters.find(k => k.id === id);
+                        if (!k) return;
+                        setSelectedKnitterId(id);
+                        setValue('deliveryName', k.name);
+                        setValue('deliveryAddress', buildAddress(k) || '');
+                        setValue('deliveryGST', k.gstin || '');
+                      }}
+                    >
+                      <option value="">— Select Knitter —</option>
+                      {knitters.map(k => (
+                        <option key={k.id} value={k.id}>{k.name}</option>
+                      ))}
+                    </select>
+                    <input type="hidden" {...register('deliveryName', { required: true })} />
+                    {watch('deliveryName') && (
+                      <p className="text-xs text-emerald-400 mt-1">✓ Selected: {watch('deliveryName')}</p>
+                    )}
                   </div>
                   <div>
                     <Label className="text-slate-300 font-semibold text-xs uppercase">Delivery Address *</Label>
@@ -823,13 +876,6 @@ export default function PurchaseOrderForm() {
                             <Trash2 className="w-4 h-4" /> Delete
                           </Button>
                         </div>
-
-                        {/* Hidden container specifically for exporting PDF of historical item */}
-                        <div className="hidden">
-                          <div id={`po-pdf-overlay-${po.id}`}>
-                            <PurchaseOrderPrintTemplate data={po} />
-                          </div>
-                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -847,6 +893,19 @@ export default function PurchaseOrderForm() {
         data={watchedItems ? { ...form.getValues(), items: watchedItems, poType } : { ...form.getValues(), poType }}
         onConfirm={handleConfirm}
       />
+
+      {/*
+        ── HIDDEN PDF PRINT TEMPLATES ──
+        Rendered off-screen so generatePOPDF can capture the correct element
+        by its unique id without any DOM collision. One template per historical PO.
+      */}
+      <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', top: 0, pointerEvents: 'none' }}>
+        {purchaseOrders.map((po) => (
+          <div key={po.id} id={`po-pdf-overlay-${po.id}`}>
+            <PurchaseOrderPrintTemplate data={po} id={`po-pdf-overlay-${po.id}`} />
+          </div>
+        ))}
+      </div>
 
       {/* ── PRINT CONFIRMATION DIALOG ── */}
       {printConfirmPO && (() => {
@@ -993,7 +1052,7 @@ export default function PurchaseOrderForm() {
                     setPrintingPDF(true);
                     toast.loading('Generating PDF for ' + po.poNumber + '...');
                     try {
-                      await generatePOPDF(po.poNumber);
+                      await generatePOPDF(`po-pdf-overlay-${po.id}`, po.poNumber);
                       toast.dismiss();
                       toast.success('PDF generated!');
                       setPrintConfirmPO(null);
