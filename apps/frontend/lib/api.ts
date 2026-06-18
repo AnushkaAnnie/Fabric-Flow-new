@@ -3,6 +3,7 @@ import { getSupabaseAccessToken } from '@/lib/auth';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  timeout: 30000, // 30s — tolerates Render free-tier cold starts (20-30s)
 });
 
 api.interceptors.request.use(async (config) => {

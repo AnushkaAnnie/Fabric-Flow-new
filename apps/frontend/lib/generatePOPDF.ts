@@ -1,6 +1,14 @@
-export async function generatePOPDF(poNumber: string) {
-  const element = document.getElementById('po-print');
-  if (!element) return;
+/**
+ * Generates a PDF from a specific DOM element.
+ *
+ * @param elementId - The exact DOM id of the element to capture.
+ * @param poNumber  - Used as the downloaded filename.
+ */
+export async function generatePOPDF(elementId: string, poNumber: string) {
+  const element = document.getElementById(elementId);
+  if (!element) {
+    throw new Error(`generatePOPDF: element with id "${elementId}" not found in DOM`);
+  }
 
   // Dynamically import html2pdf.js on the client-side to prevent SSR ReferenceError
   const html2pdf = (await import('html2pdf.js')).default;

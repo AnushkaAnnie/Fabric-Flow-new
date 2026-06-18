@@ -108,7 +108,7 @@ const PRINT_STYLE = `
 }
 `;
 
-export default function PurchaseOrderPrintTemplate({ data }: { data: POData }) {
+export default function PurchaseOrderPrintTemplate({ data, id = 'po-print' }: { data: POData; id?: string }) {
   const items = data.items ?? [];
   const isFabric = data.poType === 'GREY_FABRIC';
 
@@ -145,7 +145,7 @@ export default function PurchaseOrderPrintTemplate({ data }: { data: POData }) {
 
   return (
     <div
-      id="po-print"
+      id={id}
       style={{
         background: '#fff',
         color: '#000',

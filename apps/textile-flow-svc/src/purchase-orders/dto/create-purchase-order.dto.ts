@@ -110,6 +110,24 @@ export class CreatePurchaseOrderDto {
   @Type(() => Number)
   totalFabricWeight?: number;
 
+  /**
+   * Direct Mill ID — preferred over name-based lookup.
+   * Sent by the PO form when a Mill is selected from the dropdown.
+   */
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  millId?: number;
+
+  /**
+   * Direct Knitter ID — preferred over name-based lookup.
+   * Sent by the PO form when a Knitter is selected as deliveryName.
+   */
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  knitterId?: number;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PurchaseOrderItemDto)

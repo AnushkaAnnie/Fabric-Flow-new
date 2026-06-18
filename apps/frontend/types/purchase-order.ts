@@ -38,6 +38,8 @@ export interface PurchaseOrder {
   totalAmount?: number;
   status?: string;
   createdAt?: string;
+  /** Returned by backend when YarnInward auto-link was skipped (non-fatal). Shows as yellow warning toast. */
+  inwardLinkWarning?: string | null;
 }
 
 export interface CreatePurchaseOrderInput {
@@ -59,5 +61,9 @@ export interface CreatePurchaseOrderInput {
   fabricDia?: string;
   fabricGsm?: string;
   totalFabricWeight?: number;
+  /** Exact Mill ID from dropdown — bypasses fuzzy name matching. */
+  millId?: number;
+  /** Exact Knitter ID from dropdown — bypasses fuzzy name matching. */
+  knitterId?: number;
   items: PurchaseOrderItem[];
 }

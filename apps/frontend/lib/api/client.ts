@@ -6,7 +6,7 @@ interface RequestOptions extends RequestInit {
   params?: Record<string, Primitive>;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export async function apiClient<T>(
   endpoint: string,
