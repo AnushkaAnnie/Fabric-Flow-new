@@ -37,9 +37,14 @@ export class PrismaService
   }
 
   async onModuleInit() {
-    this.logger.log('Connecting to Supabase PostgreSQL…');
-    await this.$connect();
-    this.logger.log('Database connection established.');
+    try {
+      this.logger.log('Connecting to Supabase PostgreSQL…');
+      await this.$connect();
+      this.logger.log('Database connection established.');
+    } catch (err) {
+      this.logger.error('Database connection failed:', err);
+      throw err;
+    }
   }
 
   async onModuleDestroy() {

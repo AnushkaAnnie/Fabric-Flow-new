@@ -1,28 +1,12 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-const path = require('path');
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // REMOVED: output: 'export'
-  // Static export mode disables all runtime features including:
-  //   - API route handlers
-  //   - Server-side rendering
-  //   - Dynamic route resolution
-  // With it set, axios calls at runtime fail silently because Next.js
-  // pre-renders the page as a static HTML file with no server to
-  // proxy or serve dynamic content, causing [API Error] {} on every fetch.
-  images: { unoptimized: true },
-  turbopack: {
-    root: path.resolve(__dirname, '../../'),
+  output: 'export',      // required for static site on Render
+  trailingSlash: true,   // required for SPA routing on static host
+  images: {
+    unoptimized: true,   // required — Next image optimization does not work in static export mode
   },
-  async rewrites() {
-    return [
-      {
-        source: '/api/backend/:path*',
-        destination: 'http://127.0.0.1:3001/:path*'
-      }
-    ]
-  }
+  // rewrites() removed — incompatible with static export.
+  // The frontend uses NEXT_PUBLIC_API_URL to reach the backend directly.
 };
 
 module.exports = nextConfig;
