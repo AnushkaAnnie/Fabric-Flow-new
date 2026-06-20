@@ -245,6 +245,18 @@ export class MemosService {
       }
 
       const sentWeight = line.sentWeight ?? yarnLot.availableWeight;
+
+      // Fix #6: Validate sentWeight against availableWeight
+      if (sentWeight > yarnLot.availableWeight) {
+        throw new BadRequestException(`Sent weight (${sentWeight}) exceeds available weight (${yarnLot.availableWeight}) for Yarn Lot ${yarnLot.id}`);
+      }
+
+      // Decrement available weight
+      await tx.yarnLot.update({
+        where: { id: yarnLot.id },
+        data: { availableWeight: { decrement: sentWeight } },
+      });
+
       const greyFabricLot = await tx.greyFabricLot.create({
         data: {
           lotNumber: `GFL-${Date.now()}-${line.yarnLotId}`,

@@ -7,6 +7,7 @@ import {
   ValidateNested,
   IsNumber,
   IsInt,
+  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -24,21 +25,27 @@ export class PurchaseOrderItemDto {
   quality: string;
 
   @IsInt()
+  @Min(0)
   bags: number;
 
   @IsNumber()
+  @Min(0)
   bagWeight: number;
 
   @IsNumber()
+  @Min(0)
   totalWeight: number;
 
   @IsNumber()
+  @Min(0)
   rate: number;
 
   @IsNumber()
+  @Min(0)
   cgst: number;
 
   @IsNumber()
+  @Min(0)
   sgst: number;
 }
 
@@ -49,8 +56,8 @@ export class CreatePurchaseOrderDto {
   poNumber?: string;
 
   @IsString()
-  @IsNotEmpty()
-  hfCode: string;
+  @IsOptional()
+  hfCode?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -108,6 +115,7 @@ export class CreatePurchaseOrderDto {
 
   @IsNumber()
   @IsOptional()
+  @Min(0)
   @Type(() => Number)
   totalFabricWeight?: number;
 

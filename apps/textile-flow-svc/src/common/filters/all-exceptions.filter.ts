@@ -25,12 +25,37 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // ---- Determine the status and message safely ----
     let status: number;
-    let message: string | object;
+    let message: string | string[];
 
     try {
       if (exception instanceof HttpException) {
         status = exception.getStatus();
-        message = exception.getResponse();
+        const res = exception.getResponse();
+        if (typeof res === 'object' && res !== null && 'message' in res) {
+          const resMessage = (res as any).message;
+          message = Array.isArray(resMessage) ? resMessage : String(resMessage);
+        } else {
+          message = typeof res === 'string' ? res : JSON.stringify(res);
+        }
+      } else if (exception instanceof Error && exception.constructor.name === 'PrismaClientKnownRequestError') {
+        const prismaError = exception as any;
+        switch (prismaError.code) {
+          case 'P2002':
+            status = HttpStatus.CONFLICT;
+            message = `Unique constraint failed: ${prismaError.meta?.target}`;
+            break;
+          case 'P2003':
+            status = HttpStatus.BAD_REQUEST;
+            message = `Foreign key constraint failed: ${prismaError.meta?.field_name}`;
+            break;
+          case 'P2025':
+            status = HttpStatus.NOT_FOUND;
+            message = 'Record not found';
+            break;
+          default:
+            status = HttpStatus.BAD_REQUEST;
+            message = `Database error ${prismaError.code}: ${prismaError.message}`;
+        }
       } else if (exception instanceof Error) {
         status = HttpStatus.INTERNAL_SERVER_ERROR;
         message = exception.message;

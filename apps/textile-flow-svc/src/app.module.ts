@@ -10,7 +10,6 @@ import { CompactersModule } from './compacters/compacters.module';
 import { ColoursModule } from './colours/colours.module';
 
 import { YarnLotsModule } from './yarn-lots/yarn-lots.module';
-import { YarnReceiptsModule } from './yarn-receipts/yarn-receipts.module';
 import { KnitterStockModule } from './knitter-stock/knitter-stock.module';
 import { DeliveryNotesModule } from './delivery-notes/delivery-notes.module';
 import { MemosModule } from './memos/memos.module';
@@ -51,7 +50,6 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     ColoursModule,
 
     YarnLotsModule,
-    YarnReceiptsModule,
     KnitterStockModule,
     DeliveryNotesModule,
     MemosModule,

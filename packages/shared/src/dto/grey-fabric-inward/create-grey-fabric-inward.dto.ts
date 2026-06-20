@@ -4,6 +4,7 @@ export const CreateGreyFabricInwardSchema = z.object({
   receiptDate: z.string().optional(), // ISO date
   supplierName: z.string().min(1, 'Supplier name is required'),
   fabricType: z.string().optional(),
+  fbNo: z.string().optional(),
   colour: z.string().optional(),
   totalWeight: z.number().positive(),
   rollCount: z.number().int().positive().optional(),

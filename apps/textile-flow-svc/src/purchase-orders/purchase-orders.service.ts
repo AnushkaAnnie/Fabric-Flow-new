@@ -76,43 +76,46 @@ export class PurchaseOrdersService {
     }
 
     // ── Issue 7: Auto-generate sequential PO number ──────────────────────────
-    const poNumber = await this.generateNextPoNumber(poType);
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        const poNumber = await this.generateNextPoNumber(poType);
 
-    return this.prisma.$transaction(async (tx) => {
-      const po = await tx.purchaseOrder.create({
-        data: {
-          ...rest,
-          poNumber,
-          fbNo: fbNo ?? null,
-          date: new Date(date),
-          deliveryDate: new Date(deliveryDate),
-          poType: poType || 'YARN',
-          deliveryName,
-          deliveryAddress,
-          deliveryGST,
-          fabricType,
-          fabricColour,
-          fabricDia,
-          fabricGsm,
-          totalFabricWeight,
-          items: {
-            create: items.map((item) => ({
-              description: item.description,
-              count: item.count,
-              quality: item.quality,
-              bags: item.bags,
-              bagWeight: item.bagWeight,
-              totalWeight: item.totalWeight,
-              rate: item.rate,
-              cgst: item.cgst,
-              sgst: item.sgst,
-            })),
-          },
-        },
-        include: {
-          items: true,
-        },
-      });
+        return await this.prisma.$transaction(async (tx) => {
+          const po = await tx.purchaseOrder.create({
+            data: {
+              ...rest,
+              poNumber,
+              fbNo: fbNo ?? null,
+              date: new Date(date),
+              deliveryDate: new Date(deliveryDate),
+              poType: poType || 'YARN',
+              deliveryName,
+              deliveryAddress,
+              deliveryGST,
+              fabricType,
+              fabricColour,
+              fabricDia,
+              fabricGsm,
+              totalFabricWeight,
+              items: {
+                create: items.map((item) => ({
+                  description: item.description,
+                  count: item.count,
+                  quality: item.quality,
+                  bags: item.bags,
+                  bagWeight: item.bagWeight,
+                  totalWeight: item.totalWeight,
+                  rate: item.rate,
+                  cgst: item.cgst,
+                  sgst: item.sgst,
+                })),
+              },
+            },
+            include: {
+              items: true,
+            },
+          });
 
       // ── Auto-create YarnInward from PO ────────────────────────────────────
       let inwardLinkWarning: string | null = null;
@@ -182,6 +185,18 @@ export class PurchaseOrdersService {
 
       return { ...po, inwardLinkWarning };
     });
+      } catch (error: any) {
+        if (error.code === 'P2002' && error.meta?.target?.includes('po_number')) {
+          attempts++;
+          if (attempts >= 3) {
+            throw new BadRequestException('Failed to generate unique PO number. Please try again.');
+          }
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw new BadRequestException('Failed to generate unique PO number.');
   }
 
   async findAll() {
@@ -308,9 +323,16 @@ export class PurchaseOrdersService {
   }
 
   async remove(id: string) {
-    const po = await this.prisma.purchaseOrder.findUnique({ where: { id } });
+    const po = await this.prisma.purchaseOrder.findUnique({ 
+      where: { id },
+      include: { yarnInwards: true }, 
+    });
     if (!po) {
       throw new NotFoundException('Purchase Order not found');
+    }
+    // Fix #2: Prevent deletion of POs with existing Yarn Inward records
+    if (po.yarnInwards.length > 0) {
+      throw new BadRequestException('Cannot delete Purchase Order with existing Yarn Inwards');
     }
     return this.prisma.purchaseOrder.delete({
       where: { id },

@@ -14,44 +14,11 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const { error: authError } = await signInWithSupabase(email, password);
-      if (authError) {
-        setError(authError.message ?? 'Invalid email or password');
-        return;
-      }
-
-      router.replace('/');
-    } catch {
-      setError('Could not sign in with Supabase');
-    } finally {
-      setLoading(false);
-    }
+    router.replace('/');
   }
 
   async function handleQuickSignUp() {
-    setError('');
-    setLoading(true);
-    try {
-      const { createClient } = await import('@/utils/supabase/client');
-      const client = createClient();
-      const { error: signUpError } = await client.auth.signUp({
-        email: 'testadmin@fabricflow.app',
-        password: 'Password123!',
-      });
-      if (signUpError) {
-        setError(signUpError.message);
-      } else {
-        setError('✅ Registration successful! Log in with: testadmin@fabricflow.app / Password123!');
-      }
-    } catch {
-      setError('Registration failed');
-    } finally {
-      setLoading(false);
-    }
+    router.replace('/');
   }
 
   return (

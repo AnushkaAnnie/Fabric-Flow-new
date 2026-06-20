@@ -7,6 +7,18 @@ datasource db {
   provider  = "postgresql"
 }
 
+enum POStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+}
+
+enum YarnInwardStatus {
+  PENDING
+  RECEIVED
+  CANCELLED
+}
+
 model Mill {
   id           Int          @id @default(autoincrement())
   name         String
@@ -317,6 +329,7 @@ enum GreyFabricLotStatus {
 model GreyFabricLot {
   id                 Int                  @id @default(autoincrement())
   lotNumber          String               @unique @map("lot_number")
+  fbNo               String?              @map("fb_no")
   knitterProgramId   Int?                 @map("knitter_program_id")
   knitterProgram     KnitterProgram?      @relation(fields: [knitterProgramId], references: [id])
   knitterId          Int?                 @map("knitter_id")
@@ -378,6 +391,7 @@ model Dyeing {
   id                Int       @id @default(autoincrement())
   lotNo             String    @unique @map("lot_no")
   hfCode            String?   @map("hf_code")
+  fbNo              String?   @map("fb_no")
   /// which memo line this dyeing belongs to
   memoLineId        Int       @unique @map("memo_line_id")
   memoLine          MemoLine  @relation(fields: [memoLineId], references: [id])
@@ -531,7 +545,7 @@ model YarnInward {
   millInvoiceNo     String?   @map("mill_invoice_no")
   millDcNo          String?   @map("mill_dc_no")
   receivedWeight    Decimal?  @map("received_weight") @db.Decimal(10, 2)
-  status            String    @default("PENDING") @map("status")
+  status            YarnInwardStatus @default(PENDING) @map("status")
 
   @@map("yarn_inwards")
 }
@@ -541,6 +555,7 @@ model GreyFabricInward {
   id              Int             @id @default(autoincrement())
   receiptDate     DateTime        @default(now()) @map("receipt_date")
   supplierName    String          @map("supplier_name")
+  fbNo            String?         @map("fb_no")
   fabricType      String?         @map("fabric_type")
   colour          String?
   totalWeight     Decimal         @map("total_weight") @db.Decimal(10, 2)
@@ -559,9 +574,9 @@ model GreyFabricInward {
 model PurchaseOrder {
   id              String   @id @default(cuid())
   poNumber        String   @unique @map("po_number")
-  hfCode          String   @unique @map("hf_code")
-  fbNo            String?  @map("fb_no")
-  status          String   @default("ACTIVE") @map("status")
+  hfCode          String?  @unique @map("hf_code")
+  fbNo            String?  @unique @map("fb_no")
+  status          POStatus @default(ACTIVE) @map("status")
   supplierName    String   @map("supplier_name")
   supplierAddress String   @map("supplier_address")
   supplierGST     String   @map("supplier_gst")

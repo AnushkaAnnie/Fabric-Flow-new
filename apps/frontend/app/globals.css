@@ -210,8 +210,8 @@
  * them correctly. These rules only apply to the hidden #po-print template and
  * do not affect the rest of the UI.
  */
-#po-print,
-#po-print * {
+.po-print-container,
+.po-print-container * {
   color: rgb(15, 23, 42) !important;
   background-color: rgb(255, 255, 255) !important;
   border-color: rgb(226, 232, 240) !important;

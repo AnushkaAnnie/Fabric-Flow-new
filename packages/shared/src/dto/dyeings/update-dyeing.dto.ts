@@ -8,6 +8,7 @@ export const UpdateDyeingSchema = z.object({
   dateGiven: z.string().optional(),
   compacterId: z.number().int().positive().optional(),
   status: z.string().optional(),
+  fbNo: z.string().optional(),
 });
 
 export type UpdateDyeingDto = z.infer<typeof UpdateDyeingSchema>;

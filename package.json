@@ -24,5 +24,8 @@
   ],
   "dependencies": {
     "@prisma/client": "^7.8.0"
+  },
+  "overrides": {
+    "html2canvas": "npm:html2canvas-pro@latest"
   }
 }

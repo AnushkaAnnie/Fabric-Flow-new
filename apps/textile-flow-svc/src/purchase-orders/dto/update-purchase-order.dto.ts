@@ -6,6 +6,7 @@ import {
   ValidateNested,
   IsNumber,
   IsInt,
+  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PurchaseOrderItemDto } from './create-purchase-order.dto';
@@ -77,6 +78,7 @@ export class UpdatePurchaseOrderDto {
 
   @IsNumber()
   @IsOptional()
+  @Min(0)
   @Type(() => Number)
   totalFabricWeight?: number;
 

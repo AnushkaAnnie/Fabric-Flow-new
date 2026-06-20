@@ -174,7 +174,30 @@ export class YarnLotsService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
+    const lot = await this.prisma.yarnLot.findUnique({
+      where: { id },
+      include: {
+        knitterStocks: true,
+        yarnReceipts: true,
+        knittingYarnUsages: true,
+        deliveryNotes: true,
+        knitterPrograms: true,
+      }
+    });
+
+    if (!lot) throw new NotFoundException('Yarn lot not found');
+
+    // Fix #2: Prevent deletion of Yarn Lots with dependent records
+    if (
+      lot.knitterStocks.length > 0 ||
+      lot.yarnReceipts.length > 0 ||
+      lot.knittingYarnUsages.length > 0 ||
+      lot.deliveryNotes.length > 0 ||
+      lot.knitterPrograms.length > 0
+    ) {
+      throw new BadRequestException('Cannot delete Yarn Lot with existing dependencies (stock, usage, notes, or programs)');
+    }
+
     return this.prisma.yarnLot.delete({ where: { id } });
   }
 

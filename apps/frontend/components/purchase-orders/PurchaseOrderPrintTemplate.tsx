@@ -146,6 +146,7 @@ export default function PurchaseOrderPrintTemplate({ data, id = 'po-print' }: { 
   return (
     <div
       id={id}
+      className="po-print-container"
       style={{
         background: '#fff',
         color: '#000',

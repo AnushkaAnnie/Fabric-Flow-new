@@ -199,8 +199,17 @@ export default function PurchaseOrderForm() {
     },
     onError: (err: unknown) => {
       console.error('[PO Create Error]', err);
-      const axiosErr = err as { response?: { data?: { message?: string | string[] }; status?: number } };
-      const msg = axiosErr?.response?.data?.message;
+      const axiosErr = err as {
+        response?: {
+          data?: {
+            message?: string | string[] | { message?: string | string[] };
+          };
+        };
+      };
+      let msg = axiosErr?.response?.data?.message;
+      if (msg && typeof msg === 'object' && !Array.isArray(msg) && 'message' in msg) {
+        msg = msg.message;
+      }
       if (Array.isArray(msg)) {
         toast.error('Validation errors: ' + msg.join('; '));
       } else if (typeof msg === 'string') {
@@ -253,6 +262,11 @@ export default function PurchaseOrderForm() {
       // FB No. for Fabric POs
       ...(poType === 'GREY_FABRIC' && formData.fbNo && { fbNo: formData.fbNo }),
     };
+    
+    // Fix #4: Strip hfCode if GREY_FABRIC, strip fbNo if YARN to avoid unique constraint violations
+    if (poType === 'GREY_FABRIC') delete payload.hfCode;
+    if (poType === 'YARN') delete payload.fbNo;
+    
     // Remove poNumber from payload — server generates it auto-sequentially
     const payloadWithoutPoNumber: Partial<CreatePurchaseOrderInput> & { poNumber?: string } = { ...payload };
     delete payloadWithoutPoNumber.poNumber;
@@ -606,6 +620,7 @@ export default function PurchaseOrderForm() {
                       <Label className="text-slate-300 font-semibold text-xs uppercase">Total Fabric Weight (kg)</Label>
                       <Input
                         type="number"
+                        min={0}
                         step="0.01"
                         className="bg-slate-900 border-slate-700 mt-1 text-white focus:ring-primary"
                         placeholder="0.00"
@@ -706,6 +721,7 @@ export default function PurchaseOrderForm() {
                               <TableCell className="p-2 text-center">
                                 <Input
                                   type="number"
+                                  min={0}
                                   className="bg-slate-900 border-slate-700 text-white text-xs text-center"
                                   required
                                   {...register(`items.${index}.bags` as const, {
@@ -718,6 +734,7 @@ export default function PurchaseOrderForm() {
                               <TableCell className="p-2 text-center">
                                 <Input
                                   type="number"
+                                  min={0}
                                   step="0.01"
                                   className="bg-slate-900 border-slate-700 text-white text-xs text-center"
                                   required
@@ -750,6 +767,7 @@ export default function PurchaseOrderForm() {
                               <TableCell className="p-2 text-center">
                                 <Input
                                   type="number"
+                                  min={0}
                                   className="bg-slate-900 border-slate-700 text-white text-xs text-center"
                                   placeholder="Rolls"
                                   {...register(`items.${index}.bags` as const, {
@@ -762,6 +780,7 @@ export default function PurchaseOrderForm() {
                               <TableCell className="p-2 text-center">
                                 <Input
                                   type="number"
+                                  min={0}
                                   step="0.01"
                                   className="bg-slate-900 border-slate-700 text-white text-xs text-center"
                                   placeholder="kg/roll"
@@ -778,6 +797,7 @@ export default function PurchaseOrderForm() {
                           <TableCell className="p-2 text-center">
                             <Input
                               type="number"
+                              min={0}
                               step="0.01"
                               className="bg-slate-900 border-slate-700 text-white text-xs text-center font-bold text-primary"
                               required
@@ -788,6 +808,7 @@ export default function PurchaseOrderForm() {
                           <TableCell className="p-2 text-center">
                             <Input
                               type="number"
+                              min={0}
                               step="0.01"
                               className="bg-slate-900 border-slate-700 text-white text-xs text-center"
                               required
@@ -798,6 +819,7 @@ export default function PurchaseOrderForm() {
                           <TableCell className="p-2 text-center">
                             <Input
                               type="number"
+                              min={0}
                               step="0.1"
                               className="bg-slate-900 border-slate-700 text-white text-xs text-center"
                               required
@@ -808,6 +830,7 @@ export default function PurchaseOrderForm() {
                           <TableCell className="p-2 text-center">
                             <Input
                               type="number"
+                              min={0}
                               step="0.1"
                               className="bg-slate-900 border-slate-700 text-white text-xs text-center"
                               required
@@ -971,11 +994,13 @@ export default function PurchaseOrderForm() {
       </div>
 
       {/* ── PRINT CONFIRMATION DIALOG ── */}
-      {printConfirmPO && (() => {
-        const po = printConfirmPO;
-        const items = po.items ?? [];
-        const grandTotal = items.reduce((acc, item) => {
-          const tw = Number(item.totalWeight) || 0;
+      <Dialog open={!!printConfirmPO} onOpenChange={(o) => { if (!o) setPrintConfirmPO(null); }}>
+        <DialogContent className="max-w-3xl bg-slate-900 border-slate-700 text-slate-100 max-h-[90vh] overflow-y-auto">
+          {printConfirmPO && (() => {
+            const po = printConfirmPO;
+            const items = po.items ?? [];
+            const grandTotal = items.reduce((acc, item) => {
+              const tw = Number(item.totalWeight) || 0;
           const rate = Number(item.rate) || 0;
           const taxable = tw * rate;
           const cgst = taxable * ((Number(item.cgst) || 0) / 100);
@@ -987,8 +1012,7 @@ export default function PurchaseOrderForm() {
         const fmt = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         return (
-          <Dialog open onOpenChange={(o) => { if (!o) setPrintConfirmPO(null); }}>
-            <DialogContent className="max-w-3xl bg-slate-900 border-slate-700 text-slate-100 max-h-[90vh] overflow-y-auto">
+          <>
               <DialogHeader>
                 <DialogTitle className="text-lg font-bold flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-emerald-400" />
@@ -1136,10 +1160,11 @@ export default function PurchaseOrderForm() {
                   {printingPDF ? 'Generating…' : 'Confirm & Print PDF'}
                 </Button>
               </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          </>
         );
       })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

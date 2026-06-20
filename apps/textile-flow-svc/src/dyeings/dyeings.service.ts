@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateDyeingDto, WorkflowStatus } from '@textile-flow/shared';
 import { Prisma } from '@prisma/client';
@@ -66,6 +66,12 @@ export class DyeingsService {
     // Process loss = absolute weight difference (greyWeight - dyedWeight) in kg
     if (dto.finalWeight !== undefined) {
       const greyWeight = dto.initialWeight ?? existing.initialWeight;
+      
+      // Fix #7: Ensure finalWeight <= initialWeight
+      if (dto.finalWeight > greyWeight) {
+        throw new BadRequestException(`Final weight (${dto.finalWeight}) cannot exceed initial weight (${greyWeight})`);
+      }
+      
       data.processLoss = Number((greyWeight - dto.finalWeight).toFixed(3));
     }
 

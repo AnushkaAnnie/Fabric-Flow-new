@@ -259,9 +259,11 @@ export default function YarnInwardPage() {
                   <TableRow key={r.id} className={`border-slate-800/60 transition-colors ${isPending ? 'bg-yellow-500/5 border-yellow-500/20 hover:bg-yellow-500/10' : 'hover:bg-slate-800/20'}`}>
                     <TableCell className="whitespace-nowrap">
                       {isPending ? (
-                        <span className="inline-flex w-fit items-center px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">PENDING</span>
+                        <span className="inline-flex w-fit items-center px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">{r.status}</span>
                       ) : (
-                        <span className="inline-flex w-fit items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">RECEIVED</span>
+                        <span className={`inline-flex w-fit items-center px-2 py-0.5 rounded text-[10px] font-bold border ${r.status === 'CANCELLED' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'}`}>
+                          {r.status}
+                        </span>
                       )}
                     </TableCell>
                     {/* PO No. */}
