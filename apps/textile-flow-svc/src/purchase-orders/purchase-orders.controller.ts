@@ -34,7 +34,13 @@ export class PurchaseOrdersController {
   }
 
   @Patch(':id')
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true, skipMissingProperties: true }))
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      skipMissingProperties: true,
+    }),
+  )
   update(@Param('id') id: string, @Body() dto: UpdatePurchaseOrderDto) {
     return this.service.update(id, dto);
   }

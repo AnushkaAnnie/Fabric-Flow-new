@@ -30,8 +30,8 @@ describe('MillsController (e2e)', () => {
           gstin: '',
         })
         .expect(201);
-      
-      expect(res1.body.gstin).toBeNull(); // normalized to null
+
+      expect((res1.body as Record<string, unknown>).gstin).toBeNull(); // normalized to null
 
       // 2nd mill
       const res2 = await request(app.getHttpServer())
@@ -41,8 +41,8 @@ describe('MillsController (e2e)', () => {
           gstin: '',
         })
         .expect(201);
-      
-      expect(res2.body.gstin).toBeNull();
+
+      expect((res2.body as Record<string, unknown>).gstin).toBeNull();
 
       // 3rd mill
       const res3 = await request(app.getHttpServer())
@@ -53,7 +53,7 @@ describe('MillsController (e2e)', () => {
         })
         .expect(201);
 
-      expect(res3.body.gstin).toBeNull();
+      expect((res3.body as Record<string, unknown>).gstin).toBeNull();
     });
 
     it('should reject creating a second mill with the SAME non-empty GSTIN', async () => {

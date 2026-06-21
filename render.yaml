@@ -9,46 +9,51 @@ envVarGroups:
         sync: false
       - key: SUPABASE_JWT_SECRET
         sync: false
-      - key: NEXT_PUBLIC_API_URL
-        sync: false
-      - key: NEXT_PUBLIC_SUPABASE_URL
-        sync: false
-      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-        sync: false
 
 services:
+  # ── Backend: NestJS API ───────────────────────────────────────────────────
   - type: web
-    name: textile-flow-svc
+    name: fabric-flow-svc
     runtime: node
-    region: singapore
+    region: oregon
     plan: free
     rootDir: .
-    buildCommand: npm install && npx prisma generate --schema=apps/textile-flow-svc/prisma/schema.prisma && npx turbo run build --filter=textile-flow-svc
+    buildCommand: >
+      npm install &&
+      npx turbo run build --filter=textile-flow-svc...
     startCommand: node apps/textile-flow-svc/dist/main.js
     healthCheckPath: /health
     envVarGroups:
       - fabric-flow-secrets
     envVars:
       - key: PORT
-        value: 3001
+        value: 10000
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
         value: https://fabric-flow-frontend.onrender.com
 
-  - type: static
+  # ── Frontend: Next.js SSR ─────────────────────────────────────────────────
+  - type: web
     name: fabric-flow-frontend
-    region: singapore
+    runtime: node
+    region: oregon
+    plan: free
     rootDir: .
-    buildCommand: npm install && npx turbo run build --filter=@textile-flow/frontend
-    staticPublishPath: apps/frontend/out
+    buildCommand: >
+      npm install &&
+      npx turbo run build --filter=@textile-flow/frontend...
+    startCommand: node apps/frontend/node_modules/.bin/next start apps/frontend -p $PORT
     envVarGroups:
       - fabric-flow-secrets
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: no-cache
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://fabric-flow-svc.onrender.com
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false

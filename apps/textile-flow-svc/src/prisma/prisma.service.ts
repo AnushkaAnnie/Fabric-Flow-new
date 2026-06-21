@@ -40,8 +40,11 @@ export class PrismaService
       query: {
         $allModels: {
           async $allOperations({ operation, args, query }) {
-            if ((operation === 'create' || operation === 'update') && (args as any).data) {
-              (args as any).data = normalizeEmptyStrings((args as any).data);
+            if (operation === 'create' || operation === 'update') {
+              const typedArgs = args as { data?: unknown };
+              if (typedArgs.data) {
+                typedArgs.data = normalizeEmptyStrings(typedArgs.data);
+              }
             }
             return query(args);
           },
@@ -52,9 +55,9 @@ export class PrismaService
     return new Proxy(this, {
       get: (target, prop) => {
         if (prop in extendedClient) {
-          return (extendedClient as any)[prop];
+          return (extendedClient as Record<string | symbol, unknown>)[prop];
         }
-        return (target as any)[prop];
+        return (target as Record<string | symbol, unknown>)[prop];
       },
     });
   }
