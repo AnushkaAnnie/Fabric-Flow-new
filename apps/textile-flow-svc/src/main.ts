@@ -16,6 +16,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'https://fabric-flow-frontend.onrender.com',
+      'https://fabric-flow-frontend.vercel.app',
       'http://localhost:3000',
       process.env.FRONTEND_URL ?? '',
     ].filter(Boolean),
