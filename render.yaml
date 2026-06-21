@@ -31,7 +31,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
-        value: https://fabric-flow-frontend.onrender.com
+        value: https://fabric-flow-frontend.vercel.app
 
   # ── Frontend: Next.js SSR ─────────────────────────────────────────────────
   - type: web
