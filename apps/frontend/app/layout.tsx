@@ -5,6 +5,7 @@ import './globals.css';
 import { Geist } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import Script from 'next/script';
+import { ServerWakeupBanner } from '@/components/ui/server-wakeup-banner';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -56,6 +57,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <QueryProvider>
+          <ServerWakeupBanner />
           {children}
           <Toaster richColors position="top-right" theme="dark" />
         </QueryProvider>

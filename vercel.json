@@ -2,5 +2,11 @@
   "buildCommand": "npx turbo run build --filter=@textile-flow/frontend...",
   "outputDirectory": "apps/frontend/.next",
   "installCommand": "npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/keepalive",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }
