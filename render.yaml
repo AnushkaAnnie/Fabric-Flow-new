@@ -18,9 +18,12 @@ services:
     region: oregon
     plan: free
     rootDir: .
+    # Force --include=dev so that @nestjs/cli, prisma CLI, typescript etc.
+    # are installed even when NODE_ENV=production.
+    # TURBO_UI=stream avoids the TUI terminal-UI mode on Render's non-interactive CI.
     buildCommand: >
-      npm install &&
-      npx turbo run build --filter=textile-flow-svc...
+      npm install --include=dev &&
+      npx turbo run build --filter=textile-flow-svc... --ui stream
     startCommand: node apps/textile-flow-svc/dist/main.js
     healthCheckPath: /health
     envVarGroups:
@@ -41,8 +44,8 @@ services:
     plan: free
     rootDir: .
     buildCommand: >
-      npm install &&
-      npx turbo run build --filter=@textile-flow/frontend...
+      npm install --include=dev &&
+      npx turbo run build --filter=@textile-flow/frontend... --ui stream
     startCommand: node apps/frontend/node_modules/.bin/next start apps/frontend -p $PORT
     envVarGroups:
       - fabric-flow-secrets
@@ -52,7 +55,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        value: https://fabric-flow-svc.onrender.com
+        value: https://fabric-flow.onrender.com
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
