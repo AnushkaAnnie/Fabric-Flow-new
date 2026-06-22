@@ -15,13 +15,11 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'https://fabric-flow-frontend.onrender.com',
-      'https://fabric-flow-frontend.vercel.app',
       'http://localhost:3000',
       process.env.FRONTEND_URL ?? '',
     ].filter(Boolean),
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 

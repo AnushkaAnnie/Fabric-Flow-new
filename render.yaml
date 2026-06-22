@@ -13,9 +13,9 @@ envVarGroups:
 services:
   # ── Backend: NestJS API ───────────────────────────────────────────────────
   - type: web
-    name: fabric-flow-svc
+    name: textile-flow-svc
     runtime: node
-    region: oregon
+    region: singapore
     plan: free
     rootDir: .
     # Force --include=dev so that @nestjs/cli, prisma CLI, typescript etc.
@@ -23,40 +23,14 @@ services:
     # TURBO_UI=stream avoids the TUI terminal-UI mode on Render's non-interactive CI.
     buildCommand: >
       npm install --include=dev &&
+      npx prisma generate --schema=apps/textile-flow-svc/prisma/schema.prisma &&
       npx turbo run build --filter=textile-flow-svc... --ui stream
     startCommand: node apps/textile-flow-svc/dist/main.js
     healthCheckPath: /health
     envVarGroups:
       - fabric-flow-secrets
     envVars:
-      - key: PORT
-        value: 10000
       - key: NODE_ENV
         value: production
-      - key: FRONTEND_URL
-        value: https://fabric-flow-frontend.vercel.app
-
-  # ── Frontend: Next.js SSR ─────────────────────────────────────────────────
-  - type: web
-    name: fabric-flow-frontend
-    runtime: node
-    region: oregon
-    plan: free
-    rootDir: .
-    buildCommand: >
-      npm install --include=dev &&
-      npx turbo run build --filter=@textile-flow/frontend... --ui stream
-    startCommand: node apps/frontend/node_modules/.bin/next start apps/frontend -p $PORT
-    envVarGroups:
-      - fabric-flow-secrets
-    envVars:
       - key: PORT
-        value: 10000
-      - key: NODE_ENV
-        value: production
-      - key: NEXT_PUBLIC_API_URL
-        value: https://fabric-flow.onrender.com
-      - key: NEXT_PUBLIC_SUPABASE_URL
-        sync: false
-      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-        sync: false
+        value: "3001"
