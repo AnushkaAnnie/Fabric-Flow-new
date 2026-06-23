@@ -20,7 +20,6 @@ services:
   - type: web
     name: fabric-flow-frontend
     env: static
-    plan: free
     buildCommand: npm install && npx turbo run build --filter=@textile-flow/frontend
     staticPublishPath: apps/frontend/out
     routes:
