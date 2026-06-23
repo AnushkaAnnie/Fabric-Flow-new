@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { CreateYarnInwardDto, UpdateYarnInwardDto } from '@textile-flow/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { yarnStatusFromInvoice } from '../common/adapters/workflow-status.adapter';
 import { InventoryService } from '../inventory/inventory.service';
 
@@ -188,7 +189,7 @@ export class YarnInwardService {
         if (Number(dto.receivedWeight) > orderedWeight) {
           throw new BadRequestException(
             `Received weight (${dto.receivedWeight} kg) cannot exceed ` +
-            `the ordered PO weight (${orderedWeight} kg)`,
+              `the ordered PO weight (${orderedWeight} kg)`,
           );
         }
       }
@@ -197,8 +198,10 @@ export class YarnInwardService {
       const wasPending = existing.status === 'PENDING';
       const isNowReceived = dto.receivedWeight != null;
 
-      const dataToUpdate: any = {
-        receiptDate: dto.receiptDate ? new Date(dto.receiptDate) : existing.receiptDate,
+      const dataToUpdate: Prisma.YarnInwardUncheckedUpdateInput = {
+        receiptDate: dto.receiptDate
+          ? new Date(dto.receiptDate)
+          : existing.receiptDate,
         millInvoiceNo: dto.millInvoiceNo ?? existing.millInvoiceNo,
         millDcNo: dto.millDcNo ?? existing.millDcNo,
       };
@@ -209,7 +212,8 @@ export class YarnInwardService {
       } else {
         // Fallback for regular updates
         dataToUpdate.millId = dto.millId ?? existing.millId;
-        dataToUpdate.deliveryKnitterId = dto.deliveryKnitterId ?? existing.deliveryKnitterId;
+        dataToUpdate.deliveryKnitterId =
+          dto.deliveryKnitterId ?? existing.deliveryKnitterId;
         dataToUpdate.hfBatch = dto.hfBatch ?? existing.hfBatch;
         dataToUpdate.yarnCount = dto.yarnCount ?? existing.yarnCount;
         dataToUpdate.yarnQuality = dto.yarnQuality ?? existing.yarnQuality;
@@ -219,10 +223,17 @@ export class YarnInwardService {
         dataToUpdate.ratePerKg = dto.ratePerKg ?? existing.ratePerKg;
         dataToUpdate.cgstRate = dto.cgstRate ?? existing.cgstRate;
         dataToUpdate.sgstRate = dto.sgstRate ?? existing.sgstRate;
-        dataToUpdate.purchaseAccount = dto.purchaseAccount ?? existing.purchaseAccount;
+        dataToUpdate.purchaseAccount =
+          dto.purchaseAccount ?? existing.purchaseAccount;
         dataToUpdate.remarks = dto.remarks ?? existing.remarks;
-        dataToUpdate.purchaseOrderId = dto.purchaseOrderId !== undefined ? (dto.purchaseOrderId ?? null) : existing.purchaseOrderId;
-        dataToUpdate.receivedWeight = dto.receivedWeight !== undefined ? (dto.receivedWeight ?? null) : existing.receivedWeight;
+        dataToUpdate.purchaseOrderId =
+          dto.purchaseOrderId !== undefined
+            ? (dto.purchaseOrderId ?? null)
+            : existing.purchaseOrderId;
+        dataToUpdate.receivedWeight =
+          dto.receivedWeight !== undefined
+            ? (dto.receivedWeight ?? null)
+            : existing.receivedWeight;
       }
 
       const updatedInward = await tx.yarnInward.update({
@@ -235,35 +246,38 @@ export class YarnInwardService {
         // Create YarnLot (inventory entry) exactly once
         const yarnLot = await tx.yarnLot.create({
           data: {
-            hfCode:          existing.hfBatch ?? `YI-${existing.id}`,
-            yarnInwardId:    existing.id,
-            millId:          existing.millId,
-            count:           existing.yarnCount,
-            quality:         existing.yarnQuality,
-            ratePerKg:       Number(existing.ratePerKg ?? 0),
-            totalWeight:     Number(dto.receivedWeight),
-            totalCost:       Number(existing.totalCost ?? 0),
+            hfCode: existing.hfBatch ?? `YI-${existing.id}`,
+            yarnInwardId: existing.id,
+            millId: existing.millId,
+            count: existing.yarnCount,
+            quality: existing.yarnQuality,
+            ratePerKg: Number(existing.ratePerKg ?? 0),
+            totalWeight: Number(dto.receivedWeight),
+            totalCost: Number(existing.totalCost ?? 0),
             availableWeight: Number(dto.receivedWeight),
-            noOfBags:        existing.numBags,
-            bagWeight:       Number(existing.bagWeight ?? 60),
-            status:          'ACTIVE',
-            deliveryTo:      String(existing.deliveryKnitterId),
-            description:     existing.yarnQuality,
+            noOfBags: existing.numBags,
+            bagWeight: Number(existing.bagWeight ?? 60),
+            status: 'ACTIVE',
+            deliveryTo: String(existing.deliveryKnitterId),
+            description: existing.yarnQuality,
           },
         });
 
         // Post inventory movement for the knitter
-        await this.inventoryService.postInventoryMovement({
-          entityType:   'KNITTER',
-          entityId:     existing.deliveryKnitterId,
-          itemType:     'YARN',
-          inwardWeight: Number(dto.receivedWeight),
-          lotNo:        existing.hfBatch ?? `YI-${existing.id}`,
-          stage:        'YARN_INWARD',
-          referenceNo:  existing.purchaseOrderId ?? String(existing.id),
-          remarks:      'Yarn Received from PO',
-        }, tx);
-        
+        await this.inventoryService.postInventoryMovement(
+          {
+            entityType: 'KNITTER',
+            entityId: existing.deliveryKnitterId,
+            itemType: 'YARN',
+            inwardWeight: Number(dto.receivedWeight),
+            lotNo: existing.hfBatch ?? `YI-${existing.id}`,
+            stage: 'YARN_INWARD',
+            referenceNo: existing.purchaseOrderId ?? String(existing.id),
+            remarks: 'Yarn Received from PO',
+          },
+          tx,
+        );
+
         // Also update knitterStock directly
         await tx.knitterStock.upsert({
           where: {

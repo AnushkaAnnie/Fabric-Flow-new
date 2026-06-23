@@ -32,21 +32,28 @@ export class AllExceptionsFilter implements ExceptionFilter {
         status = exception.getStatus();
         const res = exception.getResponse();
         if (typeof res === 'object' && res !== null && 'message' in res) {
-          const resMessage = (res as any).message;
+          const resMessage = res.message;
           message = Array.isArray(resMessage) ? resMessage : String(resMessage);
         } else {
           message = typeof res === 'string' ? res : JSON.stringify(res);
         }
-      } else if (exception instanceof Error && exception.constructor.name === 'PrismaClientKnownRequestError') {
-        const prismaError = exception as any;
+      } else if (
+        exception instanceof Error &&
+        exception.constructor.name === 'PrismaClientKnownRequestError'
+      ) {
+        const prismaError = exception as {
+          code?: string;
+          meta?: { target?: unknown; field_name?: unknown };
+          message?: string;
+        };
         switch (prismaError.code) {
           case 'P2002':
             status = HttpStatus.CONFLICT;
-            message = `Unique constraint failed: ${prismaError.meta?.target}`;
+            message = `Unique constraint failed: ${String(prismaError.meta?.target)}`;
             break;
           case 'P2003':
             status = HttpStatus.BAD_REQUEST;
-            message = `Foreign key constraint failed: ${prismaError.meta?.field_name}`;
+            message = `Foreign key constraint failed: ${String(prismaError.meta?.field_name)}`;
             break;
           case 'P2025':
             status = HttpStatus.NOT_FOUND;
@@ -54,7 +61,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
             break;
           default:
             status = HttpStatus.BAD_REQUEST;
-            message = `Database error ${prismaError.code}: ${prismaError.message}`;
+            message = `Database error ${prismaError.code ?? 'unknown'}: ${prismaError.message ?? 'Unknown error'}`;
         }
       } else if (exception instanceof Error) {
         status = HttpStatus.INTERNAL_SERVER_ERROR;

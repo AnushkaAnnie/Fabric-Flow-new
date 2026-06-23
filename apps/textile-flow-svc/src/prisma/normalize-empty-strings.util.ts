@@ -5,7 +5,7 @@
  * gstin, email, code) — Postgres treats NULL as distinct across
  * rows in a unique index.
  */
-export function normalizeEmptyStrings(data: any): any {
+export function normalizeEmptyStrings(data: unknown): unknown {
   if (data === null || data === undefined) {
     return data;
   }
@@ -22,8 +22,10 @@ export function normalizeEmptyStrings(data: any): any {
 
   // Recursively process plain objects
   if (typeof data === 'object' && !(data instanceof Date)) {
-    const result: any = {};
-    for (const [key, value] of Object.entries(data)) {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(
+      data as Record<string, unknown>,
+    )) {
       result[key] = normalizeEmptyStrings(value);
     }
     return result;

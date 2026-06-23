@@ -1,6 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreatePurchaseOrderDto, PurchaseOrderItemDto } from './dto/create-purchase-order.dto';
+import {
+  CreatePurchaseOrderDto,
+  PurchaseOrderItemDto,
+} from './dto/create-purchase-order.dto';
 import { UpdatePurchaseOrderDto } from './dto/update-purchase-order.dto';
 
 @Injectable()
@@ -117,79 +124,106 @@ export class PurchaseOrdersService {
             },
           });
 
-      // ── Auto-create YarnInward from PO ────────────────────────────────────
-      let inwardLinkWarning: string | null = null;
+          // ── Auto-create YarnInward from PO ────────────────────────────────────
+          let inwardLinkWarning: string | null = null;
 
-      if (!poType || poType === 'YARN') {
-        const firstItem = items[0];
+          if (!poType || poType === 'YARN') {
+            const firstItem = items[0];
 
-        const mill = dto.millId
-          ? await tx.mill.findUnique({ where: { id: dto.millId } })
-          : await tx.mill.findFirst({
-              where: { name: { contains: rest.supplierName ?? '', mode: 'insensitive' } },
-            });
+            const mill = millId
+              ? await tx.mill.findUnique({ where: { id: millId } })
+              : await tx.mill.findFirst({
+                  where: {
+                    name: {
+                      contains: rest.supplierName ?? '',
+                      mode: 'insensitive',
+                    },
+                  },
+                });
 
-        const knitter = dto.knitterId
-          ? await tx.knitter.findUnique({ where: { id: dto.knitterId } })
-          : dto.deliveryName
-          ? await tx.knitter.findFirst({
-              where: { name: { contains: dto.deliveryName, mode: 'insensitive' } },
-            })
-          : null;
+            const knitter = knitterId
+              ? await tx.knitter.findUnique({ where: { id: knitterId } })
+              : dto.deliveryName
+                ? await tx.knitter.findFirst({
+                    where: {
+                      name: { contains: dto.deliveryName, mode: 'insensitive' },
+                    },
+                  })
+                : null;
 
-        if (mill && knitter && firstItem) {
-          const bags = firstItem.bags ?? 0;
-          const bagWeight = firstItem.bagWeight ?? 60;
-          const totalWeight = bags * bagWeight;
-          const rate = firstItem.rate ?? 0;
-          const cgst = firstItem.cgst ?? 2.5;
-          const sgst = firstItem.sgst ?? 2.5;
-          const taxable = totalWeight * rate;
-          const cgstAmt = taxable * (cgst / 100);
-          const sgstAmt = taxable * (sgst / 100);
+            if (mill && knitter && firstItem) {
+              const bags = firstItem.bags ?? 0;
+              const bagWeight = firstItem.bagWeight ?? 60;
+              const totalWeight = bags * bagWeight;
+              const rate = firstItem.rate ?? 0;
+              const cgst = firstItem.cgst ?? 2.5;
+              const sgst = firstItem.sgst ?? 2.5;
+              const taxable = totalWeight * rate;
+              const cgstAmt = taxable * (cgst / 100);
+              const sgstAmt = taxable * (sgst / 100);
 
-          await tx.yarnInward.create({
-            data: {
-              status:            'PENDING',
-              purchaseOrderId:   po.id,
-              receiptDate:       new Date(dto.deliveryDate),
-              millId:            mill.id,
-              deliveryKnitterId: knitter.id,
-              hfBatch:           po.hfCode,
-              yarnCount:         firstItem.count ?? null,
-              yarnQuality:       firstItem.quality ?? null,
-              numBags:           bags,
-              bagWeight:         bagWeight,
-              totalWeight:       totalWeight,
-              ratePerKg:         rate,
-              cgstRate:          cgst,
-              sgstRate:          sgst,
-              cgstAmount:        cgstAmt,
-              sgstAmount:        sgstAmt,
-              totalCost:         taxable + cgstAmt + sgstAmt,
-              purchaseAccount:   'C.N.T.LLP',
-              receivedWeight:    null,
-              millInvoiceNo:     null,
-              millDcNo:          null,
-            },
-          });
-        } else {
-          const missingParts: string[] = [];
-          if (!mill) missingParts.push(`mill not found for "${rest.supplierName}" (try passing millId)`);
-          if (!knitter) missingParts.push(`knitter not found for "${dto.deliveryName ?? 'no delivery name'}" (try passing knitterId)`);
-          if (!firstItem) missingParts.push('no items in PO');
-          inwardLinkWarning = `YarnInward auto-link skipped: ${missingParts.join('; ')}`;
-          console.warn('[PurchaseOrdersService] create() —', inwardLinkWarning);
-        }
-      }
+              await tx.yarnInward.create({
+                data: {
+                  status: 'PENDING',
+                  purchaseOrderId: po.id,
+                  receiptDate: new Date(dto.deliveryDate),
+                  millId: mill.id,
+                  deliveryKnitterId: knitter.id,
+                  hfBatch: po.hfCode,
+                  yarnCount: firstItem.count ?? null,
+                  yarnQuality: firstItem.quality ?? null,
+                  numBags: bags,
+                  bagWeight: bagWeight,
+                  totalWeight: totalWeight,
+                  ratePerKg: rate,
+                  cgstRate: cgst,
+                  sgstRate: sgst,
+                  cgstAmount: cgstAmt,
+                  sgstAmount: sgstAmt,
+                  totalCost: taxable + cgstAmt + sgstAmt,
+                  purchaseAccount: 'C.N.T.LLP',
+                  receivedWeight: null,
+                  millInvoiceNo: null,
+                  millDcNo: null,
+                },
+              });
+            } else {
+              const missingParts: string[] = [];
+              if (!mill)
+                missingParts.push(
+                  `mill not found for "${rest.supplierName}" (try passing millId)`,
+                );
+              if (!knitter)
+                missingParts.push(
+                  `knitter not found for "${dto.deliveryName ?? 'no delivery name'}" (try passing knitterId)`,
+                );
+              if (!firstItem) missingParts.push('no items in PO');
+              inwardLinkWarning = `YarnInward auto-link skipped: ${missingParts.join('; ')}`;
+              console.warn(
+                '[PurchaseOrdersService] create() —',
+                inwardLinkWarning,
+              );
+            }
+          }
 
-      return { ...po, inwardLinkWarning };
-    });
-      } catch (error: any) {
-        if (error.code === 'P2002' && error.meta?.target?.includes('po_number')) {
+          return { ...po, inwardLinkWarning };
+        });
+      } catch (error: unknown) {
+        const prismaErr = error as {
+          code?: string;
+          meta?: { target?: string[] | string };
+        };
+        const targetStr = Array.isArray(prismaErr.meta?.target)
+          ? prismaErr.meta?.target?.join(',')
+          : typeof prismaErr.meta?.target === 'string'
+            ? prismaErr.meta.target
+            : '';
+        if (prismaErr.code === 'P2002' && targetStr.includes('po_number')) {
           attempts++;
           if (attempts >= 3) {
-            throw new BadRequestException('Failed to generate unique PO number. Please try again.');
+            throw new BadRequestException(
+              'Failed to generate unique PO number. Please try again.',
+            );
           }
           continue;
         }
@@ -252,7 +286,9 @@ export class PurchaseOrdersService {
         data: {
           ...rest,
           ...(date !== undefined && { date: new Date(date) }),
-          ...(deliveryDate !== undefined && { deliveryDate: new Date(deliveryDate) }),
+          ...(deliveryDate !== undefined && {
+            deliveryDate: new Date(deliveryDate),
+          }),
           ...(poType !== undefined && { poType }),
           ...(deliveryName !== undefined && { deliveryName }),
           ...(deliveryAddress !== undefined && { deliveryAddress }),
@@ -309,7 +345,7 @@ export class PurchaseOrdersService {
         if (linkedInward.status === 'RECEIVED') {
           throw new BadRequestException(
             'Cannot cancel this PO — yarn has already been received against it. ' +
-            'Cancel is only allowed while status is PENDING.',
+              'Cancel is only allowed while status is PENDING.',
           );
         }
         await tx.yarnInward.update({
@@ -323,16 +359,18 @@ export class PurchaseOrdersService {
   }
 
   async remove(id: string) {
-    const po = await this.prisma.purchaseOrder.findUnique({ 
+    const po = await this.prisma.purchaseOrder.findUnique({
       where: { id },
-      include: { yarnInwards: true }, 
+      include: { yarnInwards: true },
     });
     if (!po) {
       throw new NotFoundException('Purchase Order not found');
     }
     // Fix #2: Prevent deletion of POs with existing Yarn Inward records
     if (po.yarnInwards.length > 0) {
-      throw new BadRequestException('Cannot delete Purchase Order with existing Yarn Inwards');
+      throw new BadRequestException(
+        'Cannot delete Purchase Order with existing Yarn Inwards',
+      );
     }
     return this.prisma.purchaseOrder.delete({
       where: { id },

@@ -248,7 +248,9 @@ export class MemosService {
 
       // Fix #6: Validate sentWeight against availableWeight
       if (sentWeight > yarnLot.availableWeight) {
-        throw new BadRequestException(`Sent weight (${sentWeight}) exceeds available weight (${yarnLot.availableWeight}) for Yarn Lot ${yarnLot.id}`);
+        throw new BadRequestException(
+          `Sent weight (${sentWeight}) exceeds available weight (${yarnLot.availableWeight}) for Yarn Lot ${yarnLot.id}`,
+        );
       }
 
       // Decrement available weight
