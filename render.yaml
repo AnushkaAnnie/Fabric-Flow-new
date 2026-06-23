@@ -10,9 +10,11 @@ services:
     envVarGroups:
       - fabric-flow-secrets
 
-  - type: static
+  - type: web
     name: fabric-flow-frontend
+    env: static
     region: singapore
+    plan: free
     buildCommand: npm install && npx turbo run build --filter=@textile-flow/frontend
     staticPublishPath: apps/frontend/out
     envVarGroups:
