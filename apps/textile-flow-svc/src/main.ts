@@ -13,15 +13,16 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      process.env.FRONTEND_URL ?? '',
-    ].filter(Boolean),
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
+app.enableCors({
+  origin: [
+    'http://localhost:3000',
+    'https://fabric-flow-frontend-1uju.onrender.com',
+    process.env.FRONTEND_URL ?? '',
+  ].filter(Boolean),
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+});
 
   app
     .getHttpAdapter()
