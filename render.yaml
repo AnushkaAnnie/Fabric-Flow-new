@@ -1,36 +1,23 @@
-envVarGroups:
-  - name: fabric-flow-secrets
-    envVars:
-      - key: DATABASE_URL
-        sync: false
-      - key: DIRECT_URL
-        sync: false
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_JWT_SECRET
-        sync: false
-
 services:
-  # ── Backend: NestJS API ───────────────────────────────────────────────────
   - type: web
     name: textile-flow-svc
-    runtime: node
+    env: node
     region: singapore
     plan: free
-    rootDir: .
-    # Force --include=dev so that @nestjs/cli, prisma CLI, typescript etc.
-    # are installed even when NODE_ENV=production.
-    # TURBO_UI=stream avoids the TUI terminal-UI mode on Render's non-interactive CI.
-    buildCommand: >
-      npm install --include=dev &&
-      npx prisma generate --schema=apps/textile-flow-svc/prisma/schema.prisma &&
-      npx turbo run build --filter=textile-flow-svc... --ui stream
+    buildCommand: npm install && npx prisma generate --schema=apps/textile-flow-svc/prisma/schema.prisma && npx turbo run build --filter=textile-flow-svc
     startCommand: node apps/textile-flow-svc/dist/main.js
     healthCheckPath: /health
     envVarGroups:
       - fabric-flow-secrets
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: "3001"
+
+  - type: static
+    name: fabric-flow-frontend
+    region: singapore
+    buildCommand: npm install && npx turbo run build --filter=@textile-flow/frontend
+    staticPublishPath: apps/frontend/out
+    envVarGroups:
+      - fabric-flow-secrets
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
