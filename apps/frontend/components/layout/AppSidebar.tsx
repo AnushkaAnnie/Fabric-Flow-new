@@ -4,15 +4,8 @@ import { signOutFromSupabase } from '@/lib/auth';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  LayoutDashboard,
-  Layers,
-  Package,
-  Scissors,
-  ClipboardList,
-  Truck,
-  BarChart3,
-  LogOut,
-  Zap,
+  LayoutDashboard, Layers, Package, Scissors,
+  ClipboardList, Truck, BarChart3, LogOut, Zap, X,
 } from 'lucide-react';
 
 const nav = [
@@ -59,13 +52,13 @@ const nav = [
   },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
 
   async function logout() {
     await signOutFromSupabase().catch(() => undefined);
-    router.replace('/'); // Login disabled — redirect to home
+    router.replace('/');
   }
 
   function isActive(href: string) {
@@ -74,15 +67,21 @@ export function AppSidebar() {
   }
 
   return (
-    <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col overflow-y-auto border-r border-slate-800 bg-slate-950/80">
+    <aside className="flex h-screen w-60 shrink-0 flex-col overflow-y-auto border-r border-slate-800 bg-slate-950">
       <div className="flex items-center gap-3 border-b border-slate-800 px-4 py-5">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 text-base shadow-lg shadow-blue-500/25">
           FF
         </div>
-        <div>
+        <div className="flex-1">
           <p className="text-sm font-bold leading-tight text-slate-100">Fabric Flow</p>
           <p className="text-[10px] text-slate-500">Textile MES</p>
         </div>
+        {/* Close button - mobile only */}
+        {onClose && (
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 md:hidden">
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 space-y-6 px-3 py-4">
@@ -99,15 +98,14 @@ export function AppSidebar() {
                   <li key={item.href}>
                     <Link
                       href={item.href}
+                      onClick={onClose}
                       className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-150 ${
                         active
                           ? 'border border-blue-500/25 bg-blue-600/15 font-medium text-blue-300'
                           : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                       }`}
                     >
-                      <Icon
-                        className={`h-4 w-4 shrink-0 ${active ? 'text-blue-400' : 'text-slate-500'}`}
-                      />
+                      <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-blue-400' : 'text-slate-500'}`} />
                       {item.label}
                     </Link>
                   </li>
