@@ -196,7 +196,7 @@ export default function KnitterProgramsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-800 bg-slate-900/80 hover:bg-slate-900/80">
-                  {['Date', 'Knitter', 'HF Code', 'Yarn Used (kg)', 'Grey Wt (kg)', 'Rolls', 'Dia', 'Gauge', 'Loop Len', 'Fabric', 'Dyer', 'Anomaly', 'Actions'].map(h => (
+                  {['Program No', 'Date', 'Knitter', 'Yarn Lots (HF Code)', 'Total Yarn (kg)', 'Grey Wt (kg)', 'Rolls', 'Dia', 'Gauge', 'Loop Len', 'Fabric', 'Dyer', 'Anomaly', 'Actions'].map(h => (
                     <TableHead key={h} className="text-xs font-semibold uppercase tracking-widest text-slate-400">{h}</TableHead>
                   ))}
                 </TableRow>
@@ -205,19 +205,20 @@ export default function KnitterProgramsPage() {
                 {isLoading ? (
                   Array.from({ length: 4 }).map((_, i) => (
                     <TableRow key={i} className="border-slate-800">
-                      {Array.from({ length: 13 }).map((__, j) => (
+                      {Array.from({ length: 14 }).map((__, j) => (
                         <TableCell key={j}><div className="h-4 rounded bg-slate-800 animate-pulse" /></TableCell>
                       ))}
                     </TableRow>
                   ))
                 ) : programs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={13} className="py-12 text-center text-sm text-slate-500">
+                    <TableCell colSpan={14} className="py-12 text-center text-sm text-slate-500">
                       No knitting programs yet. Click &quot;Record Production&quot; to create one.
                     </TableCell>
                   </TableRow>
                 ) : programs.map((p) => (
                   <TableRow key={p.id} className="border-slate-800/60 hover:bg-slate-800/20 transition-colors">
+                    <TableCell className="font-mono text-sm font-semibold text-indigo-300">{p.programNo ?? `#${p.id}`}</TableCell>
                     <TableCell className="text-slate-300 text-sm">{new Date(p.programDate).toLocaleDateString('en-IN')}</TableCell>
                     <TableCell className="text-slate-200">{p.knitter?.name ?? '–'}</TableCell>
                     <TableCell className="font-mono text-sm font-semibold text-teal-300">{p.yarnLot?.hfCode ?? '–'}</TableCell>

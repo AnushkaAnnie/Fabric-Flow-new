@@ -183,6 +183,8 @@ export type { YarnLot, Knitter } from './yarn';
 // ===================== Phase 3D =====================
 export interface KnitterProgram {
   id: number;
+  /// Sequential reference e.g. KP-0001
+  programNo?: string | null;
   knitterId: number;
   yarnLotId: number;
   quantityUsed: number;
