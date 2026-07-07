@@ -161,6 +161,7 @@ model YarnLot {
   yarnInward    YarnInward?    @relation(fields: [yarnInwardId], references: [id])
   deliveryNotes   DeliveryNote[]
   knitterPrograms KnitterProgram[]
+  knitterProgramYarnUsages KnitterProgramYarnUsage[]
 
   @@map("yarn_lots")
 }
@@ -286,10 +287,13 @@ model KnitterProgram {
   programNo         String?   @unique @map("program_no")
   knitterId         Int       @map("knitter_id")
   knitter           Knitter   @relation(fields: [knitterId], references: [id])
-  yarnLotId         Int       @map("yarn_lot_id")
-  yarnLot           YarnLot   @relation(fields: [yarnLotId], references: [id])
-  /// kg of yarn consumed
-  quantityUsed      Decimal   @db.Decimal(10, 2) @map("quantity_used")
+  
+  // These fields are deprecated in favor of yarnUsages, but kept for non-destructive migration
+  yarnLotId         Int?      @map("yarn_lot_id")
+  yarnLot           YarnLot?  @relation(fields: [yarnLotId], references: [id])
+  /// kg of yarn consumed (deprecated)
+  quantityUsed      Decimal?  @db.Decimal(10, 2) @map("quantity_used")
+  
   /// actual scale weight of grey fabric produced
   greyWeight        Decimal   @db.Decimal(10, 2) @map("grey_weight")
   numRolls          Int?      @map("num_rolls")
@@ -311,9 +315,23 @@ model KnitterProgram {
   createdAt         DateTime  @default(now())    @map("created_at")
   updatedAt         DateTime  @updatedAt         @map("updated_at")
 
-  greyFabricLots GreyFabricLot[]
+  greyFabricLots    GreyFabricLot[]
+  yarnUsages        KnitterProgramYarnUsage[]
 
   @@map("knitter_programs")
+}
+
+model KnitterProgramYarnUsage {
+  id               Int            @id @default(autoincrement())
+  knitterProgramId Int            @map("knitter_program_id")
+  knitterProgram   KnitterProgram @relation(fields: [knitterProgramId], references: [id], onDelete: Cascade)
+  yarnLotId        Int            @map("yarn_lot_id")
+  yarnLot          YarnLot        @relation(fields: [yarnLotId], references: [id])
+  quantityUsed     Decimal        @db.Decimal(10, 2) @map("quantity_used")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  @@map("knitter_program_yarn_usages")
 }
 
 enum GreyFabricLotSource {
