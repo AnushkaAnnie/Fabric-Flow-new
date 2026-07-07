@@ -310,7 +310,7 @@ export class MemosService {
         knittingLotId: undefined,
         greyFabricLotId: lot.id,
         lotNo: lot.lotNumber,
-        hfCode: lot.knitterProgram?.yarnLot.hfCode,
+        hfCode: lot.knitterProgram?.yarnLot?.hfCode,
         colourId: await this.firstColourId(tx),
         sentWeight: Number(lot.greyWeight),
         noOfRolls: lot.rollCount ?? undefined,

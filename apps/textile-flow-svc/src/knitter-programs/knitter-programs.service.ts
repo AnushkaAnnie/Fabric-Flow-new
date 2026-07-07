@@ -164,16 +164,18 @@ export class KnitterProgramsService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // Revert stock
-      await tx.knitterStock.updateMany({
-        where: {
-          knitterId: program.knitterId,
-          yarnLotId: program.yarnLotId,
-        },
-        data: {
-          remainingWeight: { increment: program.quantityUsed.toNumber() },
-        },
-      });
+      // Revert stock — only applies to legacy single-yarn programs
+      if (program.yarnLotId != null && program.quantityUsed != null) {
+        await tx.knitterStock.updateMany({
+          where: {
+            knitterId: program.knitterId,
+            yarnLotId: program.yarnLotId,
+          },
+          data: {
+            remainingWeight: { increment: program.quantityUsed.toNumber() },
+          },
+        });
+      }
 
       // Delete greyFabricLots associated with it
       await tx.greyFabricLot.deleteMany({
