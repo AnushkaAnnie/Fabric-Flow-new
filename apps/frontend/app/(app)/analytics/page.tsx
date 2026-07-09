@@ -446,7 +446,7 @@ export default function AnalyticsPage() {
                         contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8 }}
                         labelStyle={{ color: '#94a3b8', fontSize: 12 }}
                         itemStyle={{ color: '#a78bfa' }}
-                        labelFormatter={formatDay}
+                        labelFormatter={(label) => formatDay(String(label))}
                       />
                       <Bar dataKey="count" fill="#7c3aed" radius={[4, 4, 0, 0]} />
                     </BarChart>
@@ -523,7 +523,7 @@ export default function AnalyticsPage() {
               </div>
               <Select
                 value={filterModule}
-                onValueChange={(v) => { setFilterModule(v); setPage(1); }}
+                onValueChange={(v) => { setFilterModule(v ?? 'ALL'); setPage(1); }}
               >
                 <SelectTrigger className="w-44 border-slate-700 bg-slate-800/50 text-slate-300 text-sm h-9">
                   <SelectValue placeholder="All modules" />
