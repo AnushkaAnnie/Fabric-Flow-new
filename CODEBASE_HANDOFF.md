@@ -120,6 +120,7 @@ SUPABASE_URL=https://nvtyytyykdjhgtinhftd.supabase.co
 | `ProductionPlanningModule` | `/production-planning` | Production plans + events |
 | `AuditLogsModule` | `/audit-logs` | DB change audit trail |
 | `AuthModule` | `/auth` | Supabase JWT auth (not enforced globally yet) |
+| `ActivityLogsModule` | `/activity-logs` | Business event log — bulk import, summary stats, paginated list |
 
 ### Cross-Cutting Concerns
 - **`AllExceptionsFilter`** — global exception filter at `src/common/filters/all-exceptions.filter.ts`
@@ -127,6 +128,7 @@ SUPABASE_URL=https://nvtyytyykdjhgtinhftd.supabase.co
 - **`InventoryService.postInventoryMovement()`** — used by YarnInward and PurchaseOrders to write to `InventoryLedger`
 - **`/health`** endpoint — returns `{ status: 'ok', timestamp }`, used by Render for health checks
 - **CORS** — allows `http://localhost:3000`, `https://fabric-flow-frontend.onrender.com`, and `FRONTEND_URL` env var
+- **`ActivityLogsService.log()`** — fire-and-forget live logger injected into 7 business service classes. Call with `void this.activityLogger.log({user, action, module, details})`. Never throws; errors are swallowed and logged to NestJS Logger only.
 
 ---
 
@@ -153,16 +155,27 @@ NEXT_PUBLIC_SUPABASE_URL=https://nvtyytyykdjhgtinhftd.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-anon-key-from-supabase-dashboard
 ```
 
-### API Client (`apps/frontend/lib/api.ts`)
+### API Clients (`apps/frontend/lib/`)
+
+The frontend uses **two HTTP clients** for different purposes:
+
 ```typescript
-// All API calls go through this axios instance
+// 1. lib/api.ts — axios instance (used for mutations / most pages)
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
   timeout: 30000, // 30s — tolerates Render cold starts
 });
 // Interceptor auto-attaches Supabase JWT Bearer token on every request
 // Response interceptor logs errors with method + URL + status
+export default api;
+
+// 2. lib/api/client.ts — fetch-based apiClient (used by Analytics page queries)
+export async function apiClient<T>(endpoint: string, options?: RequestOptions): Promise<T>
+// Returns T directly (not AxiosResponse). Accepts { params: Record<string, Primitive> }
+// for GET query string building. Used in useQuery queryFn callbacks.
 ```
+
+**Rule:** New pages/components should use `api` (axios) for mutations and can use either for queries. The analytics page uses `apiClient` for reads and `api` for the bulk-import POST.
 
 ### App Router Structure
 ```text
@@ -170,6 +183,8 @@ apps/frontend/app/
 ├── (app)/                          ← Authenticated shell layout
 │   ├── layout.tsx
 │   ├── page.tsx                    ← Dashboard (home)
+│   ├── analytics/                  ← Activity Analytics page (NEW)
+│   │   └── page.tsx                ← xlsx/csv import, stat cards, recharts charts, log table
 │   ├── master-data/                ← Master data management page
 │   │   └── page.tsx
 │   ├── production-planning/        ← Production planning view
@@ -247,6 +262,7 @@ Knitter ───────────────┘         KnitterProgram 
 | `LotTracker` | `Int` autoincrement | lotNo (unique), currentStatus, activeStage, completionPercent | Cross-stage tracker |
 | `ProductionPlan` | `Int` autoincrement | planNo (unique), lotNo, stage, priority (LOW/NORMAL/HIGH/URGENT), status (PENDING/IN_PROGRESS/COMPLETED/CANCELLED) | |
 | `AuditLog` | `Int` autoincrement | tableName, recordId, action (CREATE/UPDATE/DELETE), oldData, newData, performedBy | |
+| `ActivityLog` | `Int` autoincrement | date, user, action, module, details?, source (IMPORT\|LIVE), createdAt | Business event log; `@@unique([date,user,action,module])` dedup constraint |
 
 ---
 
@@ -330,10 +346,17 @@ Render free tier goes to sleep after 15 min. First request on cold start takes 2
 - ✅ **Axios timeout missing**: Added 30s timeout
 - ✅ **render.yaml missing explicit `prisma generate`**: Fixed
 
+### Fixed (Analytics session — 2026-07-09)
+- ✅ **Analytics dashboard built**: xlsx/csv import, 4 stat cards, 2 recharts bar charts (Events by Day, Events by Module), paginated + filterable log table — all at `/analytics`
+- ✅ **Live activity logging wired** into 7 modules (15 action points). `ActivityLogsService.log()` is fire-and-forget; never blocks business transactions
+- ✅ **TS error TS2322** in analytics page: `labelFormatter` recharts overload mismatch — fixed by wrapping as `(label: unknown) => formatDay(String(label))`
+- ✅ **TS error TS2345** in analytics page: shadcn `Select.onValueChange` can return `string | null` — fixed with `v ?? 'ALL'` guard
+
 ### Outstanding / Known Issues
 - ⚠️ **18 orphaned historical POs** (created before the fix): their `deliveryName` is `"CHHAVI NEETU TEXTILES LLP"` — this name does not exist as a Knitter in the DB, so the backfill script skipped them. To fix: either add that Knitter to the DB or update the POs' `deliveryName`.
 - ⚠️ **Auth is not globally enforced**: `JwtAuthGuard` is coded but not applied as `APP_GUARD`. The `ProtectedRoute` on the frontend protects UI but the API is technically unauthenticated.
 - ⚠️ **`selectedKnitterId` tracking**: The frontend tracks `selectedMillId` from supplier dropdown, but `selectedKnitterId` is tracked via state and reset, but the delivery dropdown does not yet emit knitter IDs directly (the delivery address field is a text input, not a knitter dropdown on the PO form). This means `knitterId` will always be `null` from the PO form — the fuzzy fallback on `deliveryName` applies. For the auto-inward to work reliably, either: (a) add a knitter dropdown to the delivery section of PO form, or (b) ensure the default `deliveryName` exactly matches a `Knitter.name` in DB.
+- ⚠️ **ActivityLog user field is always `'system'`**: The live logger currently hardcodes `user: 'system'` since there is no authenticated user context in NestJS services yet. Once `JwtAuthGuard` is enforced globally, a request-scoped user context can be passed through to log the actual user.
 
 ---
 
@@ -417,9 +440,67 @@ Safe to re-run (idempotent). Skips POs already having an inward row.
 | Inventory service | `apps/textile-flow-svc/src/inventory/inventory.service.ts` |
 | Prisma service (DB client) | `apps/textile-flow-svc/src/prisma/prisma.service.ts` |
 | Frontend axios client | `apps/frontend/lib/api.ts` |
+| Frontend fetch client | `apps/frontend/lib/api/client.ts` |
 | PO form component | `apps/frontend/components/purchase-orders/PurchaseOrderForm.tsx` |
 | Yarn Inward page | `apps/frontend/app/(app)/tracker/yarn-inward/page.tsx` |
+| Analytics page | `apps/frontend/app/(app)/analytics/page.tsx` |
+| Activity log service (backend) | `apps/textile-flow-svc/src/activity-logs/activity-logs.service.ts` |
+| Activity log controller | `apps/textile-flow-svc/src/activity-logs/activity-logs.controller.ts` |
+| Activity log module | `apps/textile-flow-svc/src/activity-logs/activity-logs.module.ts` |
 | PO types | `apps/frontend/types/purchase-order.ts` |
 | Entity types | `apps/frontend/types/entities.ts` |
 | Deployment config | `render.yaml` |
 | Backfill script | `apps/textile-flow-svc/scripts/backfill-yarn-inward.ts` |
+
+---
+
+## 13. Analytics System
+
+### Architecture
+The Analytics Dashboard (`/analytics`) has two data sources:
+
+| Source | Value | How set |
+|--------|-------|--------|
+| `IMPORT` | Historical logs loaded from `.xlsx`/`.csv` | User drags file → frontend parses with `xlsx` library → `POST /activity-logs/bulk-import` |
+| `LIVE` | Real-time logs from actual app usage | `ActivityLogsService.log()` called inside service methods after successful operations |
+
+### Backend Endpoints (`/activity-logs`)
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/bulk-import` | Insert rows from Excel. Body: `{ logs: [{date, user, action, module, details?, source}] }`. Skips duplicates via `@@unique([date,user,action,module])`. |
+| `GET` | `/summary` | Returns `{ totalEvents, uniqueUsers[], activeDays, eventsByModule[], eventsByUser[], eventsByDay[], recentLogs[] }`. Accepts `?from=&to=` date filters. |
+| `GET` | `/` | Paginated log list. Accepts `?page=&user=&module=&from=&to=`. Returns `{ data[], total, page, pageSize }`. |
+
+### Live Logging — 15 Instrumented Actions
+
+| Module | Actions |
+|--------|---------|
+| Purchase Orders | PO Created · PO Updated · PO Cancelled |
+| Yarn Inward | Yarn Inward Created · Yarn Received · Yarn Inward Deleted |
+| Knitter Programs | Knitter Program Created · Knitter Program Deleted |
+| Memos | Dyeing Memo Created (includes lot numbers in `details`) |
+| Dyeings | Dyeing Return Recorded · Dyeing Updated |
+| Compactings | Compacting Created · Compacting Completed |
+
+### Live Logging Pattern
+```typescript
+// In any service that imports ActivityLogsService:
+void this.activityLogger.log({
+  user: 'system',      // hardcoded until auth context is propagated
+  action: 'PO Created',
+  module: 'Purchase Orders',
+  details: 'PO-2025-001 | YARN | Supplier: ABC Mills',
+});
+// MUST use void — never await. Swallows errors silently.
+```
+
+**To add logging to a new module:**
+1. Import `ActivityLogsModule` in the feature module
+2. Inject `ActivityLogsService` into the feature service constructor
+3. Call `void this.activityLogger.log(...)` after the primary operation succeeds
+
+### Frontend Stack for Analytics
+- **xlsx** library: parses `.xlsx`, `.xls`, `.csv` in-browser via `FileReader` + `Uint8Array`
+- **recharts**: `BarChart` (Events by Day) + horizontal `BarChart` with `Cell` colors (Events by Module)
+- **`apiClient`** (fetch-based, `lib/api/client.ts`): used in `useQuery` queryFn for summary and log list
+- **`api`** (axios, `lib/api.ts`): used for the `POST /bulk-import` mutation
