@@ -9,10 +9,14 @@ import {
   PurchaseOrderItemDto,
 } from './dto/create-purchase-order.dto';
 import { UpdatePurchaseOrderDto } from './dto/update-purchase-order.dto';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 
 @Injectable()
 export class PurchaseOrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly activityLogger: ActivityLogsService,
+  ) {}
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -88,7 +92,7 @@ export class PurchaseOrdersService {
       try {
         const poNumber = await this.generateNextPoNumber(poType);
 
-        return await this.prisma.$transaction(async (tx) => {
+        const txResult = this.prisma.$transaction(async (tx) => {
           const po = await tx.purchaseOrder.create({
             data: {
               ...rest,
@@ -208,6 +212,9 @@ export class PurchaseOrdersService {
 
           return { ...po, inwardLinkWarning };
         });
+        const result = await txResult;
+        this.logPO('PO Created', result.poNumber, result.supplierName, result.poType);
+        return result;
       } catch (error: unknown) {
         const prismaErr = error as {
           code?: string;
@@ -231,6 +238,22 @@ export class PurchaseOrdersService {
       }
     }
     throw new BadRequestException('Failed to generate unique PO number.');
+  }
+
+  // NOTE: log() is called after the transaction resolves in the controller callers below.
+  // We keep a private helper so callers can pass a resolved poNumber.
+  private logPO(
+    action: string,
+    poNumber: string,
+    supplierName?: string | null,
+    poType?: string | null,
+  ): void {
+    void this.activityLogger.log({
+      user: 'system',
+      action,
+      module: 'Purchase Orders',
+      details: `${poNumber} | ${poType ?? 'YARN'} | Supplier: ${supplierName ?? 'unknown'}`,
+    });
   }
 
   async findAll() {
@@ -320,6 +343,9 @@ export class PurchaseOrdersService {
       });
 
       return po;
+    }).then((po) => {
+      this.logPO('PO Updated', po.poNumber, po.supplierName, po.poType);
+      return po;
     });
   }
 
@@ -354,6 +380,9 @@ export class PurchaseOrdersService {
         });
       }
 
+      return updatedPo;
+    }).then((updatedPo) => {
+      this.logPO('PO Cancelled', updatedPo.poNumber, po.supplierName, po.poType);
       return updatedPo;
     });
   }

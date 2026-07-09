@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 
 type YarnUsageInput = { yarnLotId: number; quantityUsed: number };
 
@@ -22,7 +23,10 @@ export type CreateKnitterProgramBody = {
 
 @Injectable()
 export class KnitterProgramsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly activityLogger: ActivityLogsService,
+  ) {}
 
   /** Public helper used by MemosService to create a program inside an existing tx */
   async createInTransaction(
@@ -139,6 +143,14 @@ export class KnitterProgramsService {
           greyFabricLots: true,
         },
       });
+    }).then((result) => {
+      void this.activityLogger.log({
+        user: 'system',
+        action: 'Knitter Program Created',
+        module: 'Knitter Programs',
+        details: `Program #${result?.programNo ?? '?'} | Knitter ID: ${dto.knitterId} | Grey: ${dto.greyWeight} kg`,
+      });
+      return result;
     });
   }
 
@@ -183,7 +195,16 @@ export class KnitterProgramsService {
       });
 
       // Delete the program itself
-      return tx.knitterProgram.delete({ where: { id } });
+      const deleted = await tx.knitterProgram.delete({ where: { id } });
+      return deleted;
+    }).then((deleted) => {
+      void this.activityLogger.log({
+        user: 'system',
+        action: 'Knitter Program Deleted',
+        module: 'Knitter Programs',
+        details: `Program #${deleted.programNo ?? id} | Knitter ID: ${program.knitterId}`,
+      });
+      return deleted;
     });
   }
 }

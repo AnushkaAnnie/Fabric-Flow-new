@@ -790,6 +790,22 @@ model ProductionEvent {
   @@index([createdAt])
 }
 
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  user      String
+  action    String
+  module    String
+  details   String?
+  source    String   @default("IMPORT")
+  createdAt DateTime @default(now())
+
+  @@unique([date, user, action, module])
+  @@index([date])
+  @@index([user])
+  @@index([module])
+}
+
 
 
 

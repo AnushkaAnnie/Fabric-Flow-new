@@ -32,6 +32,7 @@ import { InventoryModule } from './inventory/inventory.module';
 import { LotTrackerModule } from './lot-tracker/lot-tracker.module';
 import { ProductionPlanningModule } from './production-planning/production-planning.module';
 import { GreyFabricInwardModule } from './grey-fabric-inward/grey-fabric-inward.module';
+import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 
 import { AuthModule } from './auth/auth.module';
 // JwtAuthGuard kept in codebase but NOT registered globally — re-enable via
@@ -72,6 +73,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     LotTrackerModule,
     ProductionPlanningModule,
     GreyFabricInwardModule,
+    ActivityLogsModule,
   ],
 
   controllers: [AppController],

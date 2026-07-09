@@ -8,6 +8,7 @@ import { CreateCompactingDto, WorkflowStatus } from '@textile-flow/shared';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { LotTrackerService } from '../lot-tracker/lot-tracker.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 
 @Injectable()
 export class CompactingsService {
@@ -16,6 +17,7 @@ export class CompactingsService {
     private readonly workflowTransition: WorkflowTransitionService,
     private readonly inventoryService: InventoryService,
     private readonly lotTrackerService: LotTrackerService,
+    private readonly activityLogger: ActivityLogsService,
   ) {}
 
   async create(dto: CreateCompactingDto) {
@@ -85,6 +87,14 @@ export class CompactingsService {
       );
 
       return compacting;
+    }).then((result) => {
+      void this.activityLogger.log({
+        user: 'system',
+        action: 'Compacting Created',
+        module: 'Compactings',
+        details: `Lot: ${result.lotNo} | Grey: ${result.dyeing?.initialWeight?.toString() ?? '?'} kg`,
+      });
+      return result;
     });
   }
 
@@ -181,6 +191,13 @@ export class CompactingsService {
         // Non-blocking
       });
     }
+
+    void this.activityLogger.log({
+      user: 'system',
+      action: 'Compacting Completed',
+      module: 'Compactings',
+      details: `Lot: ${compacted.lotNo} | Final: ${compacted.finalWeight?.toString() ?? '?'} kg | Loss: ${compacted.processLoss?.toString() ?? '0'} kg`,
+    });
 
     return compacted;
   }

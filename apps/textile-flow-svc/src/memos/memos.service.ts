@@ -9,6 +9,7 @@ import { WorkflowTransitionService } from '../workflow/workflow-transition.servi
 import { InventoryService } from '../inventory/inventory.service';
 import { LotTrackerService } from '../lot-tracker/lot-tracker.service';
 import { KnitterProgramsService } from '../knitter-programs/knitter-programs.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 
 @Injectable()
 export class MemosService {
@@ -18,6 +19,7 @@ export class MemosService {
     private readonly inventoryService: InventoryService,
     private readonly lotTrackerService: LotTrackerService,
     private readonly knitterProgramsService: KnitterProgramsService,
+    private readonly activityLogger: ActivityLogsService,
   ) {}
 
   async create(dto: CreateMemoDto) {
@@ -166,6 +168,14 @@ export class MemosService {
           dyer: true,
         },
       });
+    }).then((result) => {
+      void this.activityLogger.log({
+        user: 'system',
+        action: 'Dyeing Memo Created',
+        module: 'Memos',
+        details: `Memo #${result?.memoNo ?? '?'} | ${result?.lines?.length ?? 0} lots | Lots: ${collectedLotNos.join(', ')}`,
+      });
+      return result;
     });
 
     // After transaction: evaluate lot tracker for all dispatched lots

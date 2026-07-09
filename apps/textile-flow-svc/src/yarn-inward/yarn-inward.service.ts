@@ -8,12 +8,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { yarnStatusFromInvoice } from '../common/adapters/workflow-status.adapter';
 import { InventoryService } from '../inventory/inventory.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 
 @Injectable()
 export class YarnInwardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly inventoryService: InventoryService,
+    private readonly activityLogger: ActivityLogsService,
   ) {}
 
   create(dto: CreateYarnInwardDto) {
@@ -135,6 +137,14 @@ export class YarnInwardService {
           yarnLots: true,
         },
       });
+    }).then((result) => {
+      void this.activityLogger.log({
+        user: 'system',
+        action: 'Yarn Inward Created',
+        module: 'Yarn Inward',
+        details: `Batch: ${result?.hfBatch ?? 'N/A'} | Weight: ${result?.totalWeight?.toString() ?? '?'} kg`,
+      });
+      return result;
     });
   }
 
@@ -300,11 +310,28 @@ export class YarnInwardService {
       }
 
       return updatedInward;
+    }).then((updated) => {
+      if (updated && updated.status === 'RECEIVED') {
+        void this.activityLogger.log({
+          user: 'system',
+          action: 'Yarn Received',
+          module: 'Yarn Inward',
+          details: `Batch: ${updated.hfBatch ?? 'N/A'} | Received: ${updated.receivedWeight?.toString() ?? '?'} kg`,
+        });
+      }
+      return updated;
     });
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.yarnInward.delete({ where: { id } });
+    const inward = await this.findOne(id);
+    const result = await this.prisma.yarnInward.delete({ where: { id } });
+    void this.activityLogger.log({
+      user: 'system',
+      action: 'Yarn Inward Deleted',
+      module: 'Yarn Inward',
+      details: `Batch: ${inward.hfBatch ?? 'N/A'} | ID: ${id}`,
+    });
+    return result;
   }
 }

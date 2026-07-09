@@ -9,6 +9,7 @@ import { Prisma } from '@prisma/client';
 import { WorkflowTransitionService } from '../workflow/workflow-transition.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { LotTrackerService } from '../lot-tracker/lot-tracker.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 
 @Injectable()
 export class DyeingsService {
@@ -17,6 +18,7 @@ export class DyeingsService {
     private readonly workflowTransition: WorkflowTransitionService,
     private readonly inventoryService: InventoryService,
     private readonly lotTrackerService: LotTrackerService,
+    private readonly activityLogger: ActivityLogsService,
   ) {}
 
   async findAll() {
@@ -210,6 +212,23 @@ export class DyeingsService {
     if (dto.finalWeight !== undefined) {
       await this.lotTrackerService.evaluateLot(existing.lotNo).catch(() => {
         // Non-blocking
+      });
+    }
+
+    // Activity log
+    if (dto.finalWeight !== undefined) {
+      void this.activityLogger.log({
+        user: 'system',
+        action: 'Dyeing Return Recorded',
+        module: 'Dyeings',
+        details: `Lot: ${result.lotNo} | Final: ${result.finalWeight?.toString() ?? '?'} kg | Loss: ${result.processLoss?.toString() ?? '0'} kg`,
+      });
+    } else {
+      void this.activityLogger.log({
+        user: 'system',
+        action: 'Dyeing Updated',
+        module: 'Dyeings',
+        details: `Lot: ${result.lotNo} | Status: ${result.status}`,
       });
     }
 

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Layers, Package, Scissors,
-  ClipboardList, Truck, BarChart3, LogOut, Zap, X,
+  ClipboardList, Truck, BarChart3, LogOut, Zap, X, LineChart,
 } from 'lucide-react';
 
 const nav = [
@@ -48,6 +48,12 @@ const nav = [
       { label: 'Production Plans', href: '/production-planning', icon: BarChart3 },
       { label: 'Plan Dashboard', href: '/production-planning/dashboard', icon: LayoutDashboard },
       { label: 'Event Timeline', href: '/production-planning/events', icon: Zap },
+    ],
+  },
+  {
+    section: 'Analytics',
+    items: [
+      { label: 'Activity Analytics', href: '/analytics', icon: LineChart },
     ],
   },
 ];
