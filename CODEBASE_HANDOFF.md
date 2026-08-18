@@ -612,3 +612,33 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXT_PUBLIC_SUPABASE_URL=https://nvtyytyykdjhgtinhftd.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<get from Supabase Dashboard → Project Settings → API → anon/public>
 ```
+
+---
+
+## 15. GitHub CI & Linting Standards (2026-08-18)
+
+### Repository URL
+- **Canonical Repository:** [https://github.com/AnushkaAnnie/Fabric-Flow-new](https://github.com/AnushkaAnnie/Fabric-Flow-new)
+- **Default Branch:** `main`
+
+### GitHub Actions CI Checks
+The CI workflow runs on every push and pull request to `main`:
+1. `npx turbo run lint` (runs ESLint across shared, frontend, and backend packages)
+2. `npx turbo run build` (builds shared package, frontend Next.js static export, and NestJS service)
+
+### Linting Rules & Critical Gotchas
+| Area | Rule / Issue | Fix Applied |
+|------|-------------|-------------|
+| **Next.js ESLint** | `@next/next/no-assign-module-variable` | Never assign or declare a variable named `module` (e.g. in `analytics/page.tsx` normaliseHeaders). Use `moduleName` or `mod` instead because `module` is reserved as a CommonJS global. |
+| **React Hooks** | `react-hooks/exhaustive-deps` | Helper functions invoked inside `useCallback` (e.g., `parseFile`) must be wrapped in `useCallback` and listed in the dependency array to ensure consistent closure state. |
+| **TypeScript Unused Vars** | `@typescript-eslint/no-unused-vars` | Unused variables, imports, and interface declarations cause CI failures in strict mode. Remove unused types and destructured variables (e.g., unused `dyers`, `purchasedLots`, `SELECT_CLASS`, `Dyer`, `GreyFabricLot`, `nextNum`). |
+| **Catch Blocks** | Unused error object | Use bare `try { ... } catch { ... }` or prefix with `_err` when the error object is not inspected in the logger/handler. |
+| **Memo Line Mapping** | Sourced yarn lots | In `memos.service.ts`, ensure `hfCodes` is assigned to `hfCode` on returned memo line creation objects for multi-yarn program lots. |
+
+### Verification Command
+To verify linting passes before committing or pushing:
+```bash
+npx turbo run lint
+# Expected: Tasks: 4 successful, 4 total (0 errors)
+```
+
