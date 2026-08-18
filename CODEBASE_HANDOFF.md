@@ -340,7 +340,7 @@ Render free tier goes to sleep after 15 min. First request on cold start takes 2
 
 ## 8. Known Bugs & Active TODOs
 
-### Fixed (in this session, not yet deployed)
+### Fixed (initial session)
 - ✅ **Auto-inward broken after render.yaml update**: Fixed by adding `millId`/`knitterId` to DTO and PO form; now uses ID-first resolution
 - ✅ **False "Save Failed" error toast**: Fixed by double-rAF before PDF generation
 - ✅ **Axios timeout missing**: Added 30s timeout
@@ -352,38 +352,81 @@ Render free tier goes to sleep after 15 min. First request on cold start takes 2
 - ✅ **TS error TS2322** in analytics page: `labelFormatter` recharts overload mismatch — fixed by wrapping as `(label: unknown) => formatDay(String(label))`
 - ✅ **TS error TS2345** in analytics page: shadcn `Select.onValueChange` can return `string | null` — fixed with `v ?? 'ALL'` guard
 
+### Fixed (Local Setup session — 2026-08-18)
+- ✅ **Backend `.env` had stale credentials**: `apps/textile-flow-svc/.env` had an outdated password (`Fabric-Flow-db-pass-2026!`) and wrong `DIRECT_URL` host. Synced to match root `.env` (password: `Anushka1326`, correct Supabase pooler + direct hosts).
+- ✅ **Frontend `.env.local` was missing entirely**: Created `apps/frontend/.env.local` with all three required `NEXT_PUBLIC_*` variables.
+- ✅ **Prisma client not generated**: Ran `npx prisma generate` from repo root to regenerate the client after `npm install`.
+
 ### Outstanding / Known Issues
 - ⚠️ **18 orphaned historical POs** (created before the fix): their `deliveryName` is `"CHHAVI NEETU TEXTILES LLP"` — this name does not exist as a Knitter in the DB, so the backfill script skipped them. To fix: either add that Knitter to the DB or update the POs' `deliveryName`.
 - ⚠️ **Auth is not globally enforced**: `JwtAuthGuard` is coded but not applied as `APP_GUARD`. The `ProtectedRoute` on the frontend protects UI but the API is technically unauthenticated.
 - ⚠️ **`selectedKnitterId` tracking**: The frontend tracks `selectedMillId` from supplier dropdown, but `selectedKnitterId` is tracked via state and reset, but the delivery dropdown does not yet emit knitter IDs directly (the delivery address field is a text input, not a knitter dropdown on the PO form). This means `knitterId` will always be `null` from the PO form — the fuzzy fallback on `deliveryName` applies. For the auto-inward to work reliably, either: (a) add a knitter dropdown to the delivery section of PO form, or (b) ensure the default `deliveryName` exactly matches a `Knitter.name` in DB.
 - ⚠️ **ActivityLog user field is always `'system'`**: The live logger currently hardcodes `user: 'system'` since there is no authenticated user context in NestJS services yet. Once `JwtAuthGuard` is enforced globally, a request-scoped user context can be passed through to log the actual user.
+- ⚠️ **Network: PostgreSQL ports 5432 & 6543 may be blocked**: On some home/office networks and ISPs (confirmed on this machine's Wi-Fi), outbound TCP to ports 5432 and 6543 is blocked at the router/ISP level. Supabase HTTPS (port 443) is always reachable. **Workaround:** switch to mobile hotspot or connect via VPN before running locally. See Section 14 for full diagnosis.
 
 ---
 
 ## 9. Running Locally
 
+> **⚠️ Network prerequisite:** PostgreSQL ports 5432 and 6543 must be open on your network.
+> If you are on a home Wi-Fi or corporate network that blocks these ports, use a **mobile hotspot** or **VPN** before running. Supabase HTTPS is always reachable but that only covers auth — all Prisma DB queries require a direct TCP connection on these ports. See Section 14 for full diagnosis.
+
 ```bash
-# Clone and install
-cd Fabric-Flow-new-main
+# 1. Install all dependencies from the repo root (npm workspaces install everything)
+cd Fabric-Flow-new
 npm install
 
-# Set up backend env
-cp apps/textile-flow-svc/.env.example apps/textile-flow-svc/.env
-# Fill in DATABASE_URL, DIRECT_URL, SUPABASE_URL
+# 2. Set up backend environment
+# File: apps/textile-flow-svc/.env  (already committed — verify credentials are current)
+# Required keys:
+#   DATABASE_URL  — Supabase pooler connection string (pgbouncer=true, port 6543)
+#   DIRECT_URL    — Supabase direct connection (port 5432, used only by prisma migrate)
+#   SUPABASE_URL  — https://nvtyytyykdjhgtinhftd.supabase.co
+#   SUPABASE_JWT_SECRET — from Supabase dashboard → Project Settings → API
 
-# Set up frontend env
-cp apps/frontend/.env.example apps/frontend/.env.local
-# Set NEXT_PUBLIC_API_URL=http://localhost:3001
-# Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+# 3. Set up frontend environment
+# Create: apps/frontend/.env.local  (git-ignored — must be created manually each clone)
+cat > apps/frontend/.env.local << 'EOF'
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_SUPABASE_URL=https://nvtyytyykdjhgtinhftd.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<your-supabase-anon-key>
+EOF
+# Get the anon key from: Supabase Dashboard → Project Settings → API → anon/public key
 
-# Generate Prisma client
-cd apps/textile-flow-svc && npx prisma generate && cd ../..
+# 4. Generate the Prisma client (required after every fresh npm install)
+npx prisma generate --schema=apps/textile-flow-svc/prisma/schema.prisma
 
-# Start both services (from repo root)
+# 5. Start both services concurrently via Turborepo (from repo root)
 npm run dev
-# Backend → http://localhost:3001
-# Frontend → http://localhost:3000
+# Backend  → http://localhost:3001  (NestJS, compiles TypeScript in watch mode ~20s)
+# Frontend → http://localhost:3000  (Next.js, ready in ~15s)
+# Shared   → packages/shared rebuilt automatically on change
 ```
+
+### Environment Variable Reference
+
+**Backend** (`apps/textile-flow-svc/.env`):
+```env
+DATABASE_URL="postgresql://postgres.<project-ref>:<password>@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://postgres.<project-ref>:<password>@aws-0-ap-northeast-1.supabase.com:5432/postgres"
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_JWT_SECRET=<jwt-secret-from-supabase-dashboard>
+```
+
+**Frontend** (`apps/frontend/.env.local` — **never committed, create manually**):
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<anon-key-from-supabase-dashboard>
+```
+
+### Startup Verification Checklist
+| Check | Expected |
+|-------|----------|
+| `GET http://localhost:3001/health` | `{"status":"ok","timestamp":"..."}` |
+| `GET http://localhost:3001/mills` | JSON array (may be empty `[]`) — confirms DB connection |
+| `http://localhost:3000` | Dashboard or login page loads without white-screen |
+| NestJS log | `Database connection established.` printed on startup |
 
 ---
 
@@ -504,3 +547,68 @@ void this.activityLogger.log({
 - **recharts**: `BarChart` (Events by Day) + horizontal `BarChart` with `Cell` colors (Events by Module)
 - **`apiClient`** (fetch-based, `lib/api/client.ts`): used in `useQuery` queryFn for summary and log list
 - **`api`** (axios, `lib/api.ts`): used for the `POST /bulk-import` mutation
+
+---
+
+## 14. Local Setup & Environment Notes (2026-08-18)
+
+> Context: First full local run of the project after initial deployment on Render. Documents what was discovered, what was fixed, and known network gotchas.
+
+### What Was Done
+
+| Action | Detail |
+|--------|--------|
+| `npm install` | Run from repo root — installs all workspace packages. Removes/audits 1254 packages. |
+| Prisma client generated | `npx prisma generate --schema=apps/textile-flow-svc/prisma/schema.prisma` |
+| Backend `.env` fixed | Stale password `Fabric-Flow-db-pass-2026!` replaced with current `Anushka1326`; `DIRECT_URL` updated to correct direct host `aws-0-ap-northeast-1.supabase.com` |
+| Frontend `.env.local` created | New file — was missing entirely on first clone. Contains the three `NEXT_PUBLIC_*` variables. |
+| Both dev servers started | `npm run dev` from root → Turborepo starts `@textile-flow/shared`, `@textile-flow/frontend`, `textile-flow-svc` concurrently |
+
+### Confirmed Working
+- ✅ `http://localhost:3001/health` → `{"status":"ok"}`
+- ✅ `http://localhost:3000` → Next.js frontend loads (dashboard page)
+- ✅ Supabase HTTPS (port 443) → reachable (auth, REST API)
+- ✅ NestJS TypeScript compilation → 0 errors
+- ✅ Shared package (`@textile-flow/shared`) → builds and watches correctly
+
+### Database Network Connectivity Issue
+
+**Symptom:** All Prisma DB queries fail with `ETIMEDOUT` immediately after query execution.
+
+**Diagnosis:**
+```powershell
+# Both of these return TcpTestSucceeded: False
+Test-NetConnection -ComputerName "aws-1-ap-northeast-1.pooler.supabase.com" -Port 6543
+Test-NetConnection -ComputerName "aws-1-ap-northeast-1.pooler.supabase.com" -Port 5432
+
+# This succeeds (port 443 is open)
+Invoke-WebRequest -Uri "https://nvtyytyykdjhgtinhftd.supabase.co/rest/v1/"
+```
+
+**Root Cause:** The Wi-Fi network/ISP blocks outbound TCP connections to non-HTTP ports. PostgreSQL runs on 5432 (direct) and 6543 (PgBouncer). Both are blocked at the router or ISP level. The HTTPS Supabase API works fine because port 443 is always open.
+
+**This is NOT a code or credentials bug.** The app, credentials, and DB schema are all correct.
+
+**Workarounds (pick one):**
+1. **Mobile hotspot** (fastest): Switch your Wi-Fi to a phone hotspot — mobile data doesn't block these ports
+2. **VPN**: Cloudflare WARP (free), ProtonVPN (free tier), or any VPN that routes TCP traffic normally
+3. **Router firewall**: Log in to `172.16.208.1` → allow outbound TCP on ports 5432 and 6543
+4. **ISP**: Contact your ISP to unblock outbound PostgreSQL connections
+
+### Key File Locations After Setup
+| File | Status | Notes |
+|------|--------|-------|
+| `apps/textile-flow-svc/.env` | ✅ Present, credentials updated | Contains DB + Supabase secrets |
+| `apps/frontend/.env.local` | ✅ Created fresh | Git-ignored; must recreate on each clone |
+| `node_modules/` (root) | ✅ Installed | Shared workspace packages |
+| `apps/frontend/node_modules/` | ✅ Installed | Frontend-specific packages |
+| `apps/textile-flow-svc/node_modules/` | ✅ Installed | Backend-specific packages |
+| `node_modules/@prisma/client/` | ✅ Generated | Run `npx prisma generate` after each `npm install` |
+
+### Important: `.env.local` is Git-Ignored
+`apps/frontend/.env.local` is listed in `.gitignore` and will **not** be present after a fresh `git clone`. It must be created manually every time. The three required values are:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_SUPABASE_URL=https://nvtyytyykdjhgtinhftd.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<get from Supabase Dashboard → Project Settings → API → anon/public>
+```

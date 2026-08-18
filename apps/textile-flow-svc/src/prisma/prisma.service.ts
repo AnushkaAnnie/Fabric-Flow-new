@@ -31,6 +31,8 @@ export class PrismaService
     const pool = new Pool({
       connectionString,
       ssl: { rejectUnauthorized: false }, // required for Supabase
+      connectionTimeoutMillis: 5000, // fail fast if DB unreachable (default is ~22s which causes frontend NETWORK errors)
+      idleTimeoutMillis: 30000, // release idle connections after 30s
     });
 
     const adapter = new PrismaPg(pool);
@@ -63,13 +65,19 @@ export class PrismaService
   }
 
   async onModuleInit() {
+    this.logger.log('Probing Supabase PostgreSQL connection…');
     try {
-      this.logger.log('Connecting to Supabase PostgreSQL…');
-      await this.$connect();
-      this.logger.log('Database connection established.');
+      // $connect() is a no-op with PrismaPg adapter — run a real query to confirm reachability
+      await this.$queryRaw`SELECT 1`;
+      this.logger.log('Database connection established ✓');
     } catch (err) {
-      this.logger.error('Database connection failed:', err);
-      throw err;
+      // Log as WARNING (not ERROR) so the app still boots and /health still works.
+      // DB-dependent routes will return 400 until the network issue is resolved.
+      // Fix: switch to mobile hotspot or VPN (ports 5432/6543 blocked by ISP/router).
+      this.logger.warn(
+        'Database unreachable on startup — DB routes will fail until network is fixed. ' +
+          'Switch to mobile hotspot or VPN to unblock PostgreSQL ports 5432/6543.',
+      );
     }
   }
 
