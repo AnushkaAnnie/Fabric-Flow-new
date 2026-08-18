@@ -21,81 +21,83 @@ export class CompactingsService {
   ) {}
 
   async create(dto: CreateCompactingDto) {
-    return this.prisma.$transaction(async (tx) => {
-      const dyeing = dto.dyeingId
-        ? await tx.dyeing.findUnique({ where: { id: dto.dyeingId } })
-        : await tx.dyeing.findUnique({ where: { lotNo: dto.lotNo } });
+    return this.prisma
+      .$transaction(async (tx) => {
+        const dyeing = dto.dyeingId
+          ? await tx.dyeing.findUnique({ where: { id: dto.dyeingId } })
+          : await tx.dyeing.findUnique({ where: { lotNo: dto.lotNo } });
 
-      if (!dyeing) throw new BadRequestException('Lot not found in dyeing');
+        if (!dyeing) throw new BadRequestException('Lot not found in dyeing');
 
-      // processLoss = greyWeight (initialWeight from memo) - compactWeight, in kg
-      const greyWeight = dyeing.initialWeight;
-      const processLoss =
-        dto.finalWeight !== undefined
-          ? Number((greyWeight - dto.finalWeight).toFixed(3))
-          : undefined;
+        // processLoss = greyWeight (initialWeight from memo) - compactWeight, in kg
+        const greyWeight = dyeing.initialWeight;
+        const processLoss =
+          dto.finalWeight !== undefined
+            ? Number((greyWeight - dto.finalWeight).toFixed(3))
+            : undefined;
 
-      const compacting = await tx.compacting.create({
-        data: {
-          lotNo: dto.lotNo,
-          dyeingId: dyeing.id,
-          compacterId: dto.compacterId ?? dyeing.compacterId,
-          colourId: dto.colourId ?? dyeing.colourId,
-          finalWeight: dto.finalWeight,
-          processLoss,
-          // Start as PENDING — caller must call completeCompacting() to finalize
-          status: WorkflowStatus.PENDING,
-        },
-        include: { compacter: true, colour: true, dyeing: true },
-      });
-
-      // Log compacting creation as a workflow event (PENDING)
-      await this.workflowTransition.transition(
-        'Compacting',
-        compacting.id,
-        '',
-        WorkflowStatus.PENDING,
-      );
-
-      await tx.auditLog.create({
-        data: {
-          tableName: 'compactings',
-          recordId: String(compacting.id),
-          action: 'CREATE',
-          oldData: undefined,
-          newData: {
+        const compacting = await tx.compacting.create({
+          data: {
+            lotNo: dto.lotNo,
             dyeingId: dyeing.id,
-            greyWeight,
-            compactWeight: dto.finalWeight,
+            compacterId: dto.compacterId ?? dyeing.compacterId,
+            colourId: dto.colourId ?? dyeing.colourId,
+            finalWeight: dto.finalWeight,
             processLoss,
+            // Start as PENDING — caller must call completeCompacting() to finalize
             status: WorkflowStatus.PENDING,
           },
-          performedBy: 'system',
-        },
-      });
+          include: { compacter: true, colour: true, dyeing: true },
+        });
 
-      await this.inventoryService.postInventoryMovement(
-        {
-          entityType: 'Compacting',
-          entityId: compacting.id,
-          itemType: 'DYED',
-          outwardWeight: dyeing.finalWeight ?? 0,
-          lotNo: compacting.lotNo,
-          remarks: 'Dyed fabric sent for compacting',
-        },
-        tx,
-      );
+        // Log compacting creation as a workflow event (PENDING)
+        await this.workflowTransition.transition(
+          'Compacting',
+          compacting.id,
+          '',
+          WorkflowStatus.PENDING,
+        );
 
-      return compacting;
-    }).then((result) => {
-      void this.activityLogger.log({
-        user: 'system',
-        action: 'Compacting Created',
-        module: 'Compactings',
-        details: `Lot: ${result.lotNo} | Grey: ${result.dyeing?.initialWeight?.toString() ?? '?'} kg`,
+        await tx.auditLog.create({
+          data: {
+            tableName: 'compactings',
+            recordId: String(compacting.id),
+            action: 'CREATE',
+            oldData: undefined,
+            newData: {
+              dyeingId: dyeing.id,
+              greyWeight,
+              compactWeight: dto.finalWeight,
+              processLoss,
+              status: WorkflowStatus.PENDING,
+            },
+            performedBy: 'system',
+          },
+        });
+
+        await this.inventoryService.postInventoryMovement(
+          {
+            entityType: 'Compacting',
+            entityId: compacting.id,
+            itemType: 'DYED',
+            outwardWeight: dyeing.finalWeight ?? 0,
+            lotNo: compacting.lotNo,
+            remarks: 'Dyed fabric sent for compacting',
+          },
+          tx,
+        );
+
+        return compacting;
+      })
+      .then((result) => {
+        void this.activityLogger.log({
+          user: 'system',
+          action: 'Compacting Created',
+          module: 'Compactings',
+          details: `Lot: ${result.lotNo} | Grey: ${result.dyeing?.initialWeight?.toString() ?? '?'} kg`,
+        });
+        return result;
       });
-      return result;
-    });
   }
 
   async findAll() {

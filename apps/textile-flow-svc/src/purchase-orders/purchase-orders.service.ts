@@ -213,7 +213,12 @@ export class PurchaseOrdersService {
           return { ...po, inwardLinkWarning };
         });
         const result = await txResult;
-        this.logPO('PO Created', result.poNumber, result.supplierName, result.poType);
+        this.logPO(
+          'PO Created',
+          result.poNumber,
+          result.supplierName,
+          result.poType,
+        );
         return result;
       } catch (error: unknown) {
         const prismaErr = error as {
@@ -297,56 +302,58 @@ export class PurchaseOrdersService {
       ...rest
     } = dto;
 
-    return this.prisma.$transaction(async (tx) => {
-      if (items !== undefined) {
-        await tx.purchaseOrderItem.deleteMany({
-          where: { purchaseOrderId: id },
+    return this.prisma
+      .$transaction(async (tx) => {
+        if (items !== undefined) {
+          await tx.purchaseOrderItem.deleteMany({
+            where: { purchaseOrderId: id },
+          });
+        }
+
+        const po = await tx.purchaseOrder.update({
+          where: { id },
+          data: {
+            ...rest,
+            ...(date !== undefined && { date: new Date(date) }),
+            ...(deliveryDate !== undefined && {
+              deliveryDate: new Date(deliveryDate),
+            }),
+            ...(poType !== undefined && { poType }),
+            ...(deliveryName !== undefined && { deliveryName }),
+            ...(deliveryAddress !== undefined && { deliveryAddress }),
+            ...(deliveryGST !== undefined && { deliveryGST }),
+            ...(fabricType !== undefined && { fabricType }),
+            ...(fabricColour !== undefined && { fabricColour }),
+            ...(fabricDia !== undefined && { fabricDia }),
+            ...(fabricGsm !== undefined && { fabricGsm }),
+            ...(totalFabricWeight !== undefined && { totalFabricWeight }),
+            ...(items !== undefined && {
+              items: {
+                create: items.map((item: PurchaseOrderItemDto) => ({
+                  description: item.description,
+                  count: item.count,
+                  quality: item.quality,
+                  bags: item.bags,
+                  bagWeight: item.bagWeight,
+                  totalWeight: item.totalWeight,
+                  rate: item.rate,
+                  cgst: item.cgst,
+                  sgst: item.sgst,
+                })),
+              },
+            }),
+          },
+          include: {
+            items: true,
+          },
         });
-      }
 
-      const po = await tx.purchaseOrder.update({
-        where: { id },
-        data: {
-          ...rest,
-          ...(date !== undefined && { date: new Date(date) }),
-          ...(deliveryDate !== undefined && {
-            deliveryDate: new Date(deliveryDate),
-          }),
-          ...(poType !== undefined && { poType }),
-          ...(deliveryName !== undefined && { deliveryName }),
-          ...(deliveryAddress !== undefined && { deliveryAddress }),
-          ...(deliveryGST !== undefined && { deliveryGST }),
-          ...(fabricType !== undefined && { fabricType }),
-          ...(fabricColour !== undefined && { fabricColour }),
-          ...(fabricDia !== undefined && { fabricDia }),
-          ...(fabricGsm !== undefined && { fabricGsm }),
-          ...(totalFabricWeight !== undefined && { totalFabricWeight }),
-          ...(items !== undefined && {
-            items: {
-              create: items.map((item: PurchaseOrderItemDto) => ({
-                description: item.description,
-                count: item.count,
-                quality: item.quality,
-                bags: item.bags,
-                bagWeight: item.bagWeight,
-                totalWeight: item.totalWeight,
-                rate: item.rate,
-                cgst: item.cgst,
-                sgst: item.sgst,
-              })),
-            },
-          }),
-        },
-        include: {
-          items: true,
-        },
+        return po;
+      })
+      .then((po) => {
+        this.logPO('PO Updated', po.poNumber, po.supplierName, po.poType);
+        return po;
       });
-
-      return po;
-    }).then((po) => {
-      this.logPO('PO Updated', po.poNumber, po.supplierName, po.poType);
-      return po;
-    });
   }
 
   // ── Issue 8: Cancel PO ───────────────────────────────────────────────────
@@ -357,34 +364,41 @@ export class PurchaseOrdersService {
       throw new BadRequestException('This PO is already cancelled');
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      const updatedPo = await tx.purchaseOrder.update({
-        where: { id },
-        data: { status: 'CANCELLED' },
-      });
-
-      // Reflect in the linked YarnInward if it hasn't been received yet
-      const linkedInward = await tx.yarnInward.findFirst({
-        where: { purchaseOrderId: id },
-      });
-      if (linkedInward) {
-        if (linkedInward.status === 'RECEIVED') {
-          throw new BadRequestException(
-            'Cannot cancel this PO — yarn has already been received against it. ' +
-              'Cancel is only allowed while status is PENDING.',
-          );
-        }
-        await tx.yarnInward.update({
-          where: { id: linkedInward.id },
+    return this.prisma
+      .$transaction(async (tx) => {
+        const updatedPo = await tx.purchaseOrder.update({
+          where: { id },
           data: { status: 'CANCELLED' },
         });
-      }
 
-      return updatedPo;
-    }).then((updatedPo) => {
-      this.logPO('PO Cancelled', updatedPo.poNumber, po.supplierName, po.poType);
-      return updatedPo;
-    });
+        // Reflect in the linked YarnInward if it hasn't been received yet
+        const linkedInward = await tx.yarnInward.findFirst({
+          where: { purchaseOrderId: id },
+        });
+        if (linkedInward) {
+          if (linkedInward.status === 'RECEIVED') {
+            throw new BadRequestException(
+              'Cannot cancel this PO — yarn has already been received against it. ' +
+                'Cancel is only allowed while status is PENDING.',
+            );
+          }
+          await tx.yarnInward.update({
+            where: { id: linkedInward.id },
+            data: { status: 'CANCELLED' },
+          });
+        }
+
+        return updatedPo;
+      })
+      .then((updatedPo) => {
+        this.logPO(
+          'PO Cancelled',
+          updatedPo.poNumber,
+          po.supplierName,
+          po.poType,
+        );
+        return updatedPo;
+      });
   }
 
   async remove(id: string) {

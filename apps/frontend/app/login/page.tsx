@@ -1,6 +1,5 @@
 'use client';
 
-import { signInWithSupabase } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
@@ -9,8 +8,8 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error] = useState('');
+  const [loading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

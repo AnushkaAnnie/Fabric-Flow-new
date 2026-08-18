@@ -29,15 +29,6 @@ interface KnitterProgram {
   greyFabricLots?: { id: number; lotNumber: string; status: string; greyWeight: number }[];
 }
 
-interface GreyFabricLot {
-  id: number;
-  lotNumber: string;
-  source: 'KNITTED' | 'PURCHASED';
-  status: string;
-  greyWeight: number;
-  knitter?: { name: string };
-}
-
 /** Source options for a memo line */
 type LineSource = 'YARN_LOT' | 'PROGRAM_LOT' | 'NEW_PROGRAM';
 
@@ -200,12 +191,6 @@ export default function MemosPage() {
   const { data: knitterPrograms = [] } = useQuery<KnitterProgram[]>({
     queryKey: ['knitter-programs'],
     queryFn: async () => (await api.get<KnitterProgram[]>('/knitter-programs')).data,
-  });
-
-  const { data: purchasedLots = [] } = useQuery<GreyFabricLot[]>({
-    queryKey: ['grey-fabric-lots', 'PURCHASED'],
-    queryFn: async () =>
-      (await api.get<GreyFabricLot[]>('/grey-fabric-lots', { params: { source: 'PURCHASED', status: 'AVAILABLE' } })).data,
   });
 
   const createMutation = useMutation<MemoApi, Error, Record<string, unknown>>({

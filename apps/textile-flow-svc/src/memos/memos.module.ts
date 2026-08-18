@@ -9,7 +9,14 @@ import { KnitterProgramsModule } from '../knitter-programs/knitter-programs.modu
 import { ActivityLogsModule } from '../activity-logs/activity-logs.module';
 
 @Module({
-  imports: [PrismaModule, WorkflowModule, InventoryModule, LotTrackerModule, KnitterProgramsModule, ActivityLogsModule],
+  imports: [
+    PrismaModule,
+    WorkflowModule,
+    InventoryModule,
+    LotTrackerModule,
+    KnitterProgramsModule,
+    ActivityLogsModule,
+  ],
   controllers: [MemosController],
   providers: [MemosService],
   exports: [MemosService],

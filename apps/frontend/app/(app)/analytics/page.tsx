@@ -12,7 +12,7 @@ import {
   ResponsiveContainer, Cell,
 } from 'recharts';
 import {
-  LineChart as LineChartIcon, Upload, CheckCircle2,
+  LineChart as LineChartIcon, Upload,
   Calendar, Users, Activity, Layers, ChevronLeft, ChevronRight,
   Filter, Search,
 } from 'lucide-react';
@@ -110,10 +110,10 @@ function ImportPanel({ onImported }: { onImported: () => void }) {
     const date = get(['date']);
     const user = get(['user']);
     const action = get(['action']);
-    const module = get(['module']);
+    const moduleName = get(['module']);
     const details = get(['details']);
 
-    if (!date || !user || !action || !module) return null;
+    if (!date || !user || !action || !moduleName) return null;
 
     // Parse Excel date serial numbers
     let isoDate = date;
@@ -128,10 +128,10 @@ function ImportPanel({ onImported }: { onImported: () => void }) {
       }
     }
 
-    return { date: isoDate, user, action, module, details: details || undefined };
+    return { date: isoDate, user, action, module: moduleName, details: details || undefined };
   }
 
-  function parseFile(file: File) {
+  const parseFile = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const data = new Uint8Array(e.target?.result as ArrayBuffer);
@@ -146,14 +146,14 @@ function ImportPanel({ onImported }: { onImported: () => void }) {
       }
     };
     reader.readAsArrayBuffer(file);
-  }
+  }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) parseFile(file);
-  }, []);
+  }, [parseFile]);
 
   async function handleImport() {
     if (allRows.length === 0) return;

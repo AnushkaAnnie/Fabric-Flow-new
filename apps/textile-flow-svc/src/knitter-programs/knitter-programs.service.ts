@@ -68,13 +68,7 @@ export class KnitterProgramsService {
       });
     }
 
-    // 3. Auto-generate programNo inside transaction to avoid races
-    const last = await tx.knitterProgram.findFirst({
-      orderBy: { id: 'desc' },
-    });
-    const nextNum = last?.id ? last.id + 1 : 1;
-    // We use a temp placeholder and update after create (Prisma autoincrement id not available pre-create)
-    // Instead: count all programs to derive next sequential display number
+    // 3. Auto-generate programNo inside transaction
     const count = await tx.knitterProgram.count();
     const programNo = `KP-${String(count + 1).padStart(4, '0')}`;
 
@@ -131,27 +125,29 @@ export class KnitterProgramsService {
   }
 
   create(dto: CreateKnitterProgramBody) {
-    return this.prisma.$transaction(async (tx) => {
-      const { program } = await this.createInTransaction(tx, dto);
+    return this.prisma
+      .$transaction(async (tx) => {
+        const { program } = await this.createInTransaction(tx, dto);
 
-      return tx.knitterProgram.findUnique({
-        where: { id: program.id },
-        include: {
-          knitter: true,
-          yarnLot: true,
-          preAssignedDyer: true,
-          greyFabricLots: true,
-        },
+        return tx.knitterProgram.findUnique({
+          where: { id: program.id },
+          include: {
+            knitter: true,
+            yarnLot: true,
+            preAssignedDyer: true,
+            greyFabricLots: true,
+          },
+        });
+      })
+      .then((result) => {
+        void this.activityLogger.log({
+          user: 'system',
+          action: 'Knitter Program Created',
+          module: 'Knitter Programs',
+          details: `Program #${result?.programNo ?? '?'} | Knitter ID: ${dto.knitterId} | Grey: ${dto.greyWeight} kg`,
+        });
+        return result;
       });
-    }).then((result) => {
-      void this.activityLogger.log({
-        user: 'system',
-        action: 'Knitter Program Created',
-        module: 'Knitter Programs',
-        details: `Program #${result?.programNo ?? '?'} | Knitter ID: ${dto.knitterId} | Grey: ${dto.greyWeight} kg`,
-      });
-      return result;
-    });
   }
 
   findAll() {
@@ -175,36 +171,38 @@ export class KnitterProgramsService {
       throw new BadRequestException('Knitter program not found');
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      // Revert stock — only applies to legacy single-yarn programs
-      if (program.yarnLotId != null && program.quantityUsed != null) {
-        await tx.knitterStock.updateMany({
-          where: {
-            knitterId: program.knitterId,
-            yarnLotId: program.yarnLotId,
-          },
-          data: {
-            remainingWeight: { increment: program.quantityUsed.toNumber() },
-          },
+    return this.prisma
+      .$transaction(async (tx) => {
+        // Revert stock — only applies to legacy single-yarn programs
+        if (program.yarnLotId != null && program.quantityUsed != null) {
+          await tx.knitterStock.updateMany({
+            where: {
+              knitterId: program.knitterId,
+              yarnLotId: program.yarnLotId,
+            },
+            data: {
+              remainingWeight: { increment: program.quantityUsed.toNumber() },
+            },
+          });
+        }
+
+        // Delete greyFabricLots associated with it
+        await tx.greyFabricLot.deleteMany({
+          where: { knitterProgramId: program.id },
         });
-      }
 
-      // Delete greyFabricLots associated with it
-      await tx.greyFabricLot.deleteMany({
-        where: { knitterProgramId: program.id },
+        // Delete the program itself
+        const deleted = await tx.knitterProgram.delete({ where: { id } });
+        return deleted;
+      })
+      .then((deleted) => {
+        void this.activityLogger.log({
+          user: 'system',
+          action: 'Knitter Program Deleted',
+          module: 'Knitter Programs',
+          details: `Program #${deleted.programNo ?? id} | Knitter ID: ${program.knitterId}`,
+        });
+        return deleted;
       });
-
-      // Delete the program itself
-      const deleted = await tx.knitterProgram.delete({ where: { id } });
-      return deleted;
-    }).then((deleted) => {
-      void this.activityLogger.log({
-        user: 'system',
-        action: 'Knitter Program Deleted',
-        module: 'Knitter Programs',
-        details: `Program #${deleted.programNo ?? id} | Knitter ID: ${program.knitterId}`,
-      });
-      return deleted;
-    });
   }
 }

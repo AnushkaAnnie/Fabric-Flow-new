@@ -65,7 +65,9 @@ export class ActivityLogsService {
   }
 
   async bulkImport(dto: BulkImportDto): Promise<{ imported: number }> {
-    const result = await (this.prisma as unknown as Prisma.TransactionClient).activityLog.createMany({
+    const result = await (
+      this.prisma as unknown as Prisma.TransactionClient
+    ).activityLog.createMany({
       data: dto.logs.map((log) => ({
         date: new Date(log.date),
         user: log.user,
@@ -91,14 +93,18 @@ export class ActivityLogsService {
       }
     }
 
-    const all = await (this.prisma as unknown as Prisma.TransactionClient).activityLog.findMany({
+    const all = await (
+      this.prisma as unknown as Prisma.TransactionClient
+    ).activityLog.findMany({
       where,
       orderBy: { date: 'desc' },
     });
 
     const totalEvents = all.length;
     const uniqueUsers = [...new Set(all.map((l) => l.user))];
-    const activeDays = new Set(all.map((l) => l.date.toISOString().slice(0, 10))).size;
+    const activeDays = new Set(
+      all.map((l) => l.date.toISOString().slice(0, 10)),
+    ).size;
 
     const moduleMap = new Map<string, number>();
     for (const l of all) {
@@ -150,7 +156,8 @@ export class ActivityLogsService {
     }
     if (filters.from || filters.to) {
       where.date = {};
-      if (filters.from) (where.date as Prisma.DateTimeFilter).gte = new Date(filters.from);
+      if (filters.from)
+        (where.date as Prisma.DateTimeFilter).gte = new Date(filters.from);
       if (filters.to) {
         const toDate = new Date(filters.to);
         toDate.setHours(23, 59, 59, 999);

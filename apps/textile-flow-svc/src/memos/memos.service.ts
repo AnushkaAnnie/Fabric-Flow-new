@@ -24,159 +24,161 @@ export class MemosService {
 
   async create(dto: CreateMemoDto) {
     const collectedLotNos: string[] = [];
-    const result = await this.prisma.$transaction(async (tx) => {
-      const last = await tx.memo.findFirst({ orderBy: { memoNo: 'desc' } });
-      const memoNo = dto.memoNo ?? (last?.memoNo ?? 39) + 1;
+    const result = await this.prisma
+      .$transaction(async (tx) => {
+        const last = await tx.memo.findFirst({ orderBy: { memoNo: 'desc' } });
+        const memoNo = dto.memoNo ?? (last?.memoNo ?? 39) + 1;
 
-      // Task 1: dyerId is the single source of truth — no per-line fallback
-      const dyerId =
-        dto.dyerId ??
-        (await tx.dyer.findFirst({ orderBy: { id: 'asc' } }))?.id;
+        // Task 1: dyerId is the single source of truth — no per-line fallback
+        const dyerId =
+          dto.dyerId ??
+          (await tx.dyer.findFirst({ orderBy: { id: 'asc' } }))?.id;
 
-      if (!dyerId) {
-        throw new BadRequestException('Dyer is required to create a memo');
-      }
-
-      const memo = await tx.memo.create({
-        data: {
-          memoNo,
-          issueDate: dto.issueDate ? new Date(dto.issueDate) : new Date(),
-          dyerId,
-          remarks: dto.remarks,
-        },
-      });
-
-      for (const line of dto.lines) {
-        const resolved = await this.resolveMemoLine(tx, line);
-        collectedLotNos.push(resolved.lotNo);
-        const initialStatus = dyeingStatusFromDc(null, null);
-
-        const memoLine = await tx.memoLine.create({
-          data: {
-            memoId: memo.id,
-            knittingLotId: resolved.knittingLotId,
-            greyFabricLotId: resolved.greyFabricLotId,
-            sentWeight: line.sentWeight ?? resolved.sentWeight,
-            yarnCount: line.yarnCount,
-            dia: line.dia,
-            gg: line.gg,
-            loopLength: line.loopLength,
-            fabricName: line.fabricName,
-            fabricColour: line.fabricColour,
-          },
-        });
-
-        const finalColourId = await this.resolveColourId(
-          tx,
-          line.fabricColour,
-          resolved.colourId,
-        );
-
-        const dyeing = await tx.dyeing.create({
-          data: {
-            lotNo: resolved.lotNo,
-            memoLineId: memoLine.id,
-            hfCode: resolved.hfCode,
-            // Task 1: single dyer from memo header — no per-line override
-            dyerId,
-            colourId: finalColourId,
-            initialWeight: line.sentWeight ?? resolved.sentWeight,
-            sourceType: resolved.sourceType,
-            status: initialStatus,
-            noOfRolls: resolved.noOfRolls,
-            // companyDcNo auto-synced to lotNo for easy lookup
-            companyDcNo: resolved.lotNo,
-          },
-        });
-
-        // Log dyeing creation via workflow
-        await this.workflowTransition.transition(
-          'Dyeing',
-          dyeing.id,
-          '',
-          initialStatus,
-        );
-
-        if (resolved.greyFabricLotId) {
-          await tx.greyFabricLot.update({
-            where: { id: resolved.greyFabricLotId },
-            data: { status: WorkflowStatus.SENT },
-          });
+        if (!dyerId) {
+          throw new BadRequestException('Dyer is required to create a memo');
         }
 
-        await this.inventoryService.postInventoryMovement(
-          {
-            entityType: 'GreyFabricLot',
-            entityId: resolved.greyFabricLotId ?? 0,
-            itemType: 'GREY',
-            inwardWeight: line.sentWeight ?? resolved.sentWeight,
-            lotNo: resolved.lotNo,
-            stage: 'GREY',
-            remarks: 'Grey fabric lot created',
+        const memo = await tx.memo.create({
+          data: {
+            memoNo,
+            issueDate: dto.issueDate ? new Date(dto.issueDate) : new Date(),
+            dyerId,
+            remarks: dto.remarks,
           },
-          tx,
-        );
+        });
 
-        await this.inventoryService.postInventoryMovement(
-          {
-            entityType: 'Memo',
-            entityId: memo.id,
-            itemType: 'GREY',
-            outwardWeight: line.sentWeight ?? resolved.sentWeight,
-            lotNo: resolved.lotNo,
-            stage: 'DYEING',
-            remarks: 'Grey fabric sent to dyeing',
-          },
-          tx,
-        );
-      }
+        for (const line of dto.lines) {
+          const resolved = await this.resolveMemoLine(tx, line);
+          collectedLotNos.push(resolved.lotNo);
+          const initialStatus = dyeingStatusFromDc(null, null);
 
-      await tx.auditLog.create({
-        data: {
-          tableName: 'memos',
-          recordId: String(memo.id),
-          action: 'CREATE',
-          oldData: undefined,
-          newData: { memoNo, lines: dto.lines.length },
-          performedBy: 'system',
-        },
-      });
-
-      // Log memo creation via workflow
-      await this.workflowTransition.transition(
-        'Memo',
-        memo.id,
-        '',
-        WorkflowStatus.PENDING,
-      );
-
-      return tx.memo.findUnique({
-        where: { id: memo.id },
-        include: {
-          lines: {
-            include: {
-              knittingLot: {
-                include: {
-                  entries: { include: { colour: true } },
-                  knitting: { include: { knitter: true } },
-                },
-              },
-              greyFabricLot: { include: { knitter: true } },
-              dyeing: true,
+          const memoLine = await tx.memoLine.create({
+            data: {
+              memoId: memo.id,
+              knittingLotId: resolved.knittingLotId,
+              greyFabricLotId: resolved.greyFabricLotId,
+              sentWeight: line.sentWeight ?? resolved.sentWeight,
+              yarnCount: line.yarnCount,
+              dia: line.dia,
+              gg: line.gg,
+              loopLength: line.loopLength,
+              fabricName: line.fabricName,
+              fabricColour: line.fabricColour,
             },
+          });
+
+          const finalColourId = await this.resolveColourId(
+            tx,
+            line.fabricColour,
+            resolved.colourId,
+          );
+
+          const dyeing = await tx.dyeing.create({
+            data: {
+              lotNo: resolved.lotNo,
+              memoLineId: memoLine.id,
+              hfCode: resolved.hfCode,
+              // Task 1: single dyer from memo header — no per-line override
+              dyerId,
+              colourId: finalColourId,
+              initialWeight: line.sentWeight ?? resolved.sentWeight,
+              sourceType: resolved.sourceType,
+              status: initialStatus,
+              noOfRolls: resolved.noOfRolls,
+              // companyDcNo auto-synced to lotNo for easy lookup
+              companyDcNo: resolved.lotNo,
+            },
+          });
+
+          // Log dyeing creation via workflow
+          await this.workflowTransition.transition(
+            'Dyeing',
+            dyeing.id,
+            '',
+            initialStatus,
+          );
+
+          if (resolved.greyFabricLotId) {
+            await tx.greyFabricLot.update({
+              where: { id: resolved.greyFabricLotId },
+              data: { status: WorkflowStatus.SENT },
+            });
+          }
+
+          await this.inventoryService.postInventoryMovement(
+            {
+              entityType: 'GreyFabricLot',
+              entityId: resolved.greyFabricLotId ?? 0,
+              itemType: 'GREY',
+              inwardWeight: line.sentWeight ?? resolved.sentWeight,
+              lotNo: resolved.lotNo,
+              stage: 'GREY',
+              remarks: 'Grey fabric lot created',
+            },
+            tx,
+          );
+
+          await this.inventoryService.postInventoryMovement(
+            {
+              entityType: 'Memo',
+              entityId: memo.id,
+              itemType: 'GREY',
+              outwardWeight: line.sentWeight ?? resolved.sentWeight,
+              lotNo: resolved.lotNo,
+              stage: 'DYEING',
+              remarks: 'Grey fabric sent to dyeing',
+            },
+            tx,
+          );
+        }
+
+        await tx.auditLog.create({
+          data: {
+            tableName: 'memos',
+            recordId: String(memo.id),
+            action: 'CREATE',
+            oldData: undefined,
+            newData: { memoNo, lines: dto.lines.length },
+            performedBy: 'system',
           },
-          dyer: true,
-        },
+        });
+
+        // Log memo creation via workflow
+        await this.workflowTransition.transition(
+          'Memo',
+          memo.id,
+          '',
+          WorkflowStatus.PENDING,
+        );
+
+        return tx.memo.findUnique({
+          where: { id: memo.id },
+          include: {
+            lines: {
+              include: {
+                knittingLot: {
+                  include: {
+                    entries: { include: { colour: true } },
+                    knitting: { include: { knitter: true } },
+                  },
+                },
+                greyFabricLot: { include: { knitter: true } },
+                dyeing: true,
+              },
+            },
+            dyer: true,
+          },
+        });
+      })
+      .then((result) => {
+        void this.activityLogger.log({
+          user: 'system',
+          action: 'Dyeing Memo Created',
+          module: 'Memos',
+          details: `Memo #${result?.memoNo ?? '?'} | ${result?.lines?.length ?? 0} lots | Lots: ${collectedLotNos.join(', ')}`,
+        });
+        return result;
       });
-    }).then((result) => {
-      void this.activityLogger.log({
-        user: 'system',
-        action: 'Dyeing Memo Created',
-        module: 'Memos',
-        details: `Memo #${result?.memoNo ?? '?'} | ${result?.lines?.length ?? 0} lots | Lots: ${collectedLotNos.join(', ')}`,
-      });
-      return result;
-    });
 
     // After transaction: evaluate lot tracker for all dispatched lots
     for (const lotNo of collectedLotNos) {
@@ -320,7 +322,7 @@ export class MemosService {
         knittingLotId: undefined,
         greyFabricLotId: lot.id,
         lotNo: lot.lotNumber,
-        hfCode: lot.knitterProgram?.yarnLot?.hfCode,
+        hfCode: hfCodes,
         colourId: await this.firstColourId(tx),
         sentWeight: Number(lot.greyWeight),
         noOfRolls: lot.rollCount ?? undefined,

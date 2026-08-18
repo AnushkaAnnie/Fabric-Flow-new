@@ -51,7 +51,6 @@ interface DyeingRecord {
   createdAt: string;
 }
 
-interface Dyer { id: number; name: string; }
 interface Colour { id: number; name: string; code: string; }
 interface Compacter { id: number; name: string; }
 
@@ -101,11 +100,6 @@ export default function DyeingPage() {
   const { data: records = [], isLoading } = useQuery<DyeingRecord[]>({
     queryKey: ['dyeings'],
     queryFn: async () => (await api.get<DyeingRecord[]>('/dyeings')).data,
-  });
-
-  const { data: dyers = [] } = useQuery<Dyer[]>({
-    queryKey: ['dyers'],
-    queryFn: async () => (await api.get<Dyer[]>('/dyers')).data,
   });
 
   const { data: colours = [] } = useQuery<Colour[]>({

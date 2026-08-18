@@ -13,7 +13,12 @@ export class GreyFabricLotsService {
       },
       include: {
         knitter: true,
-        knitterProgram: { include: { yarnLot: true, yarnUsages: { include: { yarnLot: true } } } },
+        knitterProgram: {
+          include: {
+            yarnLot: true,
+            yarnUsages: { include: { yarnLot: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

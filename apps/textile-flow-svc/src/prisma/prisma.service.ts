@@ -70,7 +70,7 @@ export class PrismaService
       // $connect() is a no-op with PrismaPg adapter — run a real query to confirm reachability
       await this.$queryRaw`SELECT 1`;
       this.logger.log('Database connection established ✓');
-    } catch (err) {
+    } catch {
       // Log as WARNING (not ERROR) so the app still boots and /health still works.
       // DB-dependent routes will return 400 until the network issue is resolved.
       // Fix: switch to mobile hotspot or VPN (ports 5432/6543 blocked by ISP/router).

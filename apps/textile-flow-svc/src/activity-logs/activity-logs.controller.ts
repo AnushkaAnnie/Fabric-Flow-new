@@ -1,11 +1,9 @@
+import { Controller, Post, Get, Body, Query } from '@nestjs/common';
 import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Query,
-} from '@nestjs/common';
-import { ActivityLogsService, SummaryResponse, PaginatedLogs } from './activity-logs.service';
+  ActivityLogsService,
+  SummaryResponse,
+  PaginatedLogs,
+} from './activity-logs.service';
 import { BulkImportDto } from './dto/create-activity-log.dto';
 
 @Controller('activity-logs')
