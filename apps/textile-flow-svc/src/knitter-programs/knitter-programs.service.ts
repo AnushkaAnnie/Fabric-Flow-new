@@ -124,7 +124,7 @@ export class KnitterProgramsService {
     return { program, greyFabricLot };
   }
 
-  create(dto: CreateKnitterProgramBody) {
+  create(dto: CreateKnitterProgramBody, performingUser = 'system') {
     return this.prisma
       .$transaction(async (tx) => {
         const { program } = await this.createInTransaction(tx, dto);
@@ -141,7 +141,7 @@ export class KnitterProgramsService {
       })
       .then((result) => {
         void this.activityLogger.log({
-          user: 'system',
+          user: performingUser,
           action: 'Knitter Program Created',
           module: 'Knitter Programs',
           details: `Program #${result?.programNo ?? '?'} | Knitter ID: ${dto.knitterId} | Grey: ${dto.greyWeight} kg`,
@@ -162,7 +162,7 @@ export class KnitterProgramsService {
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number, performingUser = 'system') {
     const program = await this.prisma.knitterProgram.findUnique({
       where: { id },
     });
@@ -197,7 +197,7 @@ export class KnitterProgramsService {
       })
       .then((deleted) => {
         void this.activityLogger.log({
-          user: 'system',
+          user: performingUser,
           action: 'Knitter Program Deleted',
           module: 'Knitter Programs',
           details: `Program #${deleted.programNo ?? id} | Knitter ID: ${program.knitterId}`,

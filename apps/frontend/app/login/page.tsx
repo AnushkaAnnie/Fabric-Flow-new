@@ -1,23 +1,75 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { signInWithSupabase, getSupabaseSession } from '@/lib/auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error] = useState('');
-  const [loading] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sessionChecking, setSessionChecking] = useState(true);
+
+  // If already logged in, redirect to dashboard immediately
+  useEffect(() => {
+    getSupabaseSession()
+      .then((session) => {
+        if (session) router.replace('/');
+      })
+      .catch(() => undefined)
+      .finally(() => setSessionChecking(false));
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    router.replace('/');
+    setError('');
+    setLoading(true);
+
+    try {
+      const { error: authError } = await signInWithSupabase(email, password);
+      if (authError) {
+        setError(authError.message);
+      } else {
+        router.replace('/');
+      }
+    } catch {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  async function handleQuickSignUp() {
-    router.replace('/');
+  async function handleQuickSignIn() {
+    setError('');
+    setLoading(true);
+    setEmail('testadmin@fabricflow.app');
+
+    try {
+      const { error: authError } = await signInWithSupabase(
+        'testadmin@fabricflow.app',
+        'FabricFlow2024!',
+      );
+      if (authError) {
+        setError(authError.message);
+      } else {
+        router.replace('/');
+      }
+    } catch {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (sessionChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#080c14]">
+        <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+      </div>
+    );
   }
 
   return (
@@ -101,12 +153,12 @@ export default function LoginPage() {
           <div className="mt-4 flex flex-col gap-2">
             <button
               type="button"
-              onClick={handleQuickSignUp}
+              onClick={() => void handleQuickSignIn()}
               disabled={loading}
               suppressHydrationWarning
               className="w-full rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm font-medium text-blue-400 transition-all hover:bg-blue-500/20 disabled:opacity-60"
             >
-              Quick Register (testadmin@fabricflow.app)
+              Quick Sign-in (testadmin@fabricflow.app)
             </button>
           </div>
 

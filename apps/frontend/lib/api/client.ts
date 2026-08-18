@@ -45,8 +45,11 @@ export async function apiClient<T>(
         : options.body,
   });
 
-  // 401 redirect disabled (auth temporarily removed).
+  // 401 — session expired or invalid: redirect to login
   if (response.status === 401) {
+    if (typeof window !== 'undefined') {
+      window.location.replace('/login');
+    }
     throw new Error('Session expired.');
   }
 

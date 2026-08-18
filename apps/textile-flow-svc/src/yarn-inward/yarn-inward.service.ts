@@ -18,7 +18,7 @@ export class YarnInwardService {
     private readonly activityLogger: ActivityLogsService,
   ) {}
 
-  create(dto: CreateYarnInwardDto) {
+  create(dto: CreateYarnInwardDto, performingUser = 'system') {
     return this.prisma
       .$transaction(async (tx) => {
         const bags = dto.numBags ?? 0;
@@ -143,7 +143,7 @@ export class YarnInwardService {
       })
       .then((result) => {
         void this.activityLogger.log({
-          user: 'system',
+          user: performingUser,
           action: 'Yarn Inward Created',
           module: 'Yarn Inward',
           details: `Batch: ${result?.hfBatch ?? 'N/A'} | Weight: ${result?.totalWeight?.toString() ?? '?'} kg`,
@@ -189,7 +189,11 @@ export class YarnInwardService {
     return inward;
   }
 
-  async update(id: number, dto: UpdateYarnInwardDto) {
+  async update(
+    id: number,
+    dto: UpdateYarnInwardDto,
+    performingUser = 'system',
+  ) {
     return this.prisma
       .$transaction(async (tx) => {
         const existing = await tx.yarnInward.findUnique({
@@ -319,7 +323,7 @@ export class YarnInwardService {
       .then((updated) => {
         if (updated && updated.status === 'RECEIVED') {
           void this.activityLogger.log({
-            user: 'system',
+            user: performingUser,
             action: 'Yarn Received',
             module: 'Yarn Inward',
             details: `Batch: ${updated.hfBatch ?? 'N/A'} | Received: ${updated.receivedWeight?.toString() ?? '?'} kg`,
@@ -329,11 +333,11 @@ export class YarnInwardService {
       });
   }
 
-  async remove(id: number) {
+  async remove(id: number, performingUser = 'system') {
     const inward = await this.findOne(id);
     const result = await this.prisma.yarnInward.delete({ where: { id } });
     void this.activityLogger.log({
-      user: 'system',
+      user: performingUser,
       action: 'Yarn Inward Deleted',
       module: 'Yarn Inward',
       details: `Batch: ${inward.hfBatch ?? 'N/A'} | ID: ${id}`,

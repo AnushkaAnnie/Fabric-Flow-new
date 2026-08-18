@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Req,
 } from '@nestjs/common';
 import {
   CreateYarnInwardSchema,
@@ -16,6 +17,10 @@ import {
 } from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { YarnInwardService } from './yarn-inward.service';
+import {
+  type AuthenticatedRequest,
+  resolveUser,
+} from '../common/types/authenticated-request';
 
 @Controller('yarn-inward')
 export class YarnInwardController {
@@ -25,8 +30,9 @@ export class YarnInwardController {
   create(
     @Body(new ZodValidationPipe(CreateYarnInwardSchema))
     dto: CreateYarnInwardDto,
+    @Req() req: AuthenticatedRequest,
   ) {
-    return this.service.create(dto);
+    return this.service.create(dto, resolveUser(req));
   }
 
   @Get()
@@ -44,12 +50,16 @@ export class YarnInwardController {
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(UpdateYarnInwardSchema))
     dto: UpdateYarnInwardDto,
+    @Req() req: AuthenticatedRequest,
   ) {
-    return this.service.update(id, dto);
+    return this.service.update(id, dto, resolveUser(req));
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.service.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.remove(id, resolveUser(req));
   }
 }

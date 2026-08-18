@@ -1,5 +1,5 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -35,8 +35,7 @@ import { GreyFabricInwardModule } from './grey-fabric-inward/grey-fabric-inward.
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 
 import { AuthModule } from './auth/auth.module';
-// JwtAuthGuard kept in codebase but NOT registered globally — re-enable via
-// APP_GUARD when a real login flow is implemented on the frontend.
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
@@ -79,6 +78,10 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,

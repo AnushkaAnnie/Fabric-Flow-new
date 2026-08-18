@@ -53,7 +53,7 @@ export class DyeingsService {
     return dyeing;
   }
 
-  async update(id: number, dto: UpdateDyeingDto) {
+  async update(id: number, dto: UpdateDyeingDto, performingUser = 'system') {
     const existing = await this.findOne(id);
 
     // Use UncheckedUpdateInput so we can set scalar FKs (compacterId) directly
@@ -218,14 +218,14 @@ export class DyeingsService {
     // Activity log
     if (dto.finalWeight !== undefined) {
       void this.activityLogger.log({
-        user: 'system',
+        user: performingUser,
         action: 'Dyeing Return Recorded',
         module: 'Dyeings',
         details: `Lot: ${result.lotNo} | Final: ${result.finalWeight?.toString() ?? '?'} kg | Loss: ${result.processLoss?.toString() ?? '0'} kg`,
       });
     } else {
       void this.activityLogger.log({
-        user: 'system',
+        user: performingUser,
         action: 'Dyeing Updated',
         module: 'Dyeings',
         details: `Lot: ${result.lotNo} | Status: ${result.status}`,

@@ -42,7 +42,7 @@ export class PurchaseOrdersService {
     return `${prefix}-${String(nextSeq).padStart(4, '0')}`;
   }
 
-  async create(dto: CreatePurchaseOrderDto) {
+  async create(dto: CreatePurchaseOrderDto, performingUser = 'system') {
     const {
       items,
       date,
@@ -216,6 +216,7 @@ export class PurchaseOrdersService {
         this.logPO(
           'PO Created',
           result.poNumber,
+          performingUser,
           result.supplierName,
           result.poType,
         );
@@ -250,11 +251,12 @@ export class PurchaseOrdersService {
   private logPO(
     action: string,
     poNumber: string,
+    performingUser = 'system',
     supplierName?: string | null,
     poType?: string | null,
   ): void {
     void this.activityLogger.log({
-      user: 'system',
+      user: performingUser,
       action,
       module: 'Purchase Orders',
       details: `${poNumber} | ${poType ?? 'YARN'} | Supplier: ${supplierName ?? 'unknown'}`,
@@ -283,7 +285,11 @@ export class PurchaseOrdersService {
     return po;
   }
 
-  async update(id: string, dto: UpdatePurchaseOrderDto) {
+  async update(
+    id: string,
+    dto: UpdatePurchaseOrderDto,
+    performingUser = 'system',
+  ) {
     await this.findOne(id);
 
     const {
@@ -351,13 +357,19 @@ export class PurchaseOrdersService {
         return po;
       })
       .then((po) => {
-        this.logPO('PO Updated', po.poNumber, po.supplierName, po.poType);
+        this.logPO(
+          'PO Updated',
+          po.poNumber,
+          performingUser,
+          po.supplierName,
+          po.poType,
+        );
         return po;
       });
   }
 
   // ── Issue 8: Cancel PO ───────────────────────────────────────────────────
-  async cancel(id: string) {
+  async cancel(id: string, performingUser = 'system') {
     const po = await this.prisma.purchaseOrder.findUnique({ where: { id } });
     if (!po) throw new NotFoundException('Purchase Order not found');
     if (po.status === 'CANCELLED') {
@@ -394,6 +406,7 @@ export class PurchaseOrdersService {
         this.logPO(
           'PO Cancelled',
           updatedPo.poNumber,
+          performingUser,
           po.supplierName,
           po.poType,
         );

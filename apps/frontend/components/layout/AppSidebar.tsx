@@ -1,6 +1,7 @@
 'use client';
 
-import { signOutFromSupabase } from '@/lib/auth';
+import { useEffect, useState } from 'react';
+import { signOutFromSupabase, getSupabaseSession } from '@/lib/auth';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -61,10 +62,17 @@ const nav = [
 export function AppSidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSupabaseSession()
+      .then((session) => setUserEmail(session?.user?.email ?? null))
+      .catch(() => undefined);
+  }, []);
 
   async function logout() {
     await signOutFromSupabase().catch(() => undefined);
-    router.replace('/');
+    router.replace('/login');
   }
 
   function isActive(href: string) {
@@ -122,7 +130,12 @@ export function AppSidebar({ onClose }: { onClose?: () => void }) {
         ))}
       </nav>
 
-      <div className="border-t border-slate-800 px-3 pb-4 pt-3">
+      <div className="border-t border-slate-800 px-3 pb-4 pt-3 space-y-1">
+        {userEmail && (
+          <p className="truncate px-2.5 py-1 text-[10px] text-slate-500" title={userEmail}>
+            {userEmail}
+          </p>
+        )}
         <button
           onClick={() => void logout()}
           className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-slate-400 transition-all duration-150 hover:bg-rose-500/10 hover:text-rose-400"

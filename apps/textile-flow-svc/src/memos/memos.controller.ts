@@ -6,19 +6,27 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Req,
 } from '@nestjs/common';
 import { MemosService } from './memos.service';
 import type { CreateMemoDto } from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { CreateMemoSchema } from '@textile-flow/shared';
+import {
+  type AuthenticatedRequest,
+  resolveUser,
+} from '../common/types/authenticated-request';
 
 @Controller('memos')
 export class MemosController {
   constructor(private readonly service: MemosService) {}
 
   @Post()
-  create(@Body(new ZodValidationPipe(CreateMemoSchema)) dto: CreateMemoDto) {
-    return this.service.create(dto);
+  create(
+    @Body(new ZodValidationPipe(CreateMemoSchema)) dto: CreateMemoDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.create(dto, resolveUser(req));
   }
 
   @Get()

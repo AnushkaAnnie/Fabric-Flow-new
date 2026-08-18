@@ -22,7 +22,7 @@ export class MemosService {
     private readonly activityLogger: ActivityLogsService,
   ) {}
 
-  async create(dto: CreateMemoDto) {
+  async create(dto: CreateMemoDto, performingUser = 'system') {
     const collectedLotNos: string[] = [];
     const result = await this.prisma
       .$transaction(async (tx) => {
@@ -172,7 +172,7 @@ export class MemosService {
       })
       .then((result) => {
         void this.activityLogger.log({
-          user: 'system',
+          user: performingUser,
           action: 'Dyeing Memo Created',
           module: 'Memos',
           details: `Memo #${result?.memoNo ?? '?'} | ${result?.lines?.length ?? 0} lots | Lots: ${collectedLotNos.join(', ')}`,

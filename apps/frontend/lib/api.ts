@@ -29,7 +29,11 @@ api.interceptors.response.use(
     const status = error.response?.status || 'NETWORK';
     const data = error.response?.data;
 
-    // 401 redirect disabled (auth temporarily removed).
+    // 401 — session expired or invalid: redirect to login
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      window.location.replace('/login');
+      return Promise.reject(error);
+    }
 
     if (error.response) {
       console.error(`[API Error] ${method} ${url} -> ${status}`, data);

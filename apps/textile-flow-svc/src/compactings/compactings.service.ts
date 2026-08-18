@@ -20,7 +20,7 @@ export class CompactingsService {
     private readonly activityLogger: ActivityLogsService,
   ) {}
 
-  async create(dto: CreateCompactingDto) {
+  async create(dto: CreateCompactingDto, performingUser = 'system') {
     return this.prisma
       .$transaction(async (tx) => {
         const dyeing = dto.dyeingId
@@ -91,7 +91,7 @@ export class CompactingsService {
       })
       .then((result) => {
         void this.activityLogger.log({
-          user: 'system',
+          user: performingUser,
           action: 'Compacting Created',
           module: 'Compactings',
           details: `Lot: ${result.lotNo} | Grey: ${result.dyeing?.initialWeight?.toString() ?? '?'} kg`,
@@ -111,7 +111,11 @@ export class CompactingsService {
    * Completes a compacting operation.
    * Process loss is calculated from the original GREY FABRIC weight, not the dyed weight.
    */
-  async completeCompacting(compactingId: number, finalWeight: number) {
+  async completeCompacting(
+    compactingId: number,
+    finalWeight: number,
+    performingUser = 'system',
+  ) {
     const compacted = await this.prisma.$transaction(async (tx) => {
       const compacting = await tx.compacting.findUnique({
         where: { id: compactingId },
@@ -195,7 +199,7 @@ export class CompactingsService {
     }
 
     void this.activityLogger.log({
-      user: 'system',
+      user: performingUser,
       action: 'Compacting Completed',
       module: 'Compactings',
       details: `Lot: ${compacted.lotNo} | Final: ${compacted.finalWeight?.toString() ?? '?'} kg | Loss: ${compacted.processLoss?.toString() ?? '0'} kg`,
@@ -208,7 +212,11 @@ export class CompactingsService {
    * @deprecated Use completeCompacting() for explicit lifecycle management.
    * Kept for backwards compatibility with existing update route.
    */
-  async update(id: number, dto: { compactWeight: number }) {
-    return this.completeCompacting(id, dto.compactWeight);
+  async update(
+    id: number,
+    dto: { compactWeight: number },
+    performingUser = 'system',
+  ) {
+    return this.completeCompacting(id, dto.compactWeight, performingUser);
   }
 }
