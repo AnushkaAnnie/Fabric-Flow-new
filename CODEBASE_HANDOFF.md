@@ -642,3 +642,93 @@ npx turbo run lint
 # Expected: Tasks: 4 successful, 4 total (0 errors)
 ```
 
+---
+
+## Section 16 — Authentication System (Restored)
+
+> **Status:** Fully active as of commit `79d9929` (2026-08-18).
+
+Authentication was deliberately disabled during early development. It has now been fully restored and wired end-to-end.
+
+### How It Works (End-to-End)
+
+```
+User visits protected page
+        │
+        ▼
+ProtectedRoute (client-side)
+  └─ calls getSupabaseSession()
+  └─ if no session → router.replace('/login')
+  └─ subscribes to onAuthStateChange for reactive sign-out
+        │
+        ▼
+Login Page (/login)
+  └─ calls signInWithSupabase(email, password)  [lib/auth.ts]
+  └─ Supabase JS creates session, stores in cookie
+  └─ on success → router.replace('/')
+        │
+        ▼
+API calls (lib/api.ts / lib/api/client.ts)
+  └─ interceptor reads getSupabaseAccessToken()
+  └─ attaches Authorization: Bearer <JWT>
+  └─ on 401 response → window.location.replace('/login')
+        │
+        ▼
+NestJS Backend (JwtAuthGuard — global APP_GUARD)
+  └─ checks @Public() metadata first — if public, allow through
+  └─ reads Authorization: Bearer header
+  └─ verifies JWT via JWKS (RS256) or SUPABASE_JWT_SECRET (HS256)
+  └─ attaches req.user = { id, email, role } on success
+  └─ throws 401 UnauthorizedException on failure
+```
+
+### Backend Files
+
+| File | Role |
+|------|------|
+| `src/auth/auth.service.ts` | Supabase JWT verification (RS256 JWKS + HS256 secret fallback) |
+| `src/auth/jwt-auth.guard.ts` | Global NestJS guard — checks `@Public()`, extracts + verifies Bearer token |
+| `src/auth/public.decorator.ts` | `@Public()` opt-out decorator |
+| `src/auth/auth.controller.ts` | `GET /auth/me` — always `@Public()`, returns `{ user: null }` |
+| `src/common/types/authenticated-request.ts` | Shared `AuthenticatedRequest` type + `resolveUser()` helper |
+| `src/app.module.ts` | Registers `JwtAuthGuard` as `APP_GUARD` |
+
+### Frontend Files
+
+| File | Role |
+|------|------|
+| `lib/auth.ts` | Supabase client helpers: signIn, signOut, getSession, getAccessToken, subscribe |
+| `lib/api.ts` | Axios instance — auto-attaches Bearer token; redirects to `/login` on 401 |
+| `lib/api/client.ts` | Fetch-based client — same Bearer token + 401 redirect pattern |
+| `app/login/page.tsx` | Login UI with real Supabase auth, error/loading state, auto-redirect if logged in |
+| `components/auth/protected-route.tsx` | Client-side route guard using `getSupabaseSession()` + `subscribeToAuthChanges()` |
+| `components/layout/AppSidebar.tsx` | Logout → `signOutFromSupabase()` → redirect to `/login`; shows user email |
+
+### Public Routes (Backend)
+
+| Route | Why public |
+|-------|-----------|
+| `GET /` (AppController) | Has `@Public()` |
+| `GET /health` | Raw Express route in `main.ts` — NestJS guard never runs on it |
+| `GET /auth/me` | Has `@Public()` — always returns `{ user: null }` |
+
+All other routes require a valid Supabase JWT Bearer token.
+
+### Real User in Activity Logs
+
+Activity logs now record the authenticated user's email via `resolveUser(req)` (falls back to user ID → `'system'`). Wired in:
+`yarn-inward`, `purchase-orders`, `memos`, `knitter-programs`, `dyeings`, `compactings` — controllers pass `resolveUser(req)` to service methods.
+
+### Static Export Constraint
+
+`next.config.js` sets `output: 'export'`. **Next.js middleware does NOT run in production** (Render serves static files). All route protection is enforced **client-side** in `ProtectedRoute`.
+
+### Required Environment Variables
+
+| Variable | Where | Purpose |
+|----------|-------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Frontend `.env.local` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Frontend `.env.local` | Supabase anon key |
+| `SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_URL` | Backend `.env` | Used to construct JWKS URL |
+| `SUPABASE_JWT_SECRET` | Backend `.env` | Required for HS256 JWT verification |
+
