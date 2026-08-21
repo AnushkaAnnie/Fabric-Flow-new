@@ -42,27 +42,6 @@ export default function LoginPage() {
     }
   }
 
-  async function handleQuickSignIn() {
-    setError('');
-    setLoading(true);
-    setEmail('testadmin@fabricflow.app');
-
-    try {
-      const { error: authError } = await signInWithSupabase(
-        'testadmin@fabricflow.app',
-        'FabricFlow2024!',
-      );
-      if (authError) {
-        setError(authError.message);
-      } else {
-        router.replace('/');
-      }
-    } catch {
-      setError('An unexpected error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   if (sessionChecking) {
     return (
@@ -150,20 +129,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-4 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => void handleQuickSignIn()}
-              disabled={loading}
-              suppressHydrationWarning
-              className="w-full rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm font-medium text-blue-400 transition-all hover:bg-blue-500/20 disabled:opacity-60"
-            >
-              Quick Sign-in (testadmin@fabricflow.app)
-            </button>
-          </div>
-
           <p className="mt-4 text-center text-xs text-slate-600">
-            Sign in with your Supabase account credentials.
+            Sign in with your account credentials.
           </p>
         </div>
       </div>

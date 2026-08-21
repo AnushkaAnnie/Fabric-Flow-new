@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getSupabaseAccessToken } from '@/lib/auth';
+import { getSupabaseAccessToken, signOutFromSupabase } from '@/lib/auth';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
@@ -29,8 +29,11 @@ api.interceptors.response.use(
     const status = error.response?.status || 'NETWORK';
     const data = error.response?.data;
 
-    // 401 — session expired or invalid: redirect to login
+    // 401 — session expired or invalid: sign out then redirect to login
+    // Signing out first ensures the login page's session check returns null,
+    // preventing the dashboard → login → dashboard redirect loop.
     if (error.response?.status === 401 && typeof window !== 'undefined') {
+      await signOutFromSupabase().catch(() => undefined);
       window.location.replace('/login');
       return Promise.reject(error);
     }

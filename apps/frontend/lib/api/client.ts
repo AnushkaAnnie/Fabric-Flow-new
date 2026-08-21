@@ -1,4 +1,4 @@
-import { getSupabaseAccessToken } from '@/lib/auth';
+import { getSupabaseAccessToken, signOutFromSupabase } from '@/lib/auth';
 
 type Primitive = string | number | boolean | null | undefined;
 
@@ -45,9 +45,11 @@ export async function apiClient<T>(
         : options.body,
   });
 
-  // 401 — session expired or invalid: redirect to login
+  // 401 — session expired or invalid: sign out then redirect to login
+  // Signing out ensures the login page sees no session and doesn't bounce back.
   if (response.status === 401) {
     if (typeof window !== 'undefined') {
+      await signOutFromSupabase().catch(() => undefined);
       window.location.replace('/login');
     }
     throw new Error('Session expired.');

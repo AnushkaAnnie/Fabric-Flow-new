@@ -357,6 +357,9 @@ Render free tier goes to sleep after 15 min. First request on cold start takes 2
 - ✅ **Frontend `.env.local` was missing entirely**: Created `apps/frontend/.env.local` with all three required `NEXT_PUBLIC_*` variables.
 - ✅ **Prisma client not generated**: Ran `npx prisma generate` from repo root to regenerate the client after `npm install`.
 
+### Fixed (Auth cleanup — 2026-08-21)
+- ✅ **Hardcoded test credentials removed**: Removed the `handleQuickSignIn` function and "Quick Sign-in" button from `app/login/page.tsx` that had `testadmin@fabricflow.app` / `FabricFlow2024!` committed to source. Login now uses the standard email/password form only. Users are managed via Supabase Dashboard → Authentication → Users.
+
 ### Outstanding / Known Issues
 - ⚠️ **18 orphaned historical POs** (created before the fix): their `deliveryName` is `"CHHAVI NEETU TEXTILES LLP"` — this name does not exist as a Knitter in the DB, so the backfill script skipped them. To fix: either add that Knitter to the DB or update the POs' `deliveryName`.
 - ⚠️ **Auth is not globally enforced**: `JwtAuthGuard` is coded but not applied as `APP_GUARD`. The `ProtectedRoute` on the frontend protects UI but the API is technically unauthenticated.
@@ -700,7 +703,7 @@ NestJS Backend (JwtAuthGuard — global APP_GUARD)
 | `lib/auth.ts` | Supabase client helpers: signIn, signOut, getSession, getAccessToken, subscribe |
 | `lib/api.ts` | Axios instance — auto-attaches Bearer token; redirects to `/login` on 401 |
 | `lib/api/client.ts` | Fetch-based client — same Bearer token + 401 redirect pattern |
-| `app/login/page.tsx` | Login UI with real Supabase auth, error/loading state, auto-redirect if logged in |
+| `app/login/page.tsx` | Login UI — email/password form only; verified by Supabase Auth server; no hardcoded credentials |
 | `components/auth/protected-route.tsx` | Client-side route guard using `getSupabaseSession()` + `subscribeToAuthChanges()` |
 | `components/layout/AppSidebar.tsx` | Logout → `signOutFromSupabase()` → redirect to `/login`; shows user email |
 
@@ -713,6 +716,15 @@ NestJS Backend (JwtAuthGuard — global APP_GUARD)
 | `GET /auth/me` | Has `@Public()` — always returns `{ user: null }` |
 
 All other routes require a valid Supabase JWT Bearer token.
+
+### User Management
+
+Users are managed exclusively via the **Supabase Dashboard → Authentication → Users**. To grant access to Fabric Flow:
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard) → your project → **Authentication → Users**
+2. Click **Invite user** or **Add user** and set their email and password
+3. The app never stores passwords — Supabase handles all credential verification
+
+The login page (`app/login/page.tsx`) accepts any email/password and delegates verification entirely to `supabase.auth.signInWithPassword()`. There are no hardcoded credentials in the codebase.
 
 ### Real User in Activity Logs
 

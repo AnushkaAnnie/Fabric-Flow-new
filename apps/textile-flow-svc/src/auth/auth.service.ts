@@ -5,10 +5,8 @@ import {
 } from '@nestjs/common';
 import {
   createRemoteJWKSet,
-  decodeProtectedHeader,
   jwtVerify,
   type JWTPayload,
-  type JWTVerifyResult,
 } from 'jose';
 
 type AuthUser = {
@@ -60,20 +58,13 @@ export class AuthService {
       );
     }
 
-    const header = decodeProtectedHeader(token);
-    const algorithm = header.alg;
-
-    let verified: JWTVerifyResult<JWTPayload>;
-
-    try {
-      if (algorithm?.startsWith('HS')) {
-        if (!this.jwtSecret) {
-          throw new InternalServerErrorException(
-            'SUPABASE_JWT_SECRET must be configured for HS256 token verification',
-          );
-        }
-
-        verified = await jwtVerify(
+    // Strategy: try SUPABASE_JWT_SECRET first (local, no network call).
+    // Supabase signs tokens with a project-scoped secret that works regardless
+    // of the JWT algorithm advertised in the header (ES256, HS256, etc.).
+    // Fall back to JWKS only when the secret is absent.
+    if (this.jwtSecret) {
+      try {
+        const verified = await jwtVerify(
           token,
           new TextEncoder().encode(this.jwtSecret),
           {
@@ -81,18 +72,26 @@ export class AuthService {
             audience: 'authenticated',
           },
         );
-      } else {
-        if (!this.jwks) {
-          throw new InternalServerErrorException(
-            'Supabase JWKS URL could not be initialized',
-          );
-        }
-
-        verified = await jwtVerify(token, this.jwks, {
-          issuer: this.issuer,
-          audience: 'authenticated',
-        });
+        return verified.payload;
+      } catch {
+        // Secret-based verification failed — fall through to JWKS
       }
+    }
+
+    // JWKS fallback (RS256 / ES256 via remote public key)
+    if (!this.jwks) {
+      throw new InternalServerErrorException(
+        'SUPABASE_JWT_SECRET is not configured and JWKS URL could not be initialised. ' +
+          'Set SUPABASE_JWT_SECRET in your environment.',
+      );
+    }
+
+    try {
+      const verified = await jwtVerify(token, this.jwks, {
+        issuer: this.issuer,
+        audience: 'authenticated',
+      });
+      return verified.payload;
     } catch (error) {
       if (
         error instanceof InternalServerErrorException ||
@@ -100,11 +99,8 @@ export class AuthService {
       ) {
         throw error;
       }
-
       throw new UnauthorizedException('Invalid or expired Supabase token');
     }
-
-    return verified.payload;
   }
 
   private isObject(value: unknown): value is Record<string, unknown> {
