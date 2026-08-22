@@ -5,7 +5,6 @@ import { Search, RefreshCw, AlertTriangle } from "lucide-react";
 import MasterDataFormDialog, { type FormField } from "./MasterDataFormDialog";
 import MasterDataTable from "./MasterDataTable";
 import { useMasterData } from "@/hooks/useMasterData";
-import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useQueryClient } from "@tanstack/react-query";
 
 type MasterDataEntityPageProps = {
@@ -48,8 +47,7 @@ export default function MasterDataEntityPage({
   const singularTitle = singular(title);
 
   return (
-    <ProtectedRoute>
-      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
         {/* Page header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -141,6 +139,5 @@ export default function MasterDataEntityPage({
           }}
         />
       </div>
-    </ProtectedRoute>
   );
 }

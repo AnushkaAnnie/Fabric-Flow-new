@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
-import { ProtectedRoute } from '@/components/auth/protected-route';
 import {
   LayoutDashboard, Package, Scissors, Truck, ClipboardList,
   Layers, BarChart3, Zap, AlertTriangle, CheckCircle2, Clock, Activity,
@@ -74,8 +73,7 @@ export default function HomePage() {
   const delayed = delayedQ.data ?? [];
 
   return (
-    <ProtectedRoute>
-      <div className="p-6 space-y-8 max-w-7xl mx-auto">
+    <div className="p-6 space-y-8 max-w-7xl mx-auto">
 
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -199,6 +197,5 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
   );
 }

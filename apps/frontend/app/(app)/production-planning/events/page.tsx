@@ -2,7 +2,6 @@
 
 import { QueryStateWrapper } from '@/components/production/query-state-wrapper';
 import { useProductionEvents } from '@/hooks/use-production-events';
-import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   ClipboardPlus, Ban, Activity,
@@ -39,8 +38,7 @@ export default function EventsPage() {
   };
 
   return (
-    <ProtectedRoute>
-      <QueryStateWrapper
+    <QueryStateWrapper
         isLoading={isLoading}
         error={error}
         retry={refetch}
@@ -113,6 +111,5 @@ export default function EventsPage() {
           </Card>
         </div>
       </QueryStateWrapper>
-    </ProtectedRoute>
   );
 }

@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Pencil, Printer, Droplets } from 'lucide-react';
-import { ProtectedRoute } from '@/components/auth/protected-route';
 
 const SELECT_CLASS =
   'w-full rounded-lg border border-slate-700/60 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 transition-all';
@@ -195,8 +194,7 @@ export default function DyeingPage() {
     : 0;
 
   return (
-    <ProtectedRoute>
-      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -490,6 +488,5 @@ export default function DyeingPage() {
           </div>
         )}
       </div>
-    </ProtectedRoute>
   );
 }

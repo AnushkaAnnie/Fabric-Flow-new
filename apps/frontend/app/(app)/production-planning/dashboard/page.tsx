@@ -1,6 +1,5 @@
 'use client';
 
-import { ProtectedRoute } from '@/components/auth/protected-route';
 import { StatusBadge } from '@/components/production/status-badge';
 import { QueryStateWrapper } from '@/components/production/query-state-wrapper';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,8 +26,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <ProtectedRoute>
-      <QueryStateWrapper isLoading={isLoading} error={hasError} retry={refetchAll}>
+    <QueryStateWrapper isLoading={isLoading} error={hasError} retry={refetchAll}>
       <div className="p-6 space-y-8">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
@@ -204,6 +202,5 @@ export default function DashboardPage() {
         </div>
       </div>
       </QueryStateWrapper>
-    </ProtectedRoute>
   );
 }

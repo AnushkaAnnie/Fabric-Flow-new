@@ -71,7 +71,7 @@ export class CompactingsService {
               processLoss,
               status: WorkflowStatus.PENDING,
             },
-            performedBy: 'system',
+            performedBy: performingUser,
           },
         });
 

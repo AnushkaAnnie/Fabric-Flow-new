@@ -6,8 +6,6 @@ import { ColumnDef } from '@tanstack/react-table';
 import { AlertCircle, Calendar, ClipboardList, PlusCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
-import { ProtectedRoute } from '@/components/auth/protected-route';
-
 import { DataTable } from '@/components/production/data-table';
 import { PaginationControls } from '@/components/production/pagination-controls';
 import { planColumns } from '@/components/production/columns/plans-columns';
@@ -141,8 +139,7 @@ export default function ProductionPlanningPage() {
   };
 
   return (
-    <ProtectedRoute>
-      <div className="p-6 space-y-8">
+    <div className="p-6 space-y-8">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
@@ -368,6 +365,5 @@ export default function ProductionPlanningPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </ProtectedRoute>
   );
 }

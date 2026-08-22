@@ -14,7 +14,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Pencil, Trash2, Layers, Palette, ChevronDown } from 'lucide-react';
 import type { GreyFabricInward, GreyFabricInwardFormData } from '@/types/entities';
-import { ProtectedRoute } from '@/components/auth/protected-route';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Knitter { id: number; name: string }
@@ -201,8 +200,7 @@ export default function FabricInventoryPage() {
   ];
 
   return (
-    <ProtectedRoute>
-      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -566,6 +564,5 @@ export default function FabricInventoryPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </ProtectedRoute>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ProtectedRoute } from '@/components/auth/protected-route';
 import { apiClient } from '@/lib/api/client';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -327,8 +326,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <ProtectedRoute>
-      <div className="p-6 space-y-8 max-w-7xl mx-auto">
+    <div className="p-6 space-y-8 max-w-7xl mx-auto">
 
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -644,6 +642,5 @@ export default function AnalyticsPage() {
         </Card>
 
       </div>
-    </ProtectedRoute>
   );
 }

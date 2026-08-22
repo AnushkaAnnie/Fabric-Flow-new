@@ -17,7 +17,6 @@ import type { YarnInward, YarnInwardFormData, Knitter } from '@/types/entities';
 import type { Mill } from '@/types/yarn';
 import YarnPOPreviewModal from '@/components/po/YarnPOPreviewModal';
 import type { YarnPOData } from '@/components/po/YarnPOPrint';
-import { ProtectedRoute } from '@/components/auth/protected-route';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SELECT_CLASS =
@@ -205,8 +204,7 @@ export default function YarnInwardPage() {
   ];
 
   return (
-    <ProtectedRoute>
-      <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+    <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -561,6 +559,5 @@ export default function YarnInwardPage() {
           onClose={() => { setPoPreviewOpen(false); setPoData(null); }}
         />
       </div>
-    </ProtectedRoute>
   );
 }

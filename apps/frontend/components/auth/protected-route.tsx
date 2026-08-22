@@ -44,8 +44,9 @@ export function ProtectedRoute({ children }: Props) {
     // Stay reactive to future sign-outs (e.g. token expiry, sign-out in another tab)
     const {
       data: { subscription },
-    } = subscribeToAuthChanges((_event, session) => {
-      if (!session) {
+    } = subscribeToAuthChanges(async (event, session) => {
+      if (event === 'INITIAL_SESSION') return;
+      if (event === 'SIGNED_OUT' || !session) {
         setAuthed(false);
         router.replace('/login');
       } else {
