@@ -12,8 +12,12 @@ export const CreateMillSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   pincode: pincodeSchema,
-  email: optionalString(z.string().email()),
-  phone: z.string().optional(),
+  email: optionalString(
+    z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email format')
+  ),
+  phone: optionalString(
+    z.string().regex(/^[+]?[0-9][\s\-().0-9]{6,14}$/, 'Invalid phone number')
+  ),
   gstin: optionalString(
     z.string()
       .length(15, 'GSTIN must be exactly 15 characters')

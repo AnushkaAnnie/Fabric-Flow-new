@@ -199,8 +199,8 @@ export async function apiClient<T>(endpoint: string, options?: RequestOptions): 
 ### App Router Structure
 ```text
 apps/frontend/app/
-├── (app)/                          <- Authenticated shell layout (ProtectedRoute + AppShell)
-│   ├── layout.tsx                  <- Thin layout wrapper (193 bytes — just passes children)
+├── (app)/                          <- Authenticated route group
+│   ├── layout.tsx                  <- Centralized root layout for authenticated app: wraps <AppShell> with <ProtectedRoute>
 │   ├── page.tsx                    <- Dashboard (home) — KPI cards, recent activity
 │   ├── analytics/                  <- Activity Analytics page
 │   │   └── page.tsx                <- xlsx/csv import, stat cards, recharts charts, log table
@@ -793,6 +793,7 @@ Controller
 | `lib/api.ts` | Axios instance — auto-attaches Bearer token; signs out + redirects to `/login` on 401 |
 | `lib/api/client.ts` | Fetch-based client — same Bearer token + 401 redirect pattern |
 | `app/login/page.tsx` | Login UI — email/password form only; no hardcoded credentials |
+| `app/(app)/layout.tsx` | Central layout for authenticated routes — wraps `<AppShell>` inside `<ProtectedRoute>` |
 | `components/auth/protected-route.tsx` | Client-side route guard using `getSupabaseSession()` + `subscribeToAuthChanges()` |
 | `components/layout/AppSidebar.tsx` | Logout -> `signOutFromSupabase()` -> redirect to `/login`; shows user email |
 

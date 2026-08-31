@@ -26,8 +26,26 @@ const partyFields: FormField[] = [
       message: "Pincode must be exactly 6 digits",
     },
   },
-  { name: "email", label: "Email", type: "text", required: false },
-  { name: "phone", label: "Phone", type: "text", required: false },
+  {
+    name: "email",
+    label: "Email",
+    type: "text",
+    required: false,
+    validation: {
+      pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+      message: "Enter a valid email address (e.g. name@example.com)",
+    },
+  },
+  {
+    name: "phone",
+    label: "Phone",
+    type: "text",
+    required: false,
+    validation: {
+      pattern: "^[+]?[0-9][\\s\\-().0-9]{6,14}$",
+      message: "Enter a valid phone number (7–15 digits, e.g. +91 9876543210)",
+    },
+  },
   {
     name: "gstin",
     label: "GSTIN",

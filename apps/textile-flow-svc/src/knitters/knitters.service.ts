@@ -7,7 +7,10 @@ export class KnittersService {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.prisma.knitter.findMany();
+    return this.prisma.knitter.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
+    });
   }
 
   create(dto: CreateKnitterDto) {
@@ -23,6 +26,9 @@ export class KnittersService {
   }
 
   remove(id: number) {
-    return this.prisma.knitter.delete({ where: { id } });
+    return this.prisma.knitter.update({
+      where: { id },
+      data: { isActive: false },
+    });
   }
 }

@@ -7,7 +7,10 @@ export class CompactersService {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.prisma.compacter.findMany();
+    return this.prisma.compacter.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
+    });
   }
 
   create(dto: CreateCompacterDto) {
@@ -23,6 +26,9 @@ export class CompactersService {
   }
 
   remove(id: number) {
-    return this.prisma.compacter.delete({ where: { id } });
+    return this.prisma.compacter.update({
+      where: { id },
+      data: { isActive: false },
+    });
   }
 }

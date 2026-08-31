@@ -130,7 +130,13 @@ export default function MasterDataEntityPage({
           onOpenChange={(open) => {
             if (!open) setEditingRow(null);
           }}
-          defaultValues={editingRow ?? {}}
+          defaultValues={
+            editingRow
+              ? Object.fromEntries(
+                  Object.entries(editingRow).map(([k, v]) => [k, v === null ? "" : v])
+                )
+              : {}
+          }
           onSubmit={(values) => {
             const rawId = editingRow?.id;
             if (rawId === undefined || rawId === null) return;

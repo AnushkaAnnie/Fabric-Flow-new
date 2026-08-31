@@ -7,7 +7,10 @@ export class DyersService {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.prisma.dyer.findMany();
+    return this.prisma.dyer.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
+    });
   }
 
   create(dto: CreateDyerDto) {
@@ -23,6 +26,9 @@ export class DyersService {
   }
 
   remove(id: number) {
-    return this.prisma.dyer.delete({ where: { id } });
+    return this.prisma.dyer.update({
+      where: { id },
+      data: { isActive: false },
+    });
   }
 }
