@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Req,
 } from '@nestjs/common';
 import {
   CreateGreyFabricInwardSchema,
@@ -13,6 +14,10 @@ import {
 } from '@textile-flow/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { GreyFabricInwardService } from './grey-fabric-inward.service';
+
+interface AuthRequest extends Request {
+  user?: { email?: string; sub?: string };
+}
 
 @Controller('grey-fabric-inward')
 export class GreyFabricInwardController {
@@ -22,8 +27,10 @@ export class GreyFabricInwardController {
   create(
     @Body(new ZodValidationPipe(CreateGreyFabricInwardSchema))
     dto: CreateGreyFabricInwardDto,
+    @Req() req: AuthRequest,
   ) {
-    return this.service.create(dto);
+    const performingUser = req.user?.email ?? req.user?.sub ?? 'system';
+    return this.service.create(dto, performingUser);
   }
 
   @Get()

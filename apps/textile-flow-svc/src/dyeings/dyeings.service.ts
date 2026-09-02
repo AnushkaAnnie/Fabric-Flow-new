@@ -83,7 +83,7 @@ export class DyeingsService {
 
     // Process loss = absolute weight difference (greyWeight - dyedWeight) in kg
     if (dto.finalWeight !== undefined) {
-      const greyWeight = dto.initialWeight ?? existing.initialWeight;
+      const greyWeight = Number(dto.initialWeight ?? existing.initialWeight);
 
       if (dto.finalWeight > greyWeight) {
         throw new BadRequestException(

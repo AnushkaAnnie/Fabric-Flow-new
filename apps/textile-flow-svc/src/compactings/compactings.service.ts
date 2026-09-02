@@ -30,7 +30,7 @@ export class CompactingsService {
         if (!dyeing) throw new BadRequestException('Lot not found in dyeing');
 
         // processLoss = greyWeight (initialWeight from memo) - compactWeight, in kg
-        const greyWeight = dyeing.initialWeight;
+        const greyWeight = Number(dyeing.initialWeight);
         const processLoss =
           dto.finalWeight !== undefined
             ? Number((greyWeight - dto.finalWeight).toFixed(3))
@@ -80,7 +80,7 @@ export class CompactingsService {
             entityType: 'Compacting',
             entityId: compacting.id,
             itemType: 'DYED',
-            outwardWeight: dyeing.finalWeight ?? 0,
+            outwardWeight: Number(dyeing.finalWeight ?? 0),
             lotNo: compacting.lotNo,
             remarks: 'Dyed fabric sent for compacting',
           },
@@ -133,7 +133,7 @@ export class CompactingsService {
       }
 
       // Business rule: process loss is from grey fabric weight, not dyed weight
-      const greyWeight = compacting.dyeing.initialWeight;
+      const greyWeight = Number(compacting.dyeing.initialWeight);
       const processLoss =
         greyWeight > 0 ? Number((greyWeight - finalWeight).toFixed(3)) : 0;
 

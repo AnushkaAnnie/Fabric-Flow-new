@@ -46,7 +46,7 @@ export class KnitterProgramsService {
         },
       });
 
-      if (!stock || stock.remainingWeight < yarn.quantityUsed) {
+      if (!stock || Number(stock.remainingWeight) < yarn.quantityUsed) {
         throw new BadRequestException(
           `Insufficient yarn stock for lot ID ${yarn.yarnLotId}`,
         );
@@ -157,6 +157,7 @@ export class KnitterProgramsService {
         yarnLot: true,
         preAssignedDyer: true,
         greyFabricLots: true,
+        yarnUsages: { include: { yarnLot: { select: { id: true, hfCode: true } } } },
       },
       orderBy: { programDate: 'desc' },
     });

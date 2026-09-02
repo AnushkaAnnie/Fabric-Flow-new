@@ -111,10 +111,11 @@ export default function KnitterProgramsPage() {
 
   const openEditDialog = (record: KnitterProgram) => {
     setEditRecord(record);
+    const firstUsage = record.yarnUsages?.[0];
     setFormData({
       knitterId: String(record.knitterId),
-      yarnLotId: String(record.yarnLotId),
-      quantityUsed: String(record.quantityUsed),
+      yarnLotId: firstUsage ? String(firstUsage.yarnLotId) : '',
+      quantityUsed: firstUsage ? String(firstUsage.quantityUsed) : '',
       greyWeight: String(record.greyWeight),
       numRolls: record.numRolls != null ? String(record.numRolls) : '',
       dia: record.dia ?? '',
@@ -148,8 +149,14 @@ export default function KnitterProgramsPage() {
     e.preventDefault();
     const payload: Record<string, unknown> = {
       knitterId: parseInt(formData.knitterId),
-      yarnLotId: parseInt(formData.yarnLotId),
-      quantityUsed: parseFloat(formData.quantityUsed),
+      // yarns[] is the correct multi-yarn shape that createInTransaction() expects.
+      // yarnLotId / quantityUsed are kept in local form state for the UI only.
+      yarns: [
+        {
+          yarnLotId: parseInt(formData.yarnLotId),
+          quantityUsed: parseFloat(formData.quantityUsed),
+        },
+      ],
       greyWeight: parseFloat(formData.greyWeight),
       numRolls: formData.numRolls ? parseInt(formData.numRolls) : undefined,
       dia: formData.dia || undefined,
@@ -219,8 +226,16 @@ export default function KnitterProgramsPage() {
                     <TableCell className="font-mono text-sm font-semibold text-indigo-300">{p.programNo ?? `#${p.id}`}</TableCell>
                     <TableCell className="text-slate-300 text-sm">{new Date(p.programDate).toLocaleDateString('en-IN')}</TableCell>
                     <TableCell className="text-slate-200">{p.knitter?.name ?? '–'}</TableCell>
-                    <TableCell className="font-mono text-sm font-semibold text-teal-300">{p.yarnLot?.hfCode ?? '–'}</TableCell>
-                    <TableCell className="text-slate-300">{Number(p.quantityUsed).toFixed(2)}</TableCell>
+                    <TableCell className="font-mono text-sm text-teal-300">
+                      {p.yarnUsages && p.yarnUsages.length > 0
+                        ? p.yarnUsages.map(u => u.yarnLot?.hfCode ?? `#${u.yarnLotId}`).join(', ')
+                        : (p.yarnLot?.hfCode ?? '–')}
+                    </TableCell>
+                    <TableCell className="text-slate-300">
+                      {p.yarnUsages && p.yarnUsages.length > 0
+                        ? p.yarnUsages.reduce((s, u) => s + Number(u.quantityUsed), 0).toFixed(2)
+                        : '–'}
+                    </TableCell>
                     <TableCell className="font-semibold text-slate-200">{Number(p.greyWeight).toFixed(2)}</TableCell>
                     <TableCell className="text-slate-300">{p.numRolls ?? '–'}</TableCell>
                     <TableCell className="text-slate-300">{p.dia ?? '–'}</TableCell>

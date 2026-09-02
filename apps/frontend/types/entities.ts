@@ -181,13 +181,22 @@ export interface YarnInwardFormData {
 export type { YarnLot, Knitter } from './yarn';
 
 // ===================== Phase 3D =====================
+export interface KnitterProgramYarnUsage {
+  id: number;
+  yarnLotId: number;
+  quantityUsed: number;
+  yarnLot?: { id: number; hfCode: string };
+}
+
 export interface KnitterProgram {
   id: number;
   /// Sequential reference e.g. KP-0001
   programNo?: string | null;
   knitterId: number;
-  yarnLotId: number;
-  quantityUsed: number;
+  /** @deprecated use yarnUsages instead */
+  yarnLotId?: number | null;
+  /** @deprecated use yarnUsages instead */
+  quantityUsed?: number | null;
   greyWeight: number;
   numRolls?: number;
   dia?: string;
@@ -200,7 +209,9 @@ export interface KnitterProgram {
   programDate: string;
   anomalyFlag: boolean;
   knitter?: { id: number; name: string };
+  /** @deprecated use yarnUsages instead */
   yarnLot?: { id: number; hfCode: string };
+  yarnUsages?: KnitterProgramYarnUsage[];
   greyFabricLots?: GreyFabricLot[];
   preAssignedDyer?: { id: number; name: string };
 }
@@ -255,6 +266,6 @@ export interface GreyFabricLot {
   greyWeight: number;
   rollCount?: number;
   source: 'KNITTED' | 'PURCHASED';
-  status: EntityWorkflowStatus;
+  status: 'AVAILABLE' | 'DISPATCHED' | 'CONSUMED' | 'DELETED';
   knitter?: { id: number; name: string };
 }
